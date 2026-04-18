@@ -1476,28 +1476,36 @@
             else if (data.status === 'Hoàn thành' || data.status === 'Hoàn tất') statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant uppercase">Hoàn thành</span>';
             
             // Serialize data string safely for inline HTML invocation
-            const dataStr = encodeURIComponent(JSON.stringify({id: data.id, code: data.code, status: data.status, title: data.title, requester: data.requester, deadline: data.deadline, content: data.content}));
+            const dataStr = encodeURIComponent(JSON.stringify({id: data.id, code: data.code, status: data.status, title: data.title, requester: data.requester, department: data.department, deadline: data.deadline, content: data.content}));
             
             fullHtml += `
-                    <tr class="hover:bg-slate-50/80 transition-colors group">
+                    <tr class="hover:bg-slate-50/80 transition-colors group relative">
                         <td class="px-6 py-4 font-headline font-bold text-sm text-primary">${data.code || '-'}</td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
+                        <td class="px-6 py-4 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'requester')">
+                            <div class="display-val flex items-center gap-3">
                                 <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">${initials}</div>
-                                <span class="text-sm font-semibold text-on-surface">${data.requester || '-'}</span>
+                                <span class="text-sm font-semibold text-on-surface pointer-events-none">${data.requester || '-'}</span>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-xs font-medium text-slate-500">${data.department || '-'}</td>
-                        <td class="px-6 py-4 max-w-[280px]">
-                            <div class="text-sm font-bold text-slate-700 truncate mb-1">${data.title || '-'}</div>
-                            <div class="text-xs text-slate-500 leading-relaxed truncate">${data.content || '-'}</div>
+                        <td class="px-6 py-4 text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'department')">
+                            <span class="display-val pointer-events-none">${data.department || '-'}</span>
+                        </td>
+                        <td class="px-6 py-4 max-w-[280px] cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'title')">
+                            <div class="display-val pointer-events-none">
+                                <div class="text-sm font-bold text-slate-700 truncate mb-1">${data.title || '-'}</div>
+                                <div class="text-xs text-slate-500 leading-relaxed truncate">${data.content || '-'}</div>
+                            </div>
                         </td>
                         <td class="px-6 py-4 text-xs italic text-slate-400">-</td>
                         <td class="px-6 py-4 text-[11px] text-slate-500">-</td>
                         <td class="px-6 py-4 text-[11px] text-slate-500">-</td>
-                        <td class="px-6 py-4 text-sm font-bold text-primary">${dateText}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-primary cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
+                            <div class="display-val pointer-events-none">${dateText}</div>
+                        </td>
                         <td class="px-6 py-4 text-xs font-semibold">-</td>
-                        <td class="px-6 py-4">${statusBadgeFull}</td>
+                        <td class="px-6 py-4 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'status')">
+                            <div class="display-val pointer-events-none">${statusBadgeFull}</div>
+                        </td>
                         <td class="px-6 py-4 text-right">
                             <div class="relative inline-block text-left group/action">
                                 <button class="text-slate-400 hover:text-primary transition-colors focus:outline-none">
@@ -1639,6 +1647,89 @@
         }
     };
 
+    // ===== Inline Edit =====
+    window.startInlineEdit = function(element, dataStr, field) {
+        if (element.classList.contains('editing')) return;
+        
+        // Prevent editing if multiple elements clicked too fast
+        if (document.querySelector('.editing')) {
+            const currentEdit = document.querySelector('.editing');
+            if (currentEdit !== element) window.saveInlineEdit(currentEdit, currentEdit.dataset.id, currentEdit.dataset.field, currentEdit.querySelector('.inline-input')?.value, currentEdit.dataset.original);
+        }
+        
+        element.classList.add('editing');
+        const data = JSON.parse(decodeURIComponent(dataStr));
+        const originalVal = data[field] || '';
+        const id = data.id;
+        
+        element.dataset.id = id;
+        element.dataset.field = field;
+        element.dataset.original = originalVal;
+        
+        const safeVal = originalVal.replace(/"/g, '&quot;');
+        
+        let inputHtml = '';
+        if (field === 'status') {
+            inputHtml = `<select class="w-[120px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow font-bold text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+                <option value="Chờ duyệt" ${originalVal === 'Chờ duyệt' ? 'selected' : ''}>Chờ duyệt</option>
+                <option value="Đang xử lý" ${originalVal === 'Đang xử lý' ? 'selected' : ''}>Đang xử lý</option>
+                <option value="Hoàn thành" ${originalVal === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+            </select>`;
+        } else if (field === 'department') {
+            inputHtml = `<select class="w-[full] min-w-[200px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+                <option value="Phòng Kế hoạch & Kinh doanh" ${originalVal === 'Phòng Kế hoạch & Kinh doanh' ? 'selected' : ''}>Phòng Kế hoạch & Kinh doanh</option>
+                <option value="Ban Điều hành Dự án" ${originalVal === 'Ban Điều hành Dự án' ? 'selected' : ''}>Ban Điều hành Dự án</option>
+                <option value="Phòng Nhân sự" ${originalVal === 'Phòng Nhân sự' ? 'selected' : ''}>Phòng Nhân sự</option>
+                <option value="Tổ Kỹ thuật - Hạ tầng" ${originalVal === 'Tổ Kỹ thuật - Hạ tầng' ? 'selected' : ''}>Tổ Kỹ thuật - Hạ tầng</option>
+            </select>`;
+        } else if (field === 'deadline') {
+            inputHtml = `<input type="date" class="w-full bg-white border border-primary rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow absolute inset-0 z-10 box-border h-[80%] m-auto w-[90%]" value="${originalVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" />`;
+        } else {
+            inputHtml = `<input type="text" class="w-full bg-white border border-primary rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow font-semibold absolute inset-0 z-10 box-border h-[80%] m-auto w-[90%]" value="${safeVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" onkeydown="if(event.key==='Enter') this.blur();" />`;
+        }
+        
+        const displayEl = element.querySelector('.display-val');
+        if(displayEl) displayEl.style.opacity = '0';
+        
+        element.insertAdjacentHTML('beforeend', inputHtml);
+        const inputEl = element.querySelector('.inline-input');
+        if(inputEl) {
+            inputEl.focus();
+            if(inputEl.type === 'text') {
+                const len = inputEl.value.length;
+                inputEl.setSelectionRange(len, len);
+            }
+        }
+    };
+    
+    window.saveInlineEdit = async function(element, id, field, newVal, oldVal) {
+        if (!element) return;
+        
+        element.classList.remove('editing');
+        const inputEl = element.querySelector('.inline-input');
+        if(inputEl) inputEl.remove();
+        const displayEl = element.querySelector('.display-val');
+        
+        if (newVal === oldVal || newVal === null || newVal === undefined) {
+             if(displayEl) displayEl.style.opacity = '1';
+             return;
+        }
+        
+        if(displayEl) {
+            displayEl.style.opacity = '0.5';
+        }
+        
+        try {
+            const orderRef = window.fsDoc(window.db, "orders", id);
+            await window.fsUpdateDoc(orderRef, {
+                [field]: newVal
+            });
+            showToast('Lưu tự động', 'Đã cập nhật', 'check_circle', 'text-tertiary');
+        } catch (error) {
+            showToast('Lỗi!', 'Không thể lưu thay đổi.', 'error', 'text-error');
+            if(displayEl) displayEl.style.opacity = '1';
+        }
+    };
 
     // ===== Keyboard Shortcuts =====
     document.addEventListener('keydown', (e) => {
