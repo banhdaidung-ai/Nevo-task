@@ -469,7 +469,7 @@
                                 <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Trạng thái</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-50">
+                        <tbody id="dashboardOrdersTableBody" class="divide-y divide-slate-50">
                             <tr class="hover:bg-surface-container-low transition-colors cursor-pointer">
                                 <td class="py-4 font-mono font-semibold text-primary text-sm">#ORD-9021</td>
                                 <td class="py-4 font-medium text-sm">Mega Media Co.</td>
@@ -610,7 +610,7 @@
                             <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest text-right">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody id="ordersTableBody" class="divide-y divide-slate-100">
                         <!-- Row 1 -->
                         <tr class="hover:bg-slate-50/80 transition-colors group">
                             <td class="px-6 py-4 font-headline font-bold text-sm text-primary">#ORD-2024-001</td>
@@ -1191,6 +1191,38 @@
     </div>
 </div>
 
+<!-- ====== FIREBASE JAVASCRIPT ====== -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
+      authDomain: "nevotask.firebaseapp.com",
+      projectId: "nevotask",
+      storageBucket: "nevotask.firebasestorage.app",
+      messagingSenderId: "1031918825498",
+      appId: "1:1031918825498:web:16f85584b81072db0be1a3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.db = db;
+    window.fsCollection = collection;
+    window.fsAddDoc = addDoc;
+    window.fsGetDocs = getDocs;
+    window.fsOnSnapshot = onSnapshot;
+    window.fsQuery = query;
+    window.fsOrderBy = orderBy;
+    window.fsServerTimestamp = serverTimestamp;
+    window.fsLimit = limit;
+    
+    // Auto start tracking
+    if (window.initOrdersTracker) {
+        window.initOrdersTracker();
+    }
+</script>
+
 <!-- ====== JAVASCRIPT ====== -->
 <script>
     // ===== Page Navigation =====
@@ -1282,30 +1314,136 @@
     }
 
     // ===== Create Order Handler =====
-    function handleCreateOrder() {
+    async function handleCreateOrder() {
         const title = document.getElementById('orderTitle').value;
         const code = document.getElementById('orderCode').value;
+        const department = document.getElementById('department').value;
+        const requester = document.getElementById('requester').value;
+        const deadline = document.getElementById('deadline').value;
+        const content = document.getElementById('orderContent').value;
         
-        if (!title) {
-            showToast('Lỗi!', 'Vui lòng nhập tiêu đề đơn hàng.', 'error', 'text-error');
+        if (!title || !code || !deadline) {
+            showToast('Lỗi!', 'Vui lòng điền đủ mã đơn, tiêu đề và hạn chót.', 'error', 'text-error');
             return;
         }
         
-        // Show loading state
         const btn = document.getElementById('submitOrderBtn');
         const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>Đang xử lý...';
         btn.disabled = true;
         
-        setTimeout(() => {
+        try {
+            if (window.db && window.fsCollection && window.fsAddDoc) {
+                await window.fsAddDoc(window.fsCollection(window.db, "orders"), {
+                    code: code,
+                    department: department,
+                    requester: requester,
+                    title: title,
+                    deadline: deadline,
+                    content: content,
+                    status: 'Chờ duyệt',
+                    createdAt: window.fsServerTimestamp ? window.fsServerTimestamp() : new Date().toISOString()
+                });
+            }
+            
             btn.innerHTML = originalText;
             btn.disabled = false;
-            showToast('Thành công!', `Đơn hàng ${code} đã được tạo thành công.`, 'check_circle', 'text-tertiary');
+            showToast('Thành công!', `Đơn hàng ${code} đã được tạo thành công trên hệ thống.`, 'check_circle', 'text-tertiary');
             
-            // Navigate to orders after a brief delay
-            setTimeout(() => navigateTo('orders'), 1500);
-        }, 1500);
+            setTimeout(() => {
+                navigateTo('orders');
+                document.getElementById('orderTitle').value = '';
+                document.getElementById('orderContent').value = '';
+                document.getElementById('orderCode').value = 'ORD-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            }, 1000);
+        } catch (error) {
+            console.error("Lỗi:", error);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            showToast('Lỗi!', 'Không thể lưu lên mạng. Kiểm tra kết nối.', 'error', 'text-error');
+        }
     }
+    
+    // ===== Load online data into tables =====
+    window.initOrdersTracker = function() {
+        if (!window.db) return;
+        const ordersRef = window.fsCollection(window.db, "orders");
+        const qAll = window.fsQuery(ordersRef, window.fsOrderBy("createdAt", "desc"));
+        
+        window.fsOnSnapshot(qAll, (snapshot) => {
+            const tbodyFull = document.getElementById('ordersTableBody');
+            const tbodyDash = document.getElementById('dashboardOrdersTableBody');
+            
+            if (snapshot.empty) {
+                if (tbodyFull) tbodyFull.innerHTML = '<tr><td colspan="11" class="px-6 py-8 text-center text-slate-400">Chưa có đơn hàng nào trong hệ thống trực tuyến.</td></tr>';
+                if (tbodyDash) tbodyDash.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">Chưa có đơn hàng nào trực tuyến.</td></tr>';
+                return;
+            }
+
+            let fullHtml = '';
+            let dashHtml = '';
+            let count = 0;
+            
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const initials = data.requester ? data.requester.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NV';
+                const dateText = data.deadline ? data.deadline.split('-').reverse().join('/') : '-';
+                const moneyText = data.money ? (data.money.toLocaleString() + 'đ') : '-';
+                
+                let statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-highest text-on-secondary-container uppercase">Chờ duyệt</span>';
+                let statusBadgeDash = '<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-surface-container-highest text-on-secondary-container">Chờ duyệt</span>';
+                
+                if (data.status === 'Đang xử lý') {
+                    statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-fixed text-on-primary-fixed-variant uppercase">Đang xử lý</span>';
+                    statusBadgeDash = '<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-primary-fixed text-primary">Đang xử lý</span>';
+                } else if (data.status === 'Hoàn thành' || data.status === 'Hoàn tất') {
+                    statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant uppercase">Hoàn thành</span>';
+                    statusBadgeDash = '<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-tertiary/10 text-tertiary">Hoàn thành</span>';
+                }
+                
+                fullHtml += `
+                        <tr class="hover:bg-slate-50/80 transition-colors group">
+                            <td class="px-6 py-4 font-headline font-bold text-sm text-primary">${data.code || '-'}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">${initials}</div>
+                                    <span class="text-sm font-semibold text-on-surface">${data.requester || '-'}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-xs font-medium text-slate-500">${data.department || '-'}</td>
+                            <td class="px-6 py-4 max-w-[280px]">
+                                <div class="text-sm font-bold text-slate-700 truncate mb-1">${data.title || '-'}</div>
+                                <div class="text-xs text-slate-500 leading-relaxed truncate">${data.content || '-'}</div>
+                            </td>
+                            <td class="px-6 py-4 text-xs italic text-slate-400">-</td>
+                            <td class="px-6 py-4 text-[11px] text-slate-500">-</td>
+                            <td class="px-6 py-4 text-[11px] text-slate-500">-</td>
+                            <td class="px-6 py-4 text-sm font-bold text-primary">${dateText}</td>
+                            <td class="px-6 py-4 text-xs font-semibold">-</td>
+                            <td class="px-6 py-4">${statusBadgeFull}</td>
+                            <td class="px-6 py-4 text-right">
+                                <button class="text-slate-400 hover:text-primary transition-colors"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+                            </td>
+                        </tr>`;
+                        
+                if (count < 4) {
+                    dashHtml += `
+                            <tr class="hover:bg-surface-container-low transition-colors cursor-pointer">
+                                <td class="py-4 font-mono font-semibold text-primary text-sm">${data.code || '-'}</td>
+                                <td class="py-4 font-medium text-sm">${data.requester || '-'}</td>
+                                <td class="py-4 text-on-surface-variant text-sm truncate max-w-[150px]">${data.title || '-'}</td>
+                                <td class="py-4 font-bold text-sm">${moneyText}</td>
+                                <td class="py-4">${statusBadgeDash}</td>
+                            </tr>`;
+                    count++;
+                }
+            });
+            
+            if (tbodyFull) tbodyFull.innerHTML = fullHtml;
+            if (tbodyDash) tbodyDash.innerHTML = dashHtml;
+        });
+    };
+
 
     // ===== Keyboard Shortcuts =====
     document.addEventListener('keydown', (e) => {
