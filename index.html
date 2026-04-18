@@ -1054,8 +1054,8 @@
                             Mã đơn hàng <span class="text-primary">*</span>
                         </label>
                         <div class="relative group">
-                            <input id="orderCode" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all font-mono font-bold text-on-surface" placeholder="Nhập mã đơn hàng..." type="text" value="ORD-2024-0892"/>
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant material-symbols-outlined">auto_fix_high</span>
+                            <input id="orderCode" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all font-mono font-bold text-slate-400 cursor-not-allowed" placeholder="Hệ thống tự động cấp phát..." type="text" value="" readonly/>
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-slate-400 material-symbols-outlined">lock</span>
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -1194,7 +1194,7 @@
 <!-- ====== FIREBASE JAVASCRIPT ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -1216,6 +1216,8 @@
     window.fsOrderBy = orderBy;
     window.fsServerTimestamp = serverTimestamp;
     window.fsLimit = limit;
+    window.fsRunTransaction = runTransaction;
+    window.fsDoc = doc;
     
     // Auto start tracking
     if (window.initOrdersTracker) {
@@ -1316,14 +1318,14 @@
     // ===== Create Order Handler =====
     async function handleCreateOrder() {
         const title = document.getElementById('orderTitle').value;
-        const code = document.getElementById('orderCode').value;
+        let code = document.getElementById('orderCode').value;
         const department = document.getElementById('department').value;
         const requester = document.getElementById('requester').value;
         const deadline = document.getElementById('deadline').value;
         const content = document.getElementById('orderContent').value;
         
-        if (!title || !code || !deadline) {
-            showToast('Lỗi!', 'Vui lòng điền đủ mã đơn, tiêu đề và hạn chót.', 'error', 'text-error');
+        if (!title || !deadline) {
+            showToast('Lỗi!', 'Vui lòng điền đủ tiêu đề và hạn chót.', 'error', 'text-error');
             return;
         }
         
@@ -1333,7 +1335,21 @@
         btn.disabled = true;
         
         try {
-            if (window.db && window.fsCollection && window.fsAddDoc) {
+            if (window.db && window.fsRunTransaction && window.fsDoc && window.fsCollection && window.fsAddDoc) {
+                // Sử dụng Transaction để lấy số đếm mới nhất an toàn
+                const counterRef = window.fsDoc(window.db, "counters", "orders");
+                code = await window.fsRunTransaction(window.db, async (transaction) => {
+                    const sfDoc = await transaction.get(counterRef);
+                    let newCount = 1;
+                    if (sfDoc.exists()) {
+                        newCount = sfDoc.data().count + 1;
+                    }
+                    // Cập nhật lại số đếm mới
+                    transaction.set(counterRef, { count: newCount }, { merge: true });
+                    return 'NEVO-' + newCount.toString().padStart(4, '0');
+                });
+
+                // Lưu dữ liệu vào mảng orders với mã vừa tạo
                 await window.fsAddDoc(window.fsCollection(window.db, "orders"), {
                     code: code,
                     department: department,
@@ -1348,13 +1364,12 @@
             
             btn.innerHTML = originalText;
             btn.disabled = false;
-            showToast('Thành công!', `Đơn hàng ${code} đã được tạo thành công trên hệ thống.`, 'check_circle', 'text-tertiary');
+            showToast('Thành công!', `Đơn hàng ${code} đã được tự động cấp và lưu trên hệ thống.`, 'check_circle', 'text-tertiary');
             
             setTimeout(() => {
                 navigateTo('orders');
                 document.getElementById('orderTitle').value = '';
                 document.getElementById('orderContent').value = '';
-                document.getElementById('orderCode').value = 'ORD-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
             }, 1000);
         } catch (error) {
             console.error("Lỗi:", error);
