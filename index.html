@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Crimson Executive — Hệ thống Quản lý Đơn hàng Nguyên liệu</title>
+    <title>Task Manager — Hệ thống Quản lý Đơn hàng Nguyên liệu</title>
     <!-- Auth Guard -->
     <script>
         (function() {
@@ -12,7 +12,7 @@
             }
         })();
     </script>
-    <meta name="description" content="Hệ thống quản lý đơn hàng nguyên liệu cao cấp - Crimson Executive Command Center"/>
+    <meta name="description" content="Hệ thống quản lý đơn hàng nguyên liệu cao cấp - Task Manager"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Inter:wght@300..700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -92,6 +92,7 @@
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
+        .brand-logo-img { width: 32px; height: auto; object-fit: contain; }
         .bg-gradient-primary {
             background: linear-gradient(135deg, #b80035 0%, #e11d48 100%);
         }
@@ -182,10 +183,8 @@
                 <span class="material-symbols-outlined">menu</span>
             </button>
             <a href="#" onclick="navigateTo('dashboard')" class="text-xl font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
-                <div class="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                    <span class="material-symbols-outlined text-white text-lg">diamond</span>
-                </div>
-                <span class="hidden sm:inline">Crimson Executive</span>
+                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Task Manager Logo" class="brand-logo-img"/>
+                <span class="hidden sm:inline">Task Manager</span>
             </a>
             <!-- Desktop Nav Links -->
             <div id="navLinks" class="hidden md:flex items-center gap-6 font-headline tracking-tight font-semibold text-sm">
@@ -1194,12 +1193,10 @@
     <div class="flex flex-col md:flex-row justify-between items-center w-full px-4 md:px-8 py-6 md:py-8 max-w-[1600px] mx-auto gap-4">
         <div class="flex flex-col md:flex-row items-center gap-2 md:gap-6">
             <span class="font-headline font-bold text-sm text-white tracking-tight flex items-center gap-2">
-                <div class="w-6 h-6 bg-gradient-primary rounded-md flex items-center justify-center">
-                    <span class="material-symbols-outlined text-white text-xs">diamond</span>
-                </div>
-                Crimson Executive
+                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Task Manager Logo" class="h-6 w-auto"/>
+                Task Manager
             </span>
-            <p class="text-xs text-slate-400">© 2024 Crimson Executive Command Center. All rights reserved.</p>
+            <p class="text-xs text-slate-400">© 2026 Hệ thống được phát triển bởi Bành Đại Dũng - Creative</p>
         </div>
         <div class="flex gap-6 text-xs">
             <a class="text-slate-400 hover:text-rose-400 transition-all" href="#">Quy định</a>

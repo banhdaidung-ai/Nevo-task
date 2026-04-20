@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Đăng nhập — Nevo Task Manager</title>
+    <title>Đăng nhập — Task Manager</title>
     <meta name="description" content="Đăng nhập vào hệ thống Quản lý task nguyên liệu NEVO"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -60,29 +60,21 @@
         .logo-icon {
             width: 64px;
             height: 64px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: #fff;
             border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 1.25rem;
-            box-shadow: 0 8px 24px -4px rgba(198, 40, 40, 0.45);
+            box-shadow: 0 8px 24px -4px rgba(15, 23, 46, 0.12);
             position: relative;
+            padding: 8px;
         }
 
-        .logo-icon::after {
-            content: '';
-            position: absolute;
-            inset: -3px;
-            border-radius: 19px;
-            background: linear-gradient(135deg, rgba(198,40,40,0.3), rgba(139,0,0,0.1));
-            z-index: -1;
-        }
-
-        .logo-icon .material-symbols-outlined {
-            color: #fff;
-            font-size: 30px;
-            font-variation-settings: 'FILL' 1, 'wght' 500;
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .brand-name {
@@ -414,11 +406,11 @@
     <!-- HEADER -->
     <div class="login-header">
         <div class="logo-icon">
-            <span class="material-symbols-outlined">shield_person</span>
+            <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Task Manager Logo"/>
         </div>
-        <div class="brand-name">Nevo Task Manager</div>
-        <div class="brand-sub">NEVO SPORT</div>
-        <div class="brand-tagline">Hệ thống Quản lý task nguyên liệu NEVO</div>
+        <h1 class="brand-name">Task Manager</h1>
+        <span class="brand-sub">Hệ thống Quản lý</span>
+        <p class="brand-tagline">Đăng nhập để vào trung tâm điều hành Task Manager</p>
     </div>
 
     <!-- CARD -->
@@ -483,6 +475,7 @@
 
     <!-- FOOTER -->
     <div class="login-footer">
+        © 2026 Hệ thống được phát triển bởi Bành Đại Dũng - Creative<br/>
         Gặp sự cố? <a href="#" onclick="return false;">Hỗ trợ kỹ thuật</a>
     </div>
 </div>
