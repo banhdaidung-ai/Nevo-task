@@ -518,358 +518,333 @@
     <span id="toastMsg">Thành công</span>
 </div>
 
-<script>
-// =============================================
-// DATA STORE — dùng localStorage để persist
-// =============================================
-const USERS_KEY = 'nevo_users';
+<!-- ====== FIREBASE JAVASCRIPT ====== -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
-const DEFAULT_USERS = [
-    { id: 1, name: 'Admin Hệ thống', empId: 'admin',    password: 'admin123', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
-    { id: 2, name: 'Nguyễn Văn Lam',empId: 'EMP-1024', password: '1234',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
-    { id: 3, name: 'Phạm Thu Thảo', empId: 'EMP-2001', password: 'nevo2024', email: 'thao.pt@nevosport.vn', dept: 'Kế toán',       role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-04-02' },
-    { id: 4, name: 'Nevo Sport',    empId: 'nevo',      password: 'nevo',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
-    { id: 5, name: 'Hoàng Duy',     empId: 'EMP-3005',  password: 'hd123',    email: 'duy.h@nevosport.vn',   dept: 'Kỹ thuật',      role: 'user',    status: 'inactive', permissions: ['view'],                                                       createdAt: '2024-02-20' },
-];
+    const firebaseConfig = {
+      apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
+      authDomain: "nevotask.firebaseapp.com",
+      projectId: "nevotask",
+      storageBucket: "nevotask.firebasestorage.app",
+      messagingSenderId: "1031918825498",
+      appId: "1:1031918825498:web:16f85584b81072db0be1a3"
+    };
 
-function loadUsers() {
-    const raw = localStorage.getItem(USERS_KEY);
-    if (raw) return JSON.parse(raw);
-    localStorage.setItem(USERS_KEY, JSON.stringify(DEFAULT_USERS));
-    return DEFAULT_USERS;
-}
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-function saveUsers(users) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
+    // =============================================
+    // GLOBAL STATE & CONSTANTS
+    // =============================================
+    let users = [];
+    let deleteTargetId = null;
+    const USERS_COLLECTION = "users";
 
-let users = loadUsers();
-let deleteTargetId = null;
+    const DEFAULT_USERS = [
+        { empId: 'admin',    name: 'Admin Hệ thống', password: 'admin123', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
+        { empId: 'EMP-1024', name: 'Nguyễn Văn Lam', password: '1234',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
+        { empId: 'EMP-2001', name: 'Phạm Thu Thảo',  password: 'nevo2024', email: 'thao.pt@nevosport.vn', dept: 'Kế toán',       role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-04-02' },
+        { empId: 'nevo',     name: 'Nevo Sport',     password: 'nevo',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
+    ];
 
-// =============================================
-// NAV USER
-// =============================================
-(function initNav() {
-    const u = sessionStorage.getItem('nevo_user') || 'Admin';
-    document.getElementById('navInit').textContent = u.substring(0,2).toUpperCase();
-    document.getElementById('navName').textContent = u;
-    document.getElementById('dropName').textContent = u;
-})();
+    // =============================================
+    // FIREBASE SYNC
+    // =============================================
+    async function initFirebaseUsers() {
+        // Check if collection exists/has data
+        const q = query(collection(db, USERS_COLLECTION));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+            console.log("Firestore users collection is empty. Initializing defaults...");
+            // Upload defaults - use empId as document ID for easier management
+            for (const u of DEFAULT_USERS) {
+                await setDoc(doc(db, USERS_COLLECTION, u.empId), u);
+            }
+        }
 
-function toggleNavUser() {
-    const d = document.getElementById('navUserDropdown');
-    const open = d.classList.contains('opacity-100');
-    if (open) {
-        d.classList.remove('opacity-100','pointer-events-auto','translate-y-0');
-        d.classList.add('opacity-0','pointer-events-none','-translate-y-2');
-    } else {
-        d.classList.add('opacity-100','pointer-events-auto','translate-y-0');
-        d.classList.remove('opacity-0','pointer-events-none','-translate-y-2');
+        // Subscribe to real-time updates
+        onSnapshot(q, (snapshot) => {
+            users = [];
+            snapshot.forEach((doc) => {
+                users.push({ id: doc.id, ...doc.data() });
+            });
+            renderTable();
+            updateStats();
+        });
     }
-}
-document.addEventListener('click', e => {
-    const w = document.getElementById('navUserWrapper');
-    const d = document.getElementById('navUserDropdown');
-    if (!w.contains(e.target)) {
-        d.classList.remove('opacity-100','pointer-events-auto','translate-y-0');
-        d.classList.add('opacity-0','pointer-events-none','-translate-y-2');
+
+    // =============================================
+    // UI CORE FUNCTIONS
+    // =============================================
+    window.updateStats = function() {
+        document.getElementById('statTotal').textContent    = users.length;
+        document.getElementById('statAdmin').textContent    = users.filter(u => u.role === 'admin').length;
+        document.getElementById('statActive').textContent   = users.filter(u => u.status === 'active').length;
+        document.getElementById('statInactive').textContent = users.filter(u => u.status === 'inactive').length;
     }
-});
 
-function handleLogout() {
-    sessionStorage.removeItem('nevo_logged_in');
-    sessionStorage.removeItem('nevo_user');
-    sessionStorage.removeItem('nevo_role');
-    window.location.href = 'login.html';
-}
+    const ROLE_LABELS = { admin:'Admin', manager:'Manager', user:'User', viewer:'Viewer' };
+    const ROLE_BADGE  = { admin:'badge-admin', manager:'badge-manager', user:'badge-user', viewer:'badge-viewer' };
+    const STATUS_BADGE = { active:'badge-active', inactive:'badge-inactive' };
+    const STATUS_LABEL = { active:'Hoạt động', inactive:'Bị khóa' };
 
-// =============================================
-// STATS
-// =============================================
-function updateStats() {
-    document.getElementById('statTotal').textContent    = users.length;
-    document.getElementById('statAdmin').textContent    = users.filter(u => u.role === 'admin').length;
-    document.getElementById('statActive').textContent   = users.filter(u => u.status === 'active').length;
-    document.getElementById('statInactive').textContent = users.filter(u => u.status === 'inactive').length;
-}
+    window.renderTable = function() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const role   = document.getElementById('roleFilter').value;
+        const status = document.getElementById('statusFilter').value;
 
-// =============================================
-// RENDER TABLE
-// =============================================
-const ROLE_LABELS = { admin:'Admin', manager:'Manager', user:'User', viewer:'Viewer' };
-const ROLE_BADGE  = { admin:'badge-admin', manager:'badge-manager', user:'badge-user', viewer:'badge-viewer' };
-const STATUS_BADGE = { active:'badge-active', inactive:'badge-inactive' };
-const STATUS_LABEL = { active:'Hoạt động', inactive:'Bị khóa' };
+        let filtered = users.filter(u => {
+            const matchSearch = !search || u.name.toLowerCase().includes(search) || u.empId.toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search);
+            const matchRole   = !role   || u.role === role;
+            const matchStatus = !status || u.status === status;
+            return matchSearch && matchRole && matchStatus;
+        });
 
-function renderTable() {
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    const role   = document.getElementById('roleFilter').value;
-    const status = document.getElementById('statusFilter').value;
+        const tbody = document.getElementById('userTableBody');
+        const empty = document.getElementById('emptyState');
+        document.getElementById('tableCount').textContent = `${filtered.length} / ${users.length} bản ghi`;
 
-    let filtered = users.filter(u => {
-        const matchSearch = !search || u.name.toLowerCase().includes(search) || u.empId.toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search);
-        const matchRole   = !role   || u.role === role;
-        const matchStatus = !status || u.status === status;
-        return matchSearch && matchRole && matchStatus;
-    });
+        if (filtered.length === 0) {
+            tbody.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
 
-    const tbody = document.getElementById('userTableBody');
-    const empty = document.getElementById('emptyState');
-    document.getElementById('tableCount').textContent = `${filtered.length} / ${users.length} bản ghi`;
-
-    if (filtered.length === 0) {
-        tbody.innerHTML = '';
-        empty.classList.remove('hidden');
-        return;
-    }
-    empty.classList.add('hidden');
-
-    tbody.innerHTML = filtered.map(u => `
-        <tr class="table-row">
-            <td class="px-5 py-3.5">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${avatarBg(u.role)}">${u.name.split(' ').map(x=>x[0]).slice(-2).join('').toUpperCase()}</div>
-                    <div>
-                        <p class="text-sm font-semibold text-slate-800">${escHtml(u.name)}</p>
-                        <p class="text-[11px] text-slate-400 mt-0.5">${u.createdAt ? 'Tạo: ' + u.createdAt : ''}</p>
+        tbody.innerHTML = filtered.map(u => `
+            <tr class="table-row">
+                <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${avatarBg(u.role)}">${(u.name||'??').split(' ').map(x=>x[0]).slice(-2).join('').toUpperCase()}</div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">${escHtml(u.name)}</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">${u.createdAt ? 'Tạo: ' + u.createdAt : ''}</p>
+                        </div>
                     </div>
-                </div>
-            </td>
-            <td class="px-5 py-3.5 font-mono text-sm font-semibold text-primary">${escHtml(u.empId)}</td>
-            <td class="px-5 py-3.5 text-sm text-slate-500">${escHtml(u.email||'—')}</td>
-            <td class="px-5 py-3.5 text-xs font-medium text-slate-500">${escHtml(u.dept||'—')}</td>
-            <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${ROLE_LABELS[u.role]||u.role}</span></td>
-            <td class="px-5 py-3.5"><span class="badge ${STATUS_BADGE[u.status]}">${STATUS_LABEL[u.status]||u.status}</span></td>
-            <td class="px-5 py-3.5">
-                <div class="flex items-center gap-2 justify-end">
-                    <button class="btn-icon-sm btn-edit" onclick="openEditModal(${u.id})" title="Chỉnh sửa">
-                        <span class="material-symbols-outlined text-[17px]">edit</span>
-                    </button>
-                    <button class="btn-icon-sm btn-delete" onclick="openDeleteModal(${u.id})" title="Xóa" ${u.empId==='admin'?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
-                        <span class="material-symbols-outlined text-[17px]">delete</span>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
+                </td>
+                <td class="px-5 py-3.5 font-mono text-sm font-semibold text-primary">${escHtml(u.empId)}</td>
+                <td class="px-5 py-3.5 text-sm text-slate-500">${escHtml(u.email||'—')}</td>
+                <td class="px-5 py-3.5 text-xs font-medium text-slate-500">${escHtml(u.dept||'—')}</td>
+                <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${ROLE_LABELS[u.role]||u.role}</span></td>
+                <td class="px-5 py-3.5"><span class="badge ${STATUS_BADGE[u.status]}">${STATUS_LABEL[u.status]||u.status}</span></td>
+                <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-2 justify-end">
+                        <button class="btn-icon-sm btn-edit" onclick="openEditModal('${u.id}')" title="Chỉnh sửa">
+                            <span class="material-symbols-outlined text-[17px]">edit</span>
+                        </button>
+                        <button class="btn-icon-sm btn-delete" onclick="openDeleteModal('${u.id}')" title="Xóa" ${u.empId==='admin'?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
+                            <span class="material-symbols-outlined text-[17px]">delete</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
 
-function avatarBg(role) {
-    const map = { admin:'bg-gradient-to-br from-amber-500 to-orange-600', manager:'bg-gradient-to-br from-orange-400 to-red-500', user:'bg-gradient-to-br from-blue-500 to-blue-700', viewer:'bg-gradient-to-br from-purple-500 to-indigo-600' };
-    return map[role] || 'bg-gradient-to-br from-slate-400 to-slate-600';
-}
+    function avatarBg(role) {
+        const map = { admin:'bg-gradient-to-br from-amber-500 to-orange-600', manager:'bg-gradient-to-br from-orange-400 to-red-500', user:'bg-gradient-to-br from-blue-500 to-blue-700', viewer:'bg-gradient-to-br from-purple-500 to-indigo-600' };
+        return map[role] || 'bg-gradient-to-br from-slate-400 to-slate-600';
+    }
 
-function escHtml(str) {
-    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+    function escHtml(str) {
+        return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
-// =============================================
-// PERMISSION PRESETS BY ROLE
-// =============================================
-const ROLE_PERMS = {
-    admin:   ['view','create','edit','delete','approve','report','admin'],
-    manager: ['view','create','edit','approve','report'],
-    user:    ['view','create'],
-    viewer:  ['view'],
-};
+    // =============================================
+    // MODAL & ACTIONS (Exposed to window)
+    // =============================================
+    window.openAddModal = function() {
+        document.getElementById('modalTitle').textContent = 'Thêm người dùng mới';
+        document.getElementById('btnSaveText').textContent = 'Thêm người dùng';
+        document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-red-500">*</span>';
+        document.getElementById('editUserId').value = '';
+        ['fieldName','fieldEmpId','fieldPassword','fieldEmail'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('fieldDept').value   = '';
+        document.getElementById('fieldRole').value   = 'user';
+        document.getElementById('fieldStatus').value = 'active';
+        hideModalError();
+        updatePermCheckboxes();
+        document.getElementById('userModal').classList.remove('hidden');
+    }
 
-function updatePermCheckboxes() {
-    const role = document.getElementById('fieldRole').value;
-    const preset = ROLE_PERMS[role] || [];
-    ['view','create','edit','delete','approve','report','admin'].forEach(p => {
-        const cb = document.getElementById('perm' + cap(p));
-        if (cb) cb.checked = preset.includes(p);
-        const lbl = document.getElementById('perm-' + p);
-        if (lbl) {
-            lbl.classList.toggle('checked', preset.includes(p));
-            cb.addEventListener('change', () => lbl.classList.toggle('checked', cb.checked));
+    window.openEditModal = function(id) {
+        const u = users.find(x => x.id === id);
+        if (!u) return;
+        document.getElementById('modalTitle').textContent = 'Chỉnh sửa người dùng';
+        document.getElementById('btnSaveText').textContent = 'Lưu thay đổi';
+        document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-slate-400 font-normal">(để trống = không đổi)</span>';
+        document.getElementById('editUserId').value = id;
+        document.getElementById('fieldName').value     = u.name;
+        document.getElementById('fieldEmpId').value    = u.empId;
+        document.getElementById('fieldPassword').value = '';
+        document.getElementById('fieldEmail').value    = u.email || '';
+        document.getElementById('fieldDept').value     = u.dept || '';
+        document.getElementById('fieldRole').value     = u.role;
+        document.getElementById('fieldStatus').value   = u.status;
+        hideModalError();
+
+        const perms = u.permissions || [];
+        ['view','create','edit','delete','approve','report','admin'].forEach(p => {
+            const cb  = document.getElementById('perm' + cap(p));
+            const lbl = document.getElementById('perm-' + p);
+            if (cb) cb.checked = perms.includes(p);
+            if (lbl) lbl.classList.toggle('checked', perms.includes(p));
+        });
+
+        document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    window.closeModal = function() {
+        document.getElementById('userModal').classList.add('hidden');
+    }
+
+    window.saveUser = async function() {
+        hideModalError();
+        const id       = document.getElementById('editUserId').value;
+        const name     = document.getElementById('fieldName').value.trim();
+        const empId    = document.getElementById('fieldEmpId').value.trim();
+        const password = document.getElementById('fieldPassword').value;
+        const email    = document.getElementById('fieldEmail').value.trim();
+        const dept     = document.getElementById('fieldDept').value;
+        const role     = document.getElementById('fieldRole').value;
+        const status   = document.getElementById('fieldStatus').value;
+
+        if (!name)  return showModalError('Vui lòng nhập họ và tên.');
+        if (!empId) return showModalError('Vui lòng nhập mã nhân viên.');
+        if (!id && !password) return showModalError('Vui lòng nhập mật khẩu.');
+        
+        // Emp ID unique check
+        const isDuplicate = users.find(u => u.empId === empId && u.id !== id);
+        if (isDuplicate) return showModalError('Mã nhân viên đã tồn tại trên hệ thống.');
+
+        const permissions = ['view','create','edit','delete','approve','report','admin'].filter(p => {
+            const cb = document.getElementById('perm' + cap(p));
+            return cb && cb.checked;
+        });
+
+        const btn = document.getElementById('btnSave');
+        btn.disabled = true;
+        btn.textContent = 'Đang lưu...';
+
+        try {
+            const userData = {
+                name, empId, email, dept, role, status, permissions,
+                updatedAt: new Date().toISOString()
+            };
+            if (password) userData.password = password;
+            if (!id) userData.createdAt = new Date().toISOString().slice(0,10);
+
+            // Use empId as document ID for easier lookup in login
+            await setDoc(doc(db, USERS_COLLECTION, empId), userData, { merge: true });
+
+            showToast(id ? 'Cập nhật thành công!' : 'Thêm người dùng thành công!');
+            closeModal();
+        } catch (e) {
+            console.error(e);
+            showModalError('Lỗi kết nối Firebase. Vui lòng thử lại.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">save</span> <span id="btnSaveText">${id ? 'Lưu thay đổi' : 'Lưu người dùng'}</span>`;
+        }
+    }
+
+    window.openDeleteModal = function(id) {
+        const u = users.find(x => x.id === id);
+        if (!u || u.empId === 'admin') return;
+        deleteTargetId = id;
+        document.getElementById('deleteUserName').textContent  = u.name;
+        document.getElementById('deleteUserEmpId').textContent = u.empId;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    window.closeDeleteModal = function() {
+        deleteTargetId = null;
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    window.confirmDelete = async function() {
+        if (!deleteTargetId) return;
+        try {
+            await deleteDoc(doc(db, USERS_COLLECTION, deleteTargetId));
+            showToast('Đã xóa thành công!');
+            closeDeleteModal();
+        } catch (e) {
+            showToast('Lỗi khi xóa người dùng', 'error');
+        }
+    }
+
+    // UI Helper Functions
+    function showModalError(msg) {
+        const el = document.getElementById('modalError');
+        document.getElementById('modalErrorText').textContent = msg;
+        el.classList.remove('hidden'); el.classList.add('flex');
+    }
+    function hideModalError() {
+        document.getElementById('modalError').classList.add('hidden');
+    }
+
+    window.toggleNavUser = function() {
+        const d = document.getElementById('navUserDropdown');
+        d.classList.toggle('opacity-100');
+        d.classList.toggle('pointer-events-auto');
+        d.classList.toggle('translate-y-0');
+    }
+
+    window.handleLogout = function() {
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    const ROLE_PERMS = {
+        admin:   ['view','create','edit','delete','approve','report','admin'],
+        manager: ['view','create','edit','approve','report'],
+        user:    ['view','create'],
+        viewer:  ['view'],
+    };
+
+    window.updatePermCheckboxes = function() {
+        const role = document.getElementById('fieldRole').value;
+        const preset = ROLE_PERMS[role] || [];
+        ['view','create','edit','delete','approve','report','admin'].forEach(p => {
+            const cb = document.getElementById('perm' + cap(p));
+            if (cb) cb.checked = preset.includes(p);
+            const lbl = document.getElementById('perm-' + p);
+            if (lbl) lbl.classList.toggle('checked', preset.includes(p));
+        });
+    }
+
+    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    let toastTimer;
+    window.showToast = function(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        const m = document.getElementById('toastMsg');
+        t.className = `toast toast-${type} show`;
+        m.textContent = msg;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Init
+    initFirebaseUsers();
+    
+    // Global Event Listeners
+    document.addEventListener('click', e => {
+        const w = document.getElementById('navUserWrapper');
+        const d = document.getElementById('navUserDropdown');
+        if (w && !w.contains(e.target)) {
+            d.classList.remove('opacity-100','pointer-events-auto','translate-y-0');
         }
     });
-}
-function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-// =============================================
-// MODAL — ADD
-// =============================================
-function openAddModal() {
-    document.getElementById('modalTitle').textContent = 'Thêm người dùng mới';
-    document.getElementById('btnSaveText').textContent = 'Thêm người dùng';
-    document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-red-500">*</span>';
-    document.getElementById('editUserId').value = '';
-    // Clear fields
-    ['fieldName','fieldEmpId','fieldPassword','fieldEmail'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('fieldDept').value   = '';
-    document.getElementById('fieldRole').value   = 'user';
-    document.getElementById('fieldStatus').value = 'active';
-    hideModalError();
-    updatePermCheckboxes();
-    document.getElementById('userModal').classList.remove('hidden');
-    setTimeout(() => document.getElementById('fieldName').focus(), 100);
-}
+    const navName = sessionStorage.getItem('nevo_user') || 'Admin';
+    document.getElementById('navInit').textContent = navName.substring(0,2).toUpperCase();
+    document.getElementById('navName').textContent = navName;
+    document.getElementById('dropName').textContent = navName;
 
-// =============================================
-// MODAL — EDIT
-// =============================================
-function openEditModal(id) {
-    const u = users.find(x => x.id === id);
-    if (!u) return;
-    document.getElementById('modalTitle').textContent = 'Chỉnh sửa người dùng';
-    document.getElementById('btnSaveText').textContent = 'Lưu thay đổi';
-    document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-slate-400 font-normal">(để trống = không đổi)</span>';
-    document.getElementById('editUserId').value = id;
-    document.getElementById('fieldName').value     = u.name;
-    document.getElementById('fieldEmpId').value    = u.empId;
-    document.getElementById('fieldPassword').value = '';
-    document.getElementById('fieldEmail').value    = u.email || '';
-    document.getElementById('fieldDept').value     = u.dept || '';
-    document.getElementById('fieldRole').value     = u.role;
-    document.getElementById('fieldStatus').value   = u.status;
-    hideModalError();
-
-    // Set permissions
-    const perms = u.permissions || [];
-    ['view','create','edit','delete','approve','report','admin'].forEach(p => {
-        const cb  = document.getElementById('perm' + cap(p));
-        const lbl = document.getElementById('perm-' + p);
-        if (cb) cb.checked = perms.includes(p);
-        if (lbl) lbl.classList.toggle('checked', perms.includes(p));
-    });
-
-    document.getElementById('userModal').classList.remove('hidden');
-    setTimeout(() => document.getElementById('fieldName').focus(), 100);
-}
-
-function closeModal() {
-    document.getElementById('userModal').classList.add('hidden');
-}
-
-// =============================================
-// SAVE USER
-// =============================================
-function saveUser() {
-    hideModalError();
-    const id       = document.getElementById('editUserId').value;
-    const name     = document.getElementById('fieldName').value.trim();
-    const empId    = document.getElementById('fieldEmpId').value.trim();
-    const password = document.getElementById('fieldPassword').value;
-    const email    = document.getElementById('fieldEmail').value.trim();
-    const dept     = document.getElementById('fieldDept').value;
-    const role     = document.getElementById('fieldRole').value;
-    const status   = document.getElementById('fieldStatus').value;
-
-    // Validate
-    if (!name)  return showModalError('Vui lòng nhập họ và tên.');
-    if (!empId) return showModalError('Vui lòng nhập mã nhân viên.');
-    if (!id && !password) return showModalError('Vui lòng nhập mật khẩu.');
-    if (password && password.length < 4) return showModalError('Mật khẩu phải tối thiểu 4 ký tự.');
-
-    // Check empId unique
-    const duplicate = users.find(u => u.empId === empId && String(u.id) !== String(id));
-    if (duplicate) return showModalError(`Mã nhân viên "${empId}" đã tồn tại.`);
-
-    // Collect permissions
-    const permissions = ['view','create','edit','delete','approve','report','admin'].filter(p => {
-        const cb = document.getElementById('perm' + cap(p));
-        return cb && cb.checked;
-    });
-
-    const today = new Date().toISOString().slice(0,10);
-
-    if (id) {
-        // Edit
-        const idx = users.findIndex(u => u.id === parseInt(id));
-        if (idx === -1) return;
-        users[idx] = { ...users[idx], name, empId, email, dept, role, status, permissions };
-        if (password) users[idx].password = password;
-    } else {
-        // Add
-        const newUser = {
-            id: Date.now(),
-            name, empId, password, email, dept, role, status, permissions,
-            createdAt: today
-        };
-        users.push(newUser);
-    }
-
-    saveUsers(users);
-    closeModal();
-    renderTable();
-    updateStats();
-    showToast(id ? 'Đã cập nhật người dùng thành công!' : 'Đã thêm người dùng mới!', 'success');
-}
-
-// =============================================
-// DELETE
-// =============================================
-function openDeleteModal(id) {
-    const u = users.find(x => x.id === id);
-    if (!u || u.empId === 'admin') return;
-    deleteTargetId = id;
-    document.getElementById('deleteUserName').textContent  = u.name;
-    document.getElementById('deleteUserEmpId').textContent = u.empId;
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-
-function closeDeleteModal() {
-    deleteTargetId = null;
-    document.getElementById('deleteModal').classList.add('hidden');
-}
-
-function confirmDelete() {
-    if (!deleteTargetId) return;
-    users = users.filter(u => u.id !== deleteTargetId);
-    saveUsers(users);
-    closeDeleteModal();
-    renderTable();
-    updateStats();
-    showToast('Đã xóa người dùng thành công!', 'success');
-}
-
-// =============================================
-// MODAL ERROR
-// =============================================
-function showModalError(msg) {
-    const el = document.getElementById('modalError');
-    document.getElementById('modalErrorText').textContent = msg;
-    el.classList.remove('hidden');
-    el.classList.add('flex');
-}
-function hideModalError() {
-    const el = document.getElementById('modalError');
-    el.classList.add('hidden');
-    el.classList.remove('flex');
-}
-
-// =============================================
-// TOAST
-// =============================================
-let toastTimer;
-function showToast(msg, type = 'success') {
-    const t = document.getElementById('toast');
-    const i = document.getElementById('toastIcon');
-    const m = document.getElementById('toastMsg');
-    t.className = `toast toast-${type}`;
-    i.textContent = type === 'success' ? 'check_circle' : 'error';
-    m.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// Close modals on overlay click
-document.getElementById('userModal').addEventListener('click', e => { if (e.target === document.getElementById('userModal')) closeModal(); });
-document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === document.getElementById('deleteModal')) closeDeleteModal(); });
-
-// ESC key
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeDeleteModal(); }
-});
-
-// =============================================
-// INIT
-// =============================================
-updateStats();
-renderTable();
 </script>
 </body>
 </html>

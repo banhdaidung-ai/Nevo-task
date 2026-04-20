@@ -480,17 +480,25 @@
     </div>
 </div>
 
-<script>
-    // ===== DEMO CREDENTIALS =====
-    const VALID_CREDENTIALS = [
-        { empId: 'admin',    password: 'admin123', role: 'admin'   },
-        { empId: 'EMP-1024', password: '1234',     role: 'manager' },
-        { empId: 'EMP-2001', password: 'nevo2024', role: 'user'    },
-        { empId: 'nevo',     password: 'nevo',     role: 'viewer'  },
-    ];
+<!-- ====== FIREBASE JAVASCRIPT ====== -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
+      authDomain: "nevotask.firebaseapp.com",
+      projectId: "nevotask",
+      storageBucket: "nevotask.firebasestorage.app",
+      messagingSenderId: "1031918825498",
+      appId: "1:1031918825498:web:16f85584b81072db0be1a3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     // ===== TOGGLE PASSWORD =====
-    function togglePassword() {
+    window.togglePassword = function() {
         const pwdInput = document.getElementById('password');
         const eyeIcon  = document.getElementById('eyeIcon');
         if (pwdInput.type === 'password') {
@@ -509,22 +517,21 @@
         text.textContent = message;
         box.classList.add('show');
 
-        // Shake inputs
         ['empIdWrapper', 'passwordWrapper'].forEach(id => {
             const el = document.getElementById(id);
             el.classList.remove('input-shake');
-            void el.offsetWidth; // reflow
+            void el.offsetWidth;
             el.classList.add('input-shake');
             setTimeout(() => el.classList.remove('input-shake'), 400);
         });
     }
 
-    function hideError() {
+    window.hideError = function() {
         document.getElementById('errorMsg').classList.remove('show');
     }
 
     // ===== LOGIN HANDLER =====
-    function handleLogin(e) {
+    window.handleLogin = async function(e) {
         e.preventDefault();
         hideError();
 
@@ -532,7 +539,6 @@
         const password = document.getElementById('password').value;
         const btn      = document.getElementById('loginBtn');
 
-        // Validation
         if (!empId) {
             showError('Vui lòng nhập mã nhân viên.');
             document.getElementById('empId').focus();
@@ -544,53 +550,58 @@
             return;
         }
 
-        // Loading state
         btn.classList.add('loading');
         btn.disabled = true;
 
-        // Simulate authentication delay
-        setTimeout(() => {
-            // Load users from localStorage (synced with Admin page)
-            const storedUsers = JSON.parse(localStorage.getItem('nevo_users') || '[]');
-            
-            // Combine with hardcoded defaults if needed or just use stored
-            // Admin page already includes defaults in its initial state
-            const allUsers = storedUsers.length > 0 ? storedUsers : VALID_CREDENTIALS;
+        try {
+            // Fetch user from Firestore
+            const userDoc = await getDoc(doc(db, "users", empId));
 
-            const matchedUser = allUsers.find(
-                u => u.empId === empId && u.password === password
-            );
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                
+                // Check password & status
+                if (userData.password === password) {
+                    if (userData.status === 'inactive') {
+                        showError('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.');
+                    } else {
+                        // Success
+                        sessionStorage.setItem('nevo_logged_in', 'true');
+                        sessionStorage.setItem('nevo_user', userData.name || empId);
+                        sessionStorage.setItem('nevo_role', userData.role || 'user');
 
-            if (matchedUser) {
-                // Store session
-                sessionStorage.setItem('nevo_logged_in', 'true');
-                sessionStorage.setItem('nevo_user', matchedUser.name || empId);
-                sessionStorage.setItem('nevo_role', matchedUser.role || 'user');
+                        btn.innerHTML = `
+                            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 600;font-size:20px;">check_circle</span>
+                            <span style="font-family:'Manrope',sans-serif;font-weight:700;">Thành công!</span>
+                        `;
+                        btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+                        btn.style.boxShadow  = '0 8px 28px -4px rgba(22,163,74,0.5)';
 
-                // Success animation then redirect
-                btn.innerHTML = `
-                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 600;font-size:20px;">check_circle</span>
-                    <span style="font-family:'Manrope',sans-serif;font-weight:700;">Thành công!</span>
-                `;
-                btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
-                btn.style.boxShadow  = '0 8px 28px -4px rgba(22,163,74,0.5)';
-
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 800);
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 800);
+                        return;
+                    }
+                } else {
+                    showError('Mã nhân viên hoặc mật khẩu không đúng.');
+                }
             } else {
+                showError('Mã nhân viên hoặc mật khẩu không đúng.');
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            showError('Lỗi kết nối máy chủ. Vui lòng thử lại sau.');
+        } finally {
+            if (sessionStorage.getItem('nevo_logged_in') !== 'true') {
                 btn.classList.remove('loading');
                 btn.disabled = false;
-                showError('Mã nhân viên hoặc mật khẩu không đúng. Vui lòng thử lại.');
             }
-        }, 1200);
+        }
     }
 
     // ===== CLEAR ERROR ON INPUT =====
     ['empId', 'password'].forEach(id => {
-        document.getElementById(id).addEventListener('input', hideError);
-
-        // Enter key moves focus
+        document.getElementById(id).addEventListener('input', window.hideError);
         document.getElementById(id).addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && id === 'empId') {
                 e.preventDefault();
@@ -599,7 +610,6 @@
         });
     });
 
-    // ===== CHECK IF ALREADY LOGGED IN =====
     if (sessionStorage.getItem('nevo_logged_in') === 'true') {
         window.location.href = 'index.html';
     }
