@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quản trị hệ thống — Nevo Task Manager</title>
+    <meta name="description" content="Trang quản trị người dùng và phân quyền hệ thống NEVO"/>
+    <!-- Auth + Admin Guard -->
+    <script>
+        (function() {
+            if (sessionStorage.getItem('nevo_logged_in') !== 'true') {
+                window.location.replace('login.html'); return;
+            }
+            if (sessionStorage.getItem('nevo_role') !== 'admin') {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#C62828',
+                        'primary-dark': '#8B0000',
+                        'primary-light': '#FFEBEE',
+                        secondary: '#1565C0',
+                        'surface': '#FAFAFA',
+                        'surface-card': '#FFFFFF',
+                    },
+                    fontFamily: {
+                        headline: ['Manrope'],
+                        body: ['Inter'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes slideIn  { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes modalIn  { from { opacity:0; transform:translateY(-24px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+
+        .animate-fade-in-up  { animation: fadeInUp 0.5s ease-out both; }
+        .animate-slide-in    { animation: slideIn 0.4s ease-out both; }
+        .delay-1 { animation-delay: 0.05s; }
+        .delay-2 { animation-delay: 0.1s; }
+        .delay-3 { animation-delay: 0.15s; }
+        .delay-4 { animation-delay: 0.2s; }
+
+        /* Table row hover */
+        .table-row { transition: background 0.15s ease; }
+        .table-row:hover { background: #FFF5F5; }
+
+        /* Status badges */
+        .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }
+        .badge-active  { background:#DCFCE7; color:#15803d; }
+        .badge-inactive{ background:#FEE2E2; color:#B91C1C; }
+        .badge-admin   { background:#FEF3C7; color:#92400E; }
+        .badge-user    { background:#DBEAFE; color:#1D4ED8; }
+        .badge-viewer  { background:#F3E8FF; color:#7E22CE; }
+        .badge-manager { background:#FFEDD5; color:#C2410C; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+            backdrop-filter: blur(4px); z-index: 1000;
+            display: flex; align-items: center; justify-content: center; padding: 1rem;
+            animation: overlayIn 0.2s ease-out;
+        }
+        .modal-box {
+            background: #fff; border-radius: 20px; width: 100%; max-width: 520px;
+            box-shadow: 0 24px 80px -12px rgba(15,23,42,0.3);
+            animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-box::-webkit-scrollbar { width: 4px; }
+
+        /* Form inputs inside modal */
+        .form-input {
+            width: 100%; padding: 0.72rem 1rem; background: #F1F5F9;
+            border: 2px solid transparent; border-radius: 10px;
+            font-size: 0.875rem; font-family: 'Inter', sans-serif; color: #131b2e;
+            font-weight: 500; transition: all 0.2s ease; outline: none;
+        }
+        .form-input:focus { background: #E8EDF5; border-color: rgba(198,40,40,0.35); box-shadow: 0 0 0 4px rgba(198,40,40,0.08); }
+        .form-input::placeholder { color: #94A3B8; font-weight: 400; }
+        select.form-input { cursor: pointer; }
+
+        /* Action buttons */
+        .btn-primary {
+            display:inline-flex; align-items:center; gap:6px;
+            padding: 0.65rem 1.25rem; background:linear-gradient(135deg,#C62828,#8B0000);
+            color:#fff; font-family:'Manrope',sans-serif; font-size:0.85rem; font-weight:700;
+            border:none; border-radius:10px; cursor:pointer;
+            box-shadow:0 4px 16px -4px rgba(198,40,40,0.45); transition:all 0.2s ease;
+        }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px -4px rgba(198,40,40,0.55); }
+        .btn-primary:active { transform:translateY(0); }
+
+        .btn-secondary {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:0.65rem 1.25rem; background:#F1F5F9; color:#475569;
+            font-family:'Manrope',sans-serif; font-size:0.85rem; font-weight:700;
+            border:none; border-radius:10px; cursor:pointer; transition:all 0.2s ease;
+        }
+        .btn-secondary:hover { background:#E2E8F0; color:#1e293b; }
+
+        .btn-icon-sm {
+            padding:6px; border:none; border-radius:8px; cursor:pointer;
+            display:inline-flex; align-items:center; justify-content:center; transition:all 0.15s ease;
+        }
+        .btn-edit  { background:#DBEAFE; color:#1D4ED8; }
+        .btn-edit:hover  { background:#BFDBFE; }
+        .btn-delete{ background:#FEE2E2; color:#B91C1C; }
+        .btn-delete:hover{ background:#FECACA; }
+
+        /* Toast */
+        .toast {
+            position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999;
+            display:flex; align-items:center; gap:10px;
+            padding:0.85rem 1.2rem; border-radius:14px;
+            box-shadow:0 8px 32px -8px rgba(15,23,42,0.25);
+            font-size:0.85rem; font-weight:600; font-family:'Inter',sans-serif;
+            transform:translateX(120%); transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            min-width: 240px;
+        }
+        .toast.show { transform:translateX(0); }
+        .toast-success { background:#16a34a; color:#fff; }
+        .toast-error   { background:#C62828; color:#fff; }
+        .toast .material-symbols-outlined { font-variation-settings:'FILL' 1,'wght' 500; font-size:20px; }
+
+        /* Search input */
+        .search-input {
+            padding: 0.6rem 1rem 0.6rem 2.5rem; background:#F1F5F9;
+            border: 2px solid transparent; border-radius:10px;
+            font-size:0.82rem; font-family:'Inter',sans-serif; font-weight:500;
+            color:#131b2e; outline:none; transition:all 0.2s ease; width:240px;
+        }
+        .search-input:focus { border-color:rgba(198,40,40,0.3); background:#E8EDF5; box-shadow:0 0 0 3px rgba(198,40,40,0.07); }
+
+        /* Confirm Delete dialog */
+        .confirm-delete-modal { max-width: 400px; }
+
+        /* Permission checkbox group */
+        .perm-checkbox { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background:#F8FAFC; border:2px solid transparent; cursor:pointer; transition:all 0.15s ease; }
+        .perm-checkbox:hover { background:#F1F5F9; border-color:#E2E8F0; }
+        .perm-checkbox input[type=checkbox] { width:16px; height:16px; accent-color:#C62828; cursor:pointer; }
+        .perm-checkbox.checked { background:#FFF5F5; border-color:rgba(198,40,40,0.25); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- ====== TOP NAVIGATION ====== -->
+<nav class="bg-white/70 backdrop-blur-xl sticky top-0 z-50 shadow-[0_4px_24px_-6px_rgba(15,23,46,0.08)] border-b border-slate-100">
+    <div class="flex justify-between items-center px-4 md:px-8 py-3 max-w-[1600px] mx-auto">
+        <!-- Brand -->
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="flex items-center gap-2.5 text-[#131b2e]">
+                <div class="w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-lg flex items-center justify-center shadow-md shadow-red-200">
+                    <span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1,'wght' 500">diamond</span>
+                </div>
+                <span class="font-headline font-800 text-lg tracking-tight hidden sm:block">Crimson Executive</span>
+            </a>
+            <!-- Breadcrumb -->
+            <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 font-medium">
+                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                <span class="flex items-center gap-1.5 bg-red-50 text-red-700 px-3 py-1 rounded-full font-bold text-[11px] uppercase tracking-wider">
+                    <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">admin_panel_settings</span>
+                    Quản trị hệ thống
+                </span>
+            </div>
+        </div>
+        <!-- Actions -->
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="btn-secondary text-xs hidden sm:inline-flex">
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                Về trang chính
+            </a>
+            <!-- Avatar -->
+            <div class="relative" id="navUserWrapper">
+                <button onclick="toggleNavUser()" class="flex items-center gap-2 p-1 pr-2.5 rounded-full hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
+                    <div class="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold text-xs border-2 border-white shadow-sm">
+                        <span id="navInit">AD</span>
+                    </div>
+                    <span id="navName" class="hidden md:block text-xs font-semibold text-slate-700 max-w-[80px] truncate"></span>
+                    <span class="material-symbols-outlined text-slate-400 text-sm hidden md:block">expand_more</span>
+                </button>
+                <div id="navUserDropdown" class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50 opacity-0 pointer-events-none transform -translate-y-2 transition-all duration-200">
+                    <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                        <p class="text-xs font-bold text-slate-700" id="dropName">Admin</p>
+                        <p class="text-[10px] text-red-600 font-semibold mt-0.5">Quản trị viên</p>
+                    </div>
+                    <div class="p-1.5">
+                        <button onclick="handleLogout()" class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
+                            <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ====== MAIN CONTENT ====== -->
+<main class="p-4 md:p-8 max-w-[1400px] mx-auto">
+
+    <!-- Page Header -->
+    <div class="mb-8 animate-fade-in-up">
+        <p class="text-red-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Hệ thống · Quản trị</p>
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h1 class="font-headline font-extrabold text-3xl md:text-4xl text-slate-900 tracking-tight">
+                    Quản lý Người dùng
+                    <span class="text-primary">.</span>
+                </h1>
+                <p class="text-slate-500 text-sm mt-1.5">Thêm, chỉnh sửa và phân quyền tài khoản trong hệ thống</p>
+            </div>
+            <button onclick="openAddModal()" id="btnAddUser" class="btn-primary animate-fade-in-up delay-2">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                Thêm người dùng
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-1">
+            <div class="flex items-center justify-between mb-3">
+                <div class="p-2 bg-slate-100 rounded-lg"><span class="material-symbols-outlined text-slate-500">group</span></div>
+                <span id="statTotal" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+            </div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tổng người dùng</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-2">
+            <div class="flex items-center justify-between mb-3">
+                <div class="p-2 bg-amber-50 rounded-lg"><span class="material-symbols-outlined text-amber-600">admin_panel_settings</span></div>
+                <span id="statAdmin" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+            </div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-3">
+            <div class="flex items-center justify-between mb-3">
+                <div class="p-2 bg-green-50 rounded-lg"><span class="material-symbols-outlined text-green-600">check_circle</span></div>
+                <span id="statActive" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+            </div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Đang hoạt động</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="p-2 bg-red-50 rounded-lg"><span class="material-symbols-outlined text-red-500">block</span></div>
+                <span id="statInactive" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+            </div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bị khóa</p>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="bg-white rounded-2xl shadow-[0_8px_40px_-8px_rgba(15,23,46,0.08)] overflow-hidden border border-slate-100 animate-fade-in-up delay-2">
+        <!-- Toolbar -->
+        <div class="p-4 md:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- Search -->
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[17px]">search</span>
+                    <input id="searchInput" type="text" class="search-input" placeholder="Tìm tên, mã, email..." oninput="renderTable()"/>
+                </div>
+                <!-- Role Filter -->
+                <select id="roleFilter" class="form-input text-xs py-2" style="width:auto; min-width:130px;" onchange="renderTable()">
+                    <option value="">Tất cả quyền</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="user">User</option>
+                    <option value="viewer">Viewer</option>
+                </select>
+                <!-- Status Filter -->
+                <select id="statusFilter" class="form-input text-xs py-2" style="width:auto; min-width:130px;" onchange="renderTable()">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Bị khóa</option>
+                </select>
+            </div>
+            <span id="tableCount" class="text-xs text-slate-400 font-medium italic"></span>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left min-w-[900px]">
+                <thead class="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Người dùng</th>
+                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Mã nhân viên</th>
+                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Email</th>
+                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Phòng ban</th>
+                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Quyền</th>
+                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Trạng thái</th>
+                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody" class="divide-y divide-slate-50">
+                    <!-- rendered by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="hidden py-20 text-center">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-slate-400 text-2xl">person_off</span>
+            </div>
+            <p class="font-headline font-bold text-slate-500 text-sm">Không tìm thấy người dùng</p>
+            <p class="text-slate-400 text-xs mt-1">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+        </div>
+    </div>
+</main>
+
+<!-- ====== ADD / EDIT MODAL ====== -->
+<div id="userModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1,'wght' 500">person</span>
+                </div>
+                <div>
+                    <h2 id="modalTitle" class="font-headline font-bold text-slate-900 text-base">Thêm người dùng</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Điền đầy đủ thông tin bên dưới</p>
+                </div>
+            </div>
+            <button onclick="closeModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                <span class="material-symbols-outlined text-slate-400">close</span>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="editUserId"/>
+
+            <!-- Full Name -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Họ và tên <span class="text-red-500">*</span></label>
+                <input type="text" id="fieldName" class="form-input" placeholder="VD: Nguyễn Văn An"/>
+            </div>
+
+            <!-- Emp ID + Password row -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Mã nhân viên <span class="text-red-500">*</span></label>
+                    <input type="text" id="fieldEmpId" class="form-input" placeholder="VD: EMP-3001"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5" id="passLabel">Mật khẩu <span class="text-red-500">*</span></label>
+                    <input type="password" id="fieldPassword" class="form-input" placeholder="Tối thiểu 4 ký tự"/>
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
+                <input type="text" id="fieldEmail" class="form-input" placeholder="VD: an.nguyen@nevosport.vn"/>
+            </div>
+
+            <!-- Department + Role row -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Phòng ban</label>
+                    <select id="fieldDept" class="form-input">
+                        <option value="">-- Chọn phòng ban --</option>
+                        <option>Ban Giám Đốc</option>
+                        <option>Kế toán</option>
+                        <option>Kỹ thuật</option>
+                        <option>Logistics</option>
+                        <option>Marketing</option>
+                        <option>Nhân sự</option>
+                        <option>Sản xuất</option>
+                        <option>IT</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Quyền truy cập <span class="text-red-500">*</span></label>
+                    <select id="fieldRole" class="form-input" onchange="updatePermCheckboxes()">
+                        <option value="user">User — Nhân viên</option>
+                        <option value="viewer">Viewer — Xem</option>
+                        <option value="manager">Manager — Quản lý</option>
+                        <option value="admin">Admin — Quản trị</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Trạng thái</label>
+                <select id="fieldStatus" class="form-input">
+                    <option value="active">✅ Hoạt động</option>
+                    <option value="inactive">🔒 Bị khóa</option>
+                </select>
+            </div>
+
+            <!-- Permissions -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-2">Quyền chi tiết</label>
+                <div class="grid grid-cols-2 gap-2" id="permGroup">
+                    <label class="perm-checkbox" id="perm-view">
+                        <input type="checkbox" id="permView" value="view" checked/>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">Xem đơn hàng</p>
+                            <p class="text-[10px] text-slate-400">Xem danh sách và chi tiết</p>
+                        </div>
+                    </label>
+                    <label class="perm-checkbox" id="perm-create">
+                        <input type="checkbox" id="permCreate" value="create"/>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">Tạo đơn hàng</p>
+                            <p class="text-[10px] text-slate-400">Thêm đơn mới vào hệ thống</p>
+                        </div>
+                    </label>
+                    <label class="perm-checkbox" id="perm-edit">
+                        <input type="checkbox" id="permEdit" value="edit"/>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">Chỉnh sửa</p>
+                            <p class="text-[10px] text-slate-400">Sửa thông tin đơn hàng</p>
+                        </div>
+                    </label>
+                    <label class="perm-checkbox" id="perm-approve">
+                        <input type="checkbox" id="permApprove" value="approve"/>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">Phê duyệt</p>
+                            <p class="text-[10px] text-slate-400">Duyệt / từ chối đơn hàng</p>
+                        </div>
+                    </label>
+                    <label class="perm-checkbox" id="perm-delete">
+                        <input type="checkbox" id="permDelete" value="delete"/>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">Xóa đơn hàng</p>
+                            <p class="text-[10px] text-slate-400">Xóa đơn khỏi hệ thống</p>
+                        </div>
+                    </label>
+                    <label class="perm-checkbox" id="perm-report">
+                        <input type="checkbox" id="permReport" value="report"/>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">Xem báo cáo</p>
+                            <p class="text-[10px] text-slate-400">Truy cập trang báo cáo</p>
+                        </div>
+                    </label>
+                    <label class="perm-checkbox" id="perm-admin">
+                        <input type="checkbox" id="permAdmin" value="admin"/>
+                        <div>
+                            <p class="text-xs font-semibold text-slate-700">Quản trị hệ thống</p>
+                            <p class="text-[10px] text-slate-400">Truy cập trang Admin</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Modal Error -->
+            <div id="modalError" class="hidden flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium">
+                <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">error</span>
+                <span id="modalErrorText"></span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+            <button onclick="closeModal()" class="btn-secondary">Hủy bỏ</button>
+            <button onclick="saveUser()" class="btn-primary" id="btnSave">
+                <span class="material-symbols-outlined text-[16px]">save</span>
+                <span id="btnSaveText">Lưu người dùng</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== DELETE CONFIRM MODAL ====== -->
+<div id="deleteModal" class="modal-overlay hidden">
+    <div class="modal-box confirm-delete-modal">
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-red-600 text-3xl" style="font-variation-settings:'FILL' 1,'wght' 500">warning</span>
+            </div>
+            <h2 class="font-headline font-bold text-slate-900 text-lg mb-2">Xác nhận xóa?</h2>
+            <p class="text-slate-500 text-sm mb-1">Bạn sắp xóa người dùng:</p>
+            <p id="deleteUserName" class="font-bold text-slate-800 text-base mb-1"></p>
+            <p id="deleteUserEmpId" class="text-xs text-slate-400 mb-5"></p>
+            <p class="text-xs text-red-600 bg-red-50 rounded-lg px-4 py-2 mb-6">⚠️ Hành động này không thể hoàn tác</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteModal()" class="btn-secondary flex-1">Hủy</button>
+                <button onclick="confirmDelete()" class="btn-primary flex-1" style="background:linear-gradient(135deg,#dc2626,#991b1b)">
+                    <span class="material-symbols-outlined text-[16px]">delete</span> Xóa ngay
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== TOAST ====== -->
+<div id="toast" class="toast">
+    <span class="material-symbols-outlined" id="toastIcon">check_circle</span>
+    <span id="toastMsg">Thành công</span>
+</div>
+
+<script>
+// =============================================
+// DATA STORE — dùng localStorage để persist
+// =============================================
+const USERS_KEY = 'nevo_users';
+
+const DEFAULT_USERS = [
+    { id: 1, name: 'Admin Hệ thống', empId: 'admin',    password: 'admin123', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
+    { id: 2, name: 'Nguyễn Văn Lam',empId: 'EMP-1024', password: '1234',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
+    { id: 3, name: 'Phạm Thu Thảo', empId: 'EMP-2001', password: 'nevo2024', email: 'thao.pt@nevosport.vn', dept: 'Kế toán',       role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-04-02' },
+    { id: 4, name: 'Nevo Sport',    empId: 'nevo',      password: 'nevo',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
+    { id: 5, name: 'Hoàng Duy',     empId: 'EMP-3005',  password: 'hd123',    email: 'duy.h@nevosport.vn',   dept: 'Kỹ thuật',      role: 'user',    status: 'inactive', permissions: ['view'],                                                       createdAt: '2024-02-20' },
+];
+
+function loadUsers() {
+    const raw = localStorage.getItem(USERS_KEY);
+    if (raw) return JSON.parse(raw);
+    localStorage.setItem(USERS_KEY, JSON.stringify(DEFAULT_USERS));
+    return DEFAULT_USERS;
+}
+
+function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+let users = loadUsers();
+let deleteTargetId = null;
+
+// =============================================
+// NAV USER
+// =============================================
+(function initNav() {
+    const u = sessionStorage.getItem('nevo_user') || 'Admin';
+    document.getElementById('navInit').textContent = u.substring(0,2).toUpperCase();
+    document.getElementById('navName').textContent = u;
+    document.getElementById('dropName').textContent = u;
+})();
+
+function toggleNavUser() {
+    const d = document.getElementById('navUserDropdown');
+    const open = d.classList.contains('opacity-100');
+    if (open) {
+        d.classList.remove('opacity-100','pointer-events-auto','translate-y-0');
+        d.classList.add('opacity-0','pointer-events-none','-translate-y-2');
+    } else {
+        d.classList.add('opacity-100','pointer-events-auto','translate-y-0');
+        d.classList.remove('opacity-0','pointer-events-none','-translate-y-2');
+    }
+}
+document.addEventListener('click', e => {
+    const w = document.getElementById('navUserWrapper');
+    const d = document.getElementById('navUserDropdown');
+    if (!w.contains(e.target)) {
+        d.classList.remove('opacity-100','pointer-events-auto','translate-y-0');
+        d.classList.add('opacity-0','pointer-events-none','-translate-y-2');
+    }
+});
+
+function handleLogout() {
+    sessionStorage.removeItem('nevo_logged_in');
+    sessionStorage.removeItem('nevo_user');
+    sessionStorage.removeItem('nevo_role');
+    window.location.href = 'login.html';
+}
+
+// =============================================
+// STATS
+// =============================================
+function updateStats() {
+    document.getElementById('statTotal').textContent    = users.length;
+    document.getElementById('statAdmin').textContent    = users.filter(u => u.role === 'admin').length;
+    document.getElementById('statActive').textContent   = users.filter(u => u.status === 'active').length;
+    document.getElementById('statInactive').textContent = users.filter(u => u.status === 'inactive').length;
+}
+
+// =============================================
+// RENDER TABLE
+// =============================================
+const ROLE_LABELS = { admin:'Admin', manager:'Manager', user:'User', viewer:'Viewer' };
+const ROLE_BADGE  = { admin:'badge-admin', manager:'badge-manager', user:'badge-user', viewer:'badge-viewer' };
+const STATUS_BADGE = { active:'badge-active', inactive:'badge-inactive' };
+const STATUS_LABEL = { active:'Hoạt động', inactive:'Bị khóa' };
+
+function renderTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const role   = document.getElementById('roleFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    let filtered = users.filter(u => {
+        const matchSearch = !search || u.name.toLowerCase().includes(search) || u.empId.toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search);
+        const matchRole   = !role   || u.role === role;
+        const matchStatus = !status || u.status === status;
+        return matchSearch && matchRole && matchStatus;
+    });
+
+    const tbody = document.getElementById('userTableBody');
+    const empty = document.getElementById('emptyState');
+    document.getElementById('tableCount').textContent = `${filtered.length} / ${users.length} bản ghi`;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+
+    tbody.innerHTML = filtered.map(u => `
+        <tr class="table-row">
+            <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${avatarBg(u.role)}">${u.name.split(' ').map(x=>x[0]).slice(-2).join('').toUpperCase()}</div>
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">${escHtml(u.name)}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">${u.createdAt ? 'Tạo: ' + u.createdAt : ''}</p>
+                    </div>
+                </div>
+            </td>
+            <td class="px-5 py-3.5 font-mono text-sm font-semibold text-primary">${escHtml(u.empId)}</td>
+            <td class="px-5 py-3.5 text-sm text-slate-500">${escHtml(u.email||'—')}</td>
+            <td class="px-5 py-3.5 text-xs font-medium text-slate-500">${escHtml(u.dept||'—')}</td>
+            <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${ROLE_LABELS[u.role]||u.role}</span></td>
+            <td class="px-5 py-3.5"><span class="badge ${STATUS_BADGE[u.status]}">${STATUS_LABEL[u.status]||u.status}</span></td>
+            <td class="px-5 py-3.5">
+                <div class="flex items-center gap-2 justify-end">
+                    <button class="btn-icon-sm btn-edit" onclick="openEditModal(${u.id})" title="Chỉnh sửa">
+                        <span class="material-symbols-outlined text-[17px]">edit</span>
+                    </button>
+                    <button class="btn-icon-sm btn-delete" onclick="openDeleteModal(${u.id})" title="Xóa" ${u.empId==='admin'?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
+                        <span class="material-symbols-outlined text-[17px]">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function avatarBg(role) {
+    const map = { admin:'bg-gradient-to-br from-amber-500 to-orange-600', manager:'bg-gradient-to-br from-orange-400 to-red-500', user:'bg-gradient-to-br from-blue-500 to-blue-700', viewer:'bg-gradient-to-br from-purple-500 to-indigo-600' };
+    return map[role] || 'bg-gradient-to-br from-slate-400 to-slate-600';
+}
+
+function escHtml(str) {
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// =============================================
+// PERMISSION PRESETS BY ROLE
+// =============================================
+const ROLE_PERMS = {
+    admin:   ['view','create','edit','delete','approve','report','admin'],
+    manager: ['view','create','edit','approve','report'],
+    user:    ['view','create'],
+    viewer:  ['view'],
+};
+
+function updatePermCheckboxes() {
+    const role = document.getElementById('fieldRole').value;
+    const preset = ROLE_PERMS[role] || [];
+    ['view','create','edit','delete','approve','report','admin'].forEach(p => {
+        const cb = document.getElementById('perm' + cap(p));
+        if (cb) cb.checked = preset.includes(p);
+        const lbl = document.getElementById('perm-' + p);
+        if (lbl) {
+            lbl.classList.toggle('checked', preset.includes(p));
+            cb.addEventListener('change', () => lbl.classList.toggle('checked', cb.checked));
+        }
+    });
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// =============================================
+// MODAL — ADD
+// =============================================
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Thêm người dùng mới';
+    document.getElementById('btnSaveText').textContent = 'Thêm người dùng';
+    document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-red-500">*</span>';
+    document.getElementById('editUserId').value = '';
+    // Clear fields
+    ['fieldName','fieldEmpId','fieldPassword','fieldEmail'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fieldDept').value   = '';
+    document.getElementById('fieldRole').value   = 'user';
+    document.getElementById('fieldStatus').value = 'active';
+    hideModalError();
+    updatePermCheckboxes();
+    document.getElementById('userModal').classList.remove('hidden');
+    setTimeout(() => document.getElementById('fieldName').focus(), 100);
+}
+
+// =============================================
+// MODAL — EDIT
+// =============================================
+function openEditModal(id) {
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('modalTitle').textContent = 'Chỉnh sửa người dùng';
+    document.getElementById('btnSaveText').textContent = 'Lưu thay đổi';
+    document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-slate-400 font-normal">(để trống = không đổi)</span>';
+    document.getElementById('editUserId').value = id;
+    document.getElementById('fieldName').value     = u.name;
+    document.getElementById('fieldEmpId').value    = u.empId;
+    document.getElementById('fieldPassword').value = '';
+    document.getElementById('fieldEmail').value    = u.email || '';
+    document.getElementById('fieldDept').value     = u.dept || '';
+    document.getElementById('fieldRole').value     = u.role;
+    document.getElementById('fieldStatus').value   = u.status;
+    hideModalError();
+
+    // Set permissions
+    const perms = u.permissions || [];
+    ['view','create','edit','delete','approve','report','admin'].forEach(p => {
+        const cb  = document.getElementById('perm' + cap(p));
+        const lbl = document.getElementById('perm-' + p);
+        if (cb) cb.checked = perms.includes(p);
+        if (lbl) lbl.classList.toggle('checked', perms.includes(p));
+    });
+
+    document.getElementById('userModal').classList.remove('hidden');
+    setTimeout(() => document.getElementById('fieldName').focus(), 100);
+}
+
+function closeModal() {
+    document.getElementById('userModal').classList.add('hidden');
+}
+
+// =============================================
+// SAVE USER
+// =============================================
+function saveUser() {
+    hideModalError();
+    const id       = document.getElementById('editUserId').value;
+    const name     = document.getElementById('fieldName').value.trim();
+    const empId    = document.getElementById('fieldEmpId').value.trim();
+    const password = document.getElementById('fieldPassword').value;
+    const email    = document.getElementById('fieldEmail').value.trim();
+    const dept     = document.getElementById('fieldDept').value;
+    const role     = document.getElementById('fieldRole').value;
+    const status   = document.getElementById('fieldStatus').value;
+
+    // Validate
+    if (!name)  return showModalError('Vui lòng nhập họ và tên.');
+    if (!empId) return showModalError('Vui lòng nhập mã nhân viên.');
+    if (!id && !password) return showModalError('Vui lòng nhập mật khẩu.');
+    if (password && password.length < 4) return showModalError('Mật khẩu phải tối thiểu 4 ký tự.');
+
+    // Check empId unique
+    const duplicate = users.find(u => u.empId === empId && String(u.id) !== String(id));
+    if (duplicate) return showModalError(`Mã nhân viên "${empId}" đã tồn tại.`);
+
+    // Collect permissions
+    const permissions = ['view','create','edit','delete','approve','report','admin'].filter(p => {
+        const cb = document.getElementById('perm' + cap(p));
+        return cb && cb.checked;
+    });
+
+    const today = new Date().toISOString().slice(0,10);
+
+    if (id) {
+        // Edit
+        const idx = users.findIndex(u => u.id === parseInt(id));
+        if (idx === -1) return;
+        users[idx] = { ...users[idx], name, empId, email, dept, role, status, permissions };
+        if (password) users[idx].password = password;
+    } else {
+        // Add
+        const newUser = {
+            id: Date.now(),
+            name, empId, password, email, dept, role, status, permissions,
+            createdAt: today
+        };
+        users.push(newUser);
+    }
+
+    saveUsers(users);
+    closeModal();
+    renderTable();
+    updateStats();
+    showToast(id ? 'Đã cập nhật người dùng thành công!' : 'Đã thêm người dùng mới!', 'success');
+}
+
+// =============================================
+// DELETE
+// =============================================
+function openDeleteModal(id) {
+    const u = users.find(x => x.id === id);
+    if (!u || u.empId === 'admin') return;
+    deleteTargetId = id;
+    document.getElementById('deleteUserName').textContent  = u.name;
+    document.getElementById('deleteUserEmpId').textContent = u.empId;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    deleteTargetId = null;
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+function confirmDelete() {
+    if (!deleteTargetId) return;
+    users = users.filter(u => u.id !== deleteTargetId);
+    saveUsers(users);
+    closeDeleteModal();
+    renderTable();
+    updateStats();
+    showToast('Đã xóa người dùng thành công!', 'success');
+}
+
+// =============================================
+// MODAL ERROR
+// =============================================
+function showModalError(msg) {
+    const el = document.getElementById('modalError');
+    document.getElementById('modalErrorText').textContent = msg;
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+}
+function hideModalError() {
+    const el = document.getElementById('modalError');
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+}
+
+// =============================================
+// TOAST
+// =============================================
+let toastTimer;
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    const i = document.getElementById('toastIcon');
+    const m = document.getElementById('toastMsg');
+    t.className = `toast toast-${type}`;
+    i.textContent = type === 'success' ? 'check_circle' : 'error';
+    m.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Close modals on overlay click
+document.getElementById('userModal').addEventListener('click', e => { if (e.target === document.getElementById('userModal')) closeModal(); });
+document.getElementById('deleteModal').addEventListener('click', e => { if (e.target === document.getElementById('deleteModal')) closeDeleteModal(); });
+
+// ESC key
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeDeleteModal(); }
+});
+
+// =============================================
+// INIT
+// =============================================
+updateStats();
+renderTable();
+</script>
+</body>
+</html>
