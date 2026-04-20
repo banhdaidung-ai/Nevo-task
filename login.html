@@ -550,15 +550,22 @@
 
         // Simulate authentication delay
         setTimeout(() => {
-            const isValid = VALID_CREDENTIALS.find(
-                c => c.empId === empId && c.password === password
+            // Load users from localStorage (synced with Admin page)
+            const storedUsers = JSON.parse(localStorage.getItem('nevo_users') || '[]');
+            
+            // Combine with hardcoded defaults if needed or just use stored
+            // Admin page already includes defaults in its initial state
+            const allUsers = storedUsers.length > 0 ? storedUsers : VALID_CREDENTIALS;
+
+            const matchedUser = allUsers.find(
+                u => u.empId === empId && u.password === password
             );
 
-            if (isValid) {
+            if (matchedUser) {
                 // Store session
                 sessionStorage.setItem('nevo_logged_in', 'true');
-                sessionStorage.setItem('nevo_user', empId);
-                sessionStorage.setItem('nevo_role', isValid.role || 'user');
+                sessionStorage.setItem('nevo_user', matchedUser.name || empId);
+                sessionStorage.setItem('nevo_role', matchedUser.role || 'user');
 
                 // Success animation then redirect
                 btn.innerHTML = `
