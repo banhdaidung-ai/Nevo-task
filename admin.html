@@ -518,7 +518,7 @@
     <span id="toastMsg">Thành công</span>
 </div>
 
-<!-- ====== FIREBASE JAVASCRIPT ====== -->
+<!-- ====== FIREBASE SYSTEM ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
@@ -535,6 +535,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Expose Firebase to window for UI script
+    window.db = db;
+    window.fs = {
+        collection, addDoc, getDocs, onSnapshot, query, orderBy, 
+        serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc
+    };
+    
+    console.log("Firebase System Initialized");
+    
+    // Trigger initial data load from UI script
+    if (window.startSync) window.startSync();
+</script>
+
+<!-- ====== UI & BUSINESS LOGIC ====== -->
+<script>
     // =============================================
     // GLOBAL STATE & CONSTANTS
     // =============================================
@@ -550,23 +565,23 @@
     ];
 
     // =============================================
-    // FIREBASE SYNC
+    // FIREBASE SYNC (Linked to window.db)
     // =============================================
-    async function initFirebaseUsers() {
-        // Check if collection exists/has data
-        const q = query(collection(db, USERS_COLLECTION));
-        const snapshot = await getDocs(q);
+    window.startSync = async function() {
+        if (!window.db) return;
+        
+        const q = window.fs.query(window.fs.collection(window.db, USERS_COLLECTION));
+        const snapshot = await window.fs.getDocs(q);
         
         if (snapshot.empty) {
             console.log("Firestore users collection is empty. Initializing defaults...");
-            // Upload defaults - use empId as document ID for easier management
             for (const u of DEFAULT_USERS) {
-                await setDoc(doc(db, USERS_COLLECTION, u.empId), u);
+                await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, u.empId), u);
             }
         }
 
         // Subscribe to real-time updates
-        onSnapshot(q, (snapshot) => {
+        window.fs.onSnapshot(q, (snapshot) => {
             users = [];
             snapshot.forEach((doc) => {
                 users.push({ id: doc.id, ...doc.data() });
@@ -579,7 +594,7 @@
     // =============================================
     // UI CORE FUNCTIONS
     // =============================================
-    window.updateStats = function() {
+    function updateStats() {
         document.getElementById('statTotal').textContent    = users.length;
         document.getElementById('statAdmin').textContent    = users.filter(u => u.role === 'admin').length;
         document.getElementById('statActive').textContent   = users.filter(u => u.status === 'active').length;
@@ -591,7 +606,7 @@
     const STATUS_BADGE = { active:'badge-active', inactive:'badge-inactive' };
     const STATUS_LABEL = { active:'Hoạt động', inactive:'Bị khóa' };
 
-    window.renderTable = function() {
+    function renderTable() {
         const search = document.getElementById('searchInput').value.toLowerCase();
         const role   = document.getElementById('roleFilter').value;
         const status = document.getElementById('statusFilter').value;
@@ -654,7 +669,7 @@
     }
 
     // =============================================
-    // MODAL & ACTIONS (Exposed to window)
+    // MODAL & ACTIONS
     // =============================================
     window.openAddModal = function() {
         document.getElementById('modalTitle').textContent = 'Thêm người dùng mới';
@@ -716,7 +731,6 @@
         if (!empId) return showModalError('Vui lòng nhập mã nhân viên.');
         if (!id && !password) return showModalError('Vui lòng nhập mật khẩu.');
         
-        // Emp ID unique check
         const isDuplicate = users.find(u => u.empId === empId && u.id !== id);
         if (isDuplicate) return showModalError('Mã nhân viên đã tồn tại trên hệ thống.');
 
@@ -737,8 +751,9 @@
             if (password) userData.password = password;
             if (!id) userData.createdAt = new Date().toISOString().slice(0,10);
 
-            // Use empId as document ID for easier lookup in login
-            await setDoc(doc(db, USERS_COLLECTION, empId), userData, { merge: true });
+            if (!window.db) throw new Error("Firebase not ready");
+
+            await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, empId), userData, { merge: true });
 
             showToast(id ? 'Cập nhật thành công!' : 'Thêm người dùng thành công!');
             closeModal();
@@ -766,9 +781,9 @@
     }
 
     window.confirmDelete = async function() {
-        if (!deleteTargetId) return;
+        if (!deleteTargetId || !window.db) return;
         try {
-            await deleteDoc(doc(db, USERS_COLLECTION, deleteTargetId));
+            await window.fs.deleteDoc(window.fs.doc(window.db, USERS_COLLECTION, deleteTargetId));
             showToast('Đã xóa thành công!');
             closeDeleteModal();
         } catch (e) {
@@ -788,9 +803,11 @@
 
     window.toggleNavUser = function() {
         const d = document.getElementById('navUserDropdown');
-        d.classList.toggle('opacity-100');
-        d.classList.toggle('pointer-events-auto');
-        d.classList.toggle('translate-y-0');
+        if (d) {
+            d.classList.toggle('opacity-100');
+            d.classList.toggle('pointer-events-auto');
+            d.classList.toggle('translate-y-0');
+        }
     }
 
     window.handleLogout = function() {
@@ -822,29 +839,41 @@
     window.showToast = function(msg, type = 'success') {
         const t = document.getElementById('toast');
         const m = document.getElementById('toastMsg');
-        t.className = `toast toast-${type} show`;
-        m.textContent = msg;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+        if (t && m) {
+            t.className = `toast toast-${type} show`;
+            m.textContent = msg;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+        }
     }
 
-    // Init
-    initFirebaseUsers();
-    
-    // Global Event Listeners
-    document.addEventListener('click', e => {
-        const w = document.getElementById('navUserWrapper');
-        const d = document.getElementById('navUserDropdown');
-        if (w && !w.contains(e.target)) {
-            d.classList.remove('opacity-100','pointer-events-auto','translate-y-0');
-        }
+    // =============================================
+    // INITIALIZATION & EVENT LISTENERS
+    // =============================================
+    document.addEventListener('DOMContentLoaded', () => {
+        // UI event listeners for static elements
+        document.getElementById('searchInput').addEventListener('input', renderTable);
+        document.getElementById('roleFilter').addEventListener('change', renderTable);
+        document.getElementById('statusFilter').addEventListener('change', renderTable);
+        document.getElementById('fieldRole').addEventListener('change', updatePermCheckboxes);
+        
+        // Clicks outside dropdown
+        document.addEventListener('click', e => {
+            const w = document.getElementById('navUserWrapper');
+            const d = document.getElementById('navUserDropdown');
+            if (w && d && !w.contains(e.target)) {
+                d.classList.remove('opacity-100','pointer-events-auto','translate-y-0');
+            }
+        });
+
+        const navName = sessionStorage.getItem('nevo_user') || 'Admin';
+        document.getElementById('navInit').textContent = navName.substring(0,2).toUpperCase();
+        document.getElementById('navName').textContent = navName;
+        document.getElementById('dropName').textContent = navName;
+
+        // Try sync if db ready
+        if (window.db) window.startSync();
     });
-
-    const navName = sessionStorage.getItem('nevo_user') || 'Admin';
-    document.getElementById('navInit').textContent = navName.substring(0,2).toUpperCase();
-    document.getElementById('navName').textContent = navName;
-    document.getElementById('dropName').textContent = navName;
-
 </script>
 </body>
 </html>
