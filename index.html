@@ -175,11 +175,21 @@
         .sort-icon { font-size: 14px !important; cursor: pointer; color: #94a3b8; transition: color 0.15s; }
         .sort-icon.active { color: #b80035; }
         .column-filter {
-            width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 6px;
-            font-size: 10px; font-weight: 500; outline: none; transition: all 0.2s;
-            background: rgba(255,255,255,0.8);
+            width: 100%; border: 1.5px solid #f1f5f9; border-radius: 6px; padding: 5px 8px;
+            font-size: 11px; font-weight: 500; outline: none; transition: all 0.2s;
+            background: #ffffff; color: #475569;
         }
-        .column-filter:focus { border-color: #b80035; box-shadow: 0 0 0 2px rgba(184, 0, 53, 0.1); background: #fff; }
+        .column-filter:focus { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.03); color: #0f172a; }
+        .column-filter::placeholder { color: #cbd5e1; font-weight: 400; }
+        select.column-filter {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 6px center;
+            background-size: 12px;
+            padding-right: 20px;
+            cursor: pointer;
+        }
         
         .pagination-btn {
             padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
@@ -709,19 +719,34 @@
                             <th class="text-right uppercase text-[10px] font-extrabold tracking-widest">Thao tác</th>
                         </tr>
                         <!-- Filter Row -->
-                        <tr class="bg-surface-container-high/50">
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('code', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('requester', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('department', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('category', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('title', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('createdAt', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('deployDate', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('deadline', this.value)" placeholder="Ngày..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('stylist', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedVideo', this.value)" placeholder="Lọc..."></th>
-                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedPhoto', this.value)" placeholder="Lọc..."></th>
-                            <th></th>
+                        <tr class="bg-surface-container-high/30">
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('code', this.value)" placeholder="Tìm ID..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('requester', this.value)" placeholder="Tìm tên..."></th>
+                            <th class="p-2">
+                                <select class="column-filter" id="colFilterDepartment" onchange="updateColumnFilter('department', this.value)">
+                                    <option value="">Tất cả phòng</option>
+                                </select>
+                            </th>
+                            <th class="p-2">
+                                <select class="column-filter" onchange="updateColumnFilter('category', this.value)">
+                                    <option value="">Theo loại</option>
+                                    <option value="Video">Video</option>
+                                    <option value="Hình Ảnh">Hình Ảnh</option>
+                                    <option value="Giả Live">Giả Live</option>
+                                </select>
+                            </th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('title', this.value)" placeholder="Công việc..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('createdAt', this.value)" placeholder="Ngày..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('deployDate', this.value)" placeholder="Ngày..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('deadline', this.value)" placeholder="Ngày..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('stylist', this.value)" placeholder="Lọc..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedVideo', this.value)" placeholder="Lọc..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedPhoto', this.value)" placeholder="Lọc..."></th>
+                            <th class="p-2">
+                                <select class="column-filter" id="colFilterStatus" onchange="updateColumnFilter('status', this.value)">
+                                    <option value="">Trạng thái</option>
+                                </select>
+                            </th>
                             <th></th>
                         </tr>
                     </thead>
@@ -1831,6 +1856,7 @@
             window.departmentsData = [];
             snapshot.forEach(doc => window.departmentsData.push({ id: doc.id, ...doc.data() }));
             populateDropdown('department', window.departmentsData);
+            populateDropdown('colFilterDepartment', window.departmentsData, 'Tất cả phòng');
         });
 
         // --- 2. ORDER STATUSES SYNC ---
@@ -1841,6 +1867,7 @@
             snapshot.forEach(doc => window.orderStatusesData.push({ id: doc.id, ...doc.data() }));
             populateDropdown('editOrderStatus', window.orderStatusesData);
             populateDropdown('filterStatus', window.orderStatusesData, 'Tất cả trạng thái');
+            populateDropdown('colFilterStatus', window.orderStatusesData, 'Trạng thái');
             if (window.allOrdersData.length > 0) window.renderOrdersTable();
         });
 
@@ -2021,6 +2048,8 @@
             if(inputEl.type === 'text') {
                 const len = inputEl.value.length;
                 inputEl.setSelectionRange(len, len);
+            } else if (inputEl.tagName === 'SELECT' && typeof inputEl.showPicker === 'function') {
+                try { inputEl.showPicker(); } catch (e) {}
             }
         }
     };
