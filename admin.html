@@ -583,10 +583,16 @@
                 </div>
             </div>
 
-            <!-- Email -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
-                <input type="text" id="fieldEmail" class="form-input" placeholder="VD: an.nguyen@nevosport.vn"/>
+            <!-- Email & Phone -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
+                    <input type="text" id="fieldEmail" class="form-input" placeholder="an.nguyen@nevosport.vn"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Số điện thoại</label>
+                    <input type="text" id="fieldPhone" class="form-input" placeholder="09xx xxx xxx"/>
+                </div>
             </div>
 
             <!-- Department + Role row -->
@@ -980,7 +986,7 @@
         document.getElementById('btnSaveText').textContent = 'Thêm người dùng';
         document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-red-500">*</span>';
         document.getElementById('editUserId').value = '';
-        ['fieldName','fieldEmpId','fieldPassword','fieldEmail'].forEach(id => document.getElementById(id).value = '');
+        ['fieldName','fieldEmpId','fieldPassword','fieldEmail','fieldPhone'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('fieldDept').value   = '';
         document.getElementById('fieldRole').value   = 'user';
         document.getElementById('fieldStatus').value = 'active';
@@ -999,7 +1005,8 @@
         document.getElementById('fieldName').value     = u.name;
         document.getElementById('fieldEmpId').value    = u.empId;
         document.getElementById('fieldPassword').value = '';
-        document.getElementById('fieldEmail').value    = u.email || '';
+        document.getElementById('fieldEmail').value    = u ? (u.email || '') : '';
+        document.getElementById('fieldPhone').value    = u ? (u.phone || '') : '';
         document.getElementById('fieldDept').value     = u.dept || '';
         document.getElementById('fieldRole').value     = u.role;
         document.getElementById('fieldStatus').value   = u.status;
@@ -1027,6 +1034,7 @@
         const empId    = document.getElementById('fieldEmpId').value.trim();
         const password = document.getElementById('fieldPassword').value;
         const email    = document.getElementById('fieldEmail').value.trim();
+        const phone    = document.getElementById('fieldPhone').value.trim();
         const dept     = document.getElementById('fieldDept').value;
         const role     = document.getElementById('fieldRole').value;
         const status   = document.getElementById('fieldStatus').value;
@@ -1049,7 +1057,7 @@
 
         try {
             const userData = {
-                name, empId, email, dept, role, status, permissions,
+                name, empId, email, phone, dept, role, status, permissions,
                 updatedAt: new Date().toISOString()
             };
             if (password) userData.password = password;

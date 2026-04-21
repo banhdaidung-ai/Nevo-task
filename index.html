@@ -1296,10 +1296,16 @@
                         <h1 id="profileName" class="text-3xl font-extrabold tracking-tight font-headline">Admin User</h1>
                         <span id="profileRoleBadge" class="w-fit px-3 py-1 rounded-full text-[10px] font-bold bg-primary-fixed text-primary uppercase tracking-widest mx-auto md:mx-0">Quản trị viên</span>
                     </div>
-                    <p id="profileEmail" class="text-on-surface-variant font-medium flex items-center justify-center md:justify-start gap-2 mb-4">
-                        <span class="material-symbols-outlined text-[18px]">mail</span>
-                        admin@nevosport.vn
-                    </p>
+                    <div class="flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 mb-4">
+                        <p id="profileEmail" class="text-on-surface-variant font-medium flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">mail</span>
+                            admin@nevosport.vn
+                        </p>
+                        <p id="profilePhone" class="text-on-surface-variant font-medium flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">call</span>
+                            -
+                        </p>
+                    </div>
                     <div class="flex flex-wrap justify-center md:justify-start gap-4">
                         <div class="bg-surface-container-low px-4 py-2 rounded-xl flex items-center gap-2 border border-outline-variant/10">
                             <span class="material-symbols-outlined text-primary text-[18px]">corporate_fare</span>
@@ -1357,9 +1363,15 @@
                         <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Họ và tên</label>
                         <input id="editProfileName" type="text" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="Họ và tên">
                     </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Email công việc</label>
-                        <input id="editProfileEmail" type="email" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="Email">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Email công việc</label>
+                            <input id="editProfileEmail" type="email" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="Email">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Số điện thoại</label>
+                            <input id="editProfilePhone" type="text" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="Số điện thoại">
+                        </div>
                     </div>
                     <div class="pt-4 border-t border-slate-100">
                         <h3 class="text-sm font-bold text-slate-800 mb-4">Đổi mật khẩu</h3>
@@ -2882,20 +2894,24 @@
         const userRole = sessionStorage.getItem('nevo_role') || 'user';
         const userDept = sessionStorage.getItem('nevo_dept') || 'N/A';
         const userEmpId = sessionStorage.getItem('nevo_empId') || 'N/A';
-        const userEmail = sessionStorage.getItem('nevo_email') || 'N/A';
+        const userEmail = sessionStorage.getItem('nevo_email') || '';
+        const userPhone = sessionStorage.getItem('nevo_phone') || '';
         
         document.getElementById('profileName').textContent = userName;
         document.getElementById('profileInitial').textContent = userName.substring(0, 2).toUpperCase();
-        document.getElementById('profileEmail').innerHTML = `<span class="material-symbols-outlined text-[18px]">mail</span> ${userEmail}`;
+        document.getElementById('profileEmail').innerHTML = `<span class="material-symbols-outlined text-[18px]">mail</span> ${userEmail || '-'}`;
+        document.getElementById('profilePhone').innerHTML = `<span class="material-symbols-outlined text-[18px]">call</span> ${userPhone || '-'}`;
         document.getElementById('profileDept').textContent = userDept;
         document.getElementById('profileEmpId').textContent = userEmpId;
         
         const roleNames = { admin: 'Quản trị viên', manager: 'Quản lý', user: 'Nhân viên', viewer: 'Người xem' };
-        document.getElementById('profileRoleBadge').textContent = roleNames[userRole] || 'Nhân viên';
+        const roleBadge = document.getElementById('profileRoleBadge');
+        if (roleBadge) roleBadge.textContent = roleNames[userRole] || 'Nhân viên';
         
         // Fill form
         document.getElementById('editProfileName').value = userName;
         document.getElementById('editProfileEmail').value = userEmail;
+        document.getElementById('editProfilePhone').value = userPhone;
 
         // Fetch stats
         try {
@@ -2956,9 +2972,15 @@
     window.handleUpdateProfile = async function() {
         const name = document.getElementById('editProfileName').value;
         const email = document.getElementById('editProfileEmail').value;
+        const phone = document.getElementById('editProfilePhone').value;
         const oldPass = document.getElementById('oldPassword').value;
         const newPass = document.getElementById('newPassword').value;
         const empId = sessionStorage.getItem('nevo_empId');
+
+        if (!empId || empId === 'N/A') {
+            showToast('Lỗi!', 'Không tìm thấy mã nhân viên trong phiên làm việc.', 'error', 'text-error');
+            return;
+        }
 
         if (!name || !email) {
             showToast('Lỗi!', 'Vui lòng điền đủ tên và email.', 'error', 'text-error');
@@ -2971,7 +2993,7 @@
             if (!userDoc.exists()) return;
             const userData = userDoc.data();
 
-            let updateData = { name, email };
+            let updateData = { name, email, phone };
             
             if (newPass) {
                 if (userData.password !== oldPass) {
@@ -2986,6 +3008,7 @@
             // Update session
             sessionStorage.setItem('nevo_user', name);
             sessionStorage.setItem('nevo_email', email);
+            sessionStorage.setItem('nevo_phone', phone);
             
             // Refresh UI
             document.getElementById('navUserName').textContent = name;
