@@ -631,12 +631,12 @@
                             <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Mã đơn hàng</th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Người yêu cầu</th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Phòng ban</th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Thể loại</th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Công việc</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Ghi chú</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Yêu cầu</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Triển khai</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest text-primary">Deadline</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Phụ trách</th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Deadline</th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Stylist</th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Video</th>
+                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Photo</th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Trạng thái</th>
                             <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest text-right">Thao tác</th>
                         </tr>
@@ -1122,6 +1122,35 @@
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-error material-symbols-outlined">alarm</span>
                         </div>
                     </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                            Thể loại <span class="text-primary">*</span>
+                        </label>
+                        <select id="orderCategory" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer">
+                            <option value="Video">Video</option>
+                            <option value="Hình Ảnh">Hình Ảnh</option>
+                            <option value="Giả Live">Giả Live</option>
+                        </select>
+                    </div>
+                    <!-- Detailed Assigned Persons -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                            Stylist
+                        </label>
+                        <input id="assignedStylist" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên người phụ trách Stylist" type="text"/>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                            Video (Phụ trách)
+                        </label>
+                        <input id="assignedVideo" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên người phụ trách Video" type="text"/>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                            Photo (Phụ trách)
+                        </label>
+                        <input id="assignedPhoto" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên người phụ trách Photo" type="text"/>
+                    </div>
                     <div class="md:col-span-2 space-y-2">
                         <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                             Tiêu đề đơn hàng <span class="text-primary">*</span>
@@ -1260,6 +1289,30 @@
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold uppercase text-on-surface-variant">Deadline <span class="text-primary">*</span></label>
                     <input id="editOrderDeadline" type="date" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase text-on-surface-variant">Thể loại <span class="text-primary">*</span></label>
+                    <select id="editOrderCategory" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                        <option value="Video">Video</option>
+                        <option value="Hình Ảnh">Hình Ảnh</option>
+                        <option value="Giả Live">Giả Live</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase text-on-surface-variant">Stylist</label>
+                    <input id="editOrderStylist" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase text-on-surface-variant">Video (Phụ trách)</label>
+                    <input id="editOrderVideo" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase text-on-surface-variant">Photo (Phụ trách)</label>
+                    <input id="editOrderPhoto" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
                 </div>
             </div>
             <div class="space-y-1.5">
@@ -1411,6 +1464,10 @@
         const requester = document.getElementById('requester').value;
         const deadline = document.getElementById('deadline').value;
         const content = document.getElementById('orderContent').value;
+        const category = document.getElementById('orderCategory').value;
+        const stylist = document.getElementById('assignedStylist').value;
+        const assignedVideo = document.getElementById('assignedVideo').value;
+        const assignedPhoto = document.getElementById('assignedPhoto').value;
         
         if (!title || !deadline) {
             showToast('Lỗi!', 'Vui lòng điền đủ tiêu đề và hạn chót.', 'error', 'text-error');
@@ -1445,6 +1502,10 @@
                     title: title,
                     deadline: deadline,
                     content: content,
+                    category: category,
+                    stylist: stylist,
+                    assignedVideo: assignedVideo,
+                    assignedPhoto: assignedPhoto,
                     status: 'Chờ duyệt',
                     createdAt: window.fsServerTimestamp ? window.fsServerTimestamp() : new Date().toISOString()
                 });
@@ -1458,6 +1519,9 @@
                 navigateTo('orders');
                 document.getElementById('orderTitle').value = '';
                 document.getElementById('orderContent').value = '';
+                document.getElementById('assignedStylist').value = '';
+                document.getElementById('assignedVideo').value = '';
+                document.getElementById('assignedPhoto').value = '';
             }, 1000);
         } catch (error) {
             console.error("Lỗi:", error);
@@ -1501,7 +1565,20 @@
             else if (data.status === 'Hoàn thành' || data.status === 'Hoàn tất') statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant uppercase">Hoàn thành</span>';
             
             // Serialize data string safely for inline HTML invocation
-            const dataStr = encodeURIComponent(JSON.stringify({id: data.id, code: data.code, status: data.status, title: data.title, requester: data.requester, department: data.department, deadline: data.deadline, content: data.content}));
+            const dataStr = encodeURIComponent(JSON.stringify({
+                id: data.id, 
+                code: data.code, 
+                status: data.status, 
+                title: data.title, 
+                requester: data.requester, 
+                department: data.department, 
+                deadline: data.deadline, 
+                content: data.content,
+                category: data.category,
+                stylist: data.stylist,
+                assignedVideo: data.assignedVideo,
+                assignedPhoto: data.assignedPhoto
+            }));
             
             fullHtml += `
                     <tr class="hover:bg-slate-50/80 transition-colors group relative">
@@ -1515,19 +1592,27 @@
                         <td class="px-6 py-4 text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'department')">
                             <span class="display-val pointer-events-none">${data.department || '-'}</span>
                         </td>
+                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'category')">
+                            <span class="display-val pointer-events-none">${data.category || '-'}</span>
+                        </td>
                         <td class="px-6 py-4 max-w-[280px] cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'title')">
                             <div class="display-val pointer-events-none">
                                 <div class="text-sm font-bold text-slate-700 truncate mb-1">${data.title || '-'}</div>
                                 <div class="text-xs text-slate-500 leading-relaxed truncate">${data.content || '-'}</div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-xs italic text-slate-400">-</td>
-                        <td class="px-6 py-4 text-[11px] text-slate-500">-</td>
-                        <td class="px-6 py-4 text-[11px] text-slate-500">-</td>
                         <td class="px-6 py-4 text-sm font-bold text-primary cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
                             <div class="display-val pointer-events-none">${dateText}</div>
                         </td>
-                        <td class="px-6 py-4 text-xs font-semibold">-</td>
+                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
+                            <span class="display-val pointer-events-none">${data.stylist || '-'}</span>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
+                            <span class="display-val pointer-events-none">${data.assignedVideo || '-'}</span>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
+                            <span class="display-val pointer-events-none">${data.assignedPhoto || '-'}</span>
+                        </td>
                         <td class="px-6 py-4 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'status')">
                             <div class="display-val pointer-events-none">${statusBadgeFull}</div>
                         </td>
@@ -1618,6 +1703,10 @@
         document.getElementById('editOrderTitle').value = data.title || '';
         document.getElementById('editOrderRequester').value = data.requester || '';
         document.getElementById('editOrderDeadline').value = data.deadline || '';
+        document.getElementById('editOrderCategory').value = data.category || 'Video';
+        document.getElementById('editOrderStylist').value = data.stylist || '';
+        document.getElementById('editOrderVideo').value = data.assignedVideo || '';
+        document.getElementById('editOrderPhoto').value = data.assignedPhoto || '';
         document.getElementById('editOrderContent').value = data.content || '';
         
         const modal = document.getElementById('editOrderModal');
@@ -1638,6 +1727,10 @@
         const title = document.getElementById('editOrderTitle').value;
         const requester = document.getElementById('editOrderRequester').value;
         const deadline = document.getElementById('editOrderDeadline').value;
+        const category = document.getElementById('editOrderCategory').value;
+        const stylist = document.getElementById('editOrderStylist').value;
+        const assignedVideo = document.getElementById('editOrderVideo').value;
+        const assignedPhoto = document.getElementById('editOrderPhoto').value;
         const content = document.getElementById('editOrderContent').value;
         
         if (!title || !requester || !deadline) {
@@ -1657,6 +1750,10 @@
                 title: title,
                 requester: requester,
                 deadline: deadline,
+                category: category,
+                stylist: stylist,
+                assignedVideo: assignedVideo,
+                assignedPhoto: assignedPhoto,
                 content: content
             });
             
@@ -1706,6 +1803,12 @@
                 <option value="Ban Điều hành Dự án" ${originalVal === 'Ban Điều hành Dự án' ? 'selected' : ''}>Ban Điều hành Dự án</option>
                 <option value="Phòng Nhân sự" ${originalVal === 'Phòng Nhân sự' ? 'selected' : ''}>Phòng Nhân sự</option>
                 <option value="Tổ Kỹ thuật - Hạ tầng" ${originalVal === 'Tổ Kỹ thuật - Hạ tầng' ? 'selected' : ''}>Tổ Kỹ thuật - Hạ tầng</option>
+            </select>`;
+        } else if (field === 'category') {
+            inputHtml = `<select class="w-[full] min-w-[120px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+                <option value="Video" ${originalVal === 'Video' ? 'selected' : ''}>Video</option>
+                <option value="Hình Ảnh" ${originalVal === 'Hình Ảnh' ? 'selected' : ''}>Hình Ảnh</option>
+                <option value="Giả Live" ${originalVal === 'Giả Live' ? 'selected' : ''}>Giả Live</option>
             </select>`;
         } else if (field === 'deadline') {
             inputHtml = `<input type="date" class="w-full bg-white border border-primary rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow absolute inset-0 z-10 box-border h-[80%] m-auto w-[90%]" value="${originalVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" />`;
