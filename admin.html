@@ -393,6 +393,7 @@
                             <tr>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nhân sự</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã NV</th>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phòng ban</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quyền</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trạng thái</th>
@@ -1265,10 +1266,15 @@
 
     window.toggleNavUser = function() {
         const d = document.getElementById('navUserDropdown');
-        if (d) {
-            d.classList.toggle('opacity-100');
-            d.classList.toggle('pointer-events-auto');
-            d.classList.toggle('translate-y-0');
+        if (!d) return;
+        
+        // In the future, if a notifDropdown is added, close it here
+        const isCurrentlyOpen = d.classList.contains('opacity-100');
+        
+        if (isCurrentlyOpen) {
+            d.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+        } else {
+            d.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
         }
     }
 

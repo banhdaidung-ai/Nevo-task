@@ -160,16 +160,30 @@
         }
         .mobile-menu.open { transform: translateX(0); }
 
-        /* Notification dropdown */
-        .notification-dropdown {
-            opacity: 0; transform: translateY(-8px) scale(0.95);
-            pointer-events: none;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
         .notification-dropdown.open {
             opacity: 1; transform: translateY(0) scale(1);
             pointer-events: auto;
         }
+
+        /* Order Table Compact Mode & Filtering */
+        .table-compact th { padding: 0.5rem 0.75rem !important; }
+        .table-compact td { padding: 0.4rem 0.75rem !important; }
+        .sort-icon { font-size: 14px !important; cursor: pointer; color: #94a3b8; transition: color 0.15s; }
+        .sort-icon.active { color: #b80035; }
+        .column-filter {
+            width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 6px;
+            font-size: 10px; font-weight: 500; outline: none; transition: all 0.2s;
+            background: rgba(255,255,255,0.8);
+        }
+        .column-filter:focus { border-color: #b80035; box-shadow: 0 0 0 2px rgba(184, 0, 53, 0.1); background: #fff; }
+        
+        .pagination-btn {
+            padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+            transition: all 0.2s; border: 1px solid #e2e8f0; background: #fff;
+        }
+        .pagination-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
+        .pagination-btn.active { background: #b80035; color: #fff; border-color: #b80035; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
@@ -625,20 +639,86 @@
             </div>
             <!-- Table -->
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse table-auto min-w-[1200px]">
-                    <thead class="bg-surface-container-high border-b border-surface-variant/30">
+                <table id="mainOrdersTable" class="w-full text-left border-collapse table-auto min-w-[1500px] table-compact">
+                    <thead class="bg-surface-container-high border-b border-surface-variant/30 text-slate-500">
                         <tr>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Mã đơn hàng</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Người yêu cầu</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Phòng ban</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Thể loại</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Công việc</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Deadline</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Stylist</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Video</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Photo</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Trạng thái</th>
-                            <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-widest text-right">Thao tác</th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('code')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Mã đơn <span class="material-symbols-outlined sort-icon" id="sort-code">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('requester')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Thành viên <span class="material-symbols-outlined sort-icon" id="sort-requester">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('department')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Phòng ban <span class="material-symbols-outlined sort-icon" id="sort-department">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('category')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('title')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Công việc <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('createdAt')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Ngày Order <span class="material-symbols-outlined sort-icon" id="sort-createdAt">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('deployDate')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Ngày Triển khai <span class="material-symbols-outlined sort-icon" id="sort-deployDate">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('deadline')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Deadline <span class="material-symbols-outlined sort-icon" id="sort-deadline">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('stylist')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Stylist <span class="material-symbols-outlined sort-icon" id="sort-stylist">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('assignedVideo')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Video <span class="material-symbols-outlined sort-icon" id="sort-assignedVideo">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('assignedPhoto')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Photo <span class="material-symbols-outlined sort-icon" id="sort-assignedPhoto">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('status')">
+                                <div class="flex items-center gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Trạng thái <span class="material-symbols-outlined sort-icon" id="sort-status">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="text-right uppercase text-[10px] font-extrabold tracking-widest">Thao tác</th>
+                        </tr>
+                        <!-- Filter Row -->
+                        <tr class="bg-surface-container-high/50">
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('code', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('requester', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('department', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('category', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('title', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('createdAt', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('deployDate', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('deadline', this.value)" placeholder="Ngày..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('stylist', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedVideo', this.value)" placeholder="Lọc..."></th>
+                            <th><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedPhoto', this.value)" placeholder="Lọc..."></th>
+                            <th></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-slate-100">
@@ -1124,6 +1204,15 @@
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                            Ngày triển khai
+                        </label>
+                        <div class="relative">
+                            <input id="orderDeployDate" class="w-full bg-surface-container-highest border-none rounded-lg px-10 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" type="date"/>
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-secondary material-symbols-outlined">event_available</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                             Thể loại <span class="text-primary">*</span>
                         </label>
                         <select id="orderCategory" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer">
@@ -1281,10 +1370,14 @@
                 <label class="text-xs font-bold uppercase text-on-surface-variant">Tiêu đề <span class="text-primary">*</span></label>
                 <input id="editOrderTitle" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold uppercase text-on-surface-variant">Người yêu cầu <span class="text-primary">*</span></label>
                     <input id="editOrderRequester" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase text-on-surface-variant">Ngày triển khai</label>
+                    <input id="editOrderDeployDate" type="date" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
                 </div>
                 <div class="space-y-1.5">
                     <label class="text-xs font-bold uppercase text-on-surface-variant">Deadline <span class="text-primary">*</span></label>
@@ -1423,21 +1516,50 @@
     }
     document.getElementById('mobileMenuBtn').addEventListener('click', openMobileMenu);
 
-    // ===== Notification Dropdown =====
-    const notifBtn = document.getElementById('notifBtn');
-    const notifDropdown = document.getElementById('notifDropdown');
-    let notifOpen = false;
+    // ===== Dropdown Management (Mutual Exclusivity) =====
+    window.closeAllDropdowns = function(exceptId = null) {
+        const notifDropdown = document.getElementById('notifDropdown');
+        const userDropdown = document.getElementById('userDropdown');
+        
+        if (notifDropdown && exceptId !== 'notifDropdown') {
+            notifDropdown.classList.remove('open');
+            window.notifOpen = false;
+        }
+        if (userDropdown && exceptId !== 'userDropdown') {
+            userDropdown.classList.remove('open');
+        }
+    };
 
-    notifBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        notifOpen = !notifOpen;
-        notifDropdown.classList.toggle('open', notifOpen);
-    });
+    // Notification Dropdown
+    const notifBtn = document.getElementById('notifBtn');
+    window.notifOpen = false;
+
+    if (notifBtn) {
+        notifBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = document.getElementById('notifDropdown').classList.contains('open');
+            window.closeAllDropdowns(isOpen ? null : 'notifDropdown');
+            if (!isOpen) {
+                document.getElementById('notifDropdown').classList.add('open');
+                window.notifOpen = true;
+            }
+        });
+    }
 
     document.addEventListener('click', (e) => {
-        if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
-            notifOpen = false;
+        const notifBtn = document.getElementById('notifBtn');
+        const notifDropdown = document.getElementById('notifDropdown');
+        const userWrapper = document.getElementById('userMenuWrapper');
+        
+        // Close notif if click outside
+        if (notifDropdown && notifBtn && !notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
             notifDropdown.classList.remove('open');
+            window.notifOpen = false;
+        }
+        // Close user menu if click outside
+        if (userWrapper && !userWrapper.contains(e.target)) {
+            const userDropdown = document.getElementById('userDropdown');
+            if (userDropdown) userDropdown.classList.remove('open');
         }
     });
 
@@ -1463,6 +1585,7 @@
         const department = document.getElementById('department').value;
         const requester = document.getElementById('requester').value;
         const deadline = document.getElementById('deadline').value;
+        const deployDate = document.getElementById('orderDeployDate').value;
         const content = document.getElementById('orderContent').value;
         const category = document.getElementById('orderCategory').value;
         const stylist = document.getElementById('assignedStylist').value;
@@ -1501,6 +1624,7 @@
                     requester: requester,
                     title: title,
                     deadline: deadline,
+                    deployDate: deployDate,
                     content: content,
                     category: category,
                     stylist: stylist,
@@ -1519,6 +1643,7 @@
                 navigateTo('orders');
                 document.getElementById('orderTitle').value = '';
                 document.getElementById('orderContent').value = '';
+                document.getElementById('orderDeployDate').value = '';
                 document.getElementById('assignedStylist').value = '';
                 document.getElementById('assignedVideo').value = '';
                 document.getElementById('assignedPhoto').value = '';
@@ -1533,7 +1658,49 @@
     
     // ===== Load online data into tables with Filters and Actions =====
     window.allOrdersData = [];
-    
+    let currentTablePage = 0;
+    const itemsPerPage = 100;
+    let sortConfig = { key: 'createdAt', direction: 'desc' };
+    let columnFilters = {};
+
+    window.toggleSort = function(key) {
+        if (sortConfig.key === key) {
+            sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortConfig.key = key;
+            sortConfig.direction = 'asc';
+        }
+        
+        // Update UI Icons
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.textContent = 'unfold_more';
+            icon.classList.remove('active');
+        });
+        const activeIcon = document.getElementById('sort-' + key);
+        if (activeIcon) {
+            activeIcon.textContent = sortConfig.direction === 'asc' ? 'expand_less' : 'expand_more';
+            activeIcon.classList.add('active');
+        }
+        
+        window.renderOrdersTable();
+    };
+
+    window.updateColumnFilter = function(key, val) {
+        if (!val) delete columnFilters[key];
+        else columnFilters[key] = val.toLowerCase();
+        currentTablePage = 0; // Reset to page 1 on filter
+        window.renderOrdersTable();
+    };
+
+    function formatDateDisplay(dateStr) {
+        if (!dateStr) return '-';
+        if (dateStr.includes('T')) {
+            const d = new Date(dateStr);
+            return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        }
+        return dateStr.split('-').reverse().join('/');
+    }
+
     window.renderOrdersTable = function() {
         const tbodyFull = document.getElementById('ordersTableBody');
         const filterSearchEle = document.getElementById('filterSearch');
@@ -1541,31 +1708,77 @@
         
         if (!tbodyFull) return;
 
-        const searchTerm = (filterSearchEle ? filterSearchEle.value : '').toLowerCase();
-        const statusTerm = filterStatusEle ? filterStatusEle.value : '';
+        const globalSearch = (filterSearchEle ? filterSearchEle.value : '').toLowerCase();
+        const statusSearch = filterStatusEle ? filterStatusEle.value : '';
 
-        const filtered = window.allOrdersData.filter(data => {
-            const matchSearch = (data.code || '').toLowerCase().includes(searchTerm) || (data.title || '').toLowerCase().includes(searchTerm);
-            const matchStatus = statusTerm === '' || data.status === statusTerm;
-            return matchSearch && matchStatus;
+        // 1. FILTERING
+        let filtered = window.allOrdersData.filter(data => {
+            // Global match
+            const matchGlobal = !globalSearch || 
+                (data.code || '').toLowerCase().includes(globalSearch) || 
+                (data.title || '').toLowerCase().includes(globalSearch) ||
+                (data.requester || '').toLowerCase().includes(globalSearch);
+            
+            // Status match
+            const matchStatus = statusSearch === '' || data.status === statusSearch;
+            
+            // Column filters match
+            const matchColumns = Object.keys(columnFilters).every(key => {
+                let val = '';
+                if (key === 'createdAt' || key === 'deployDate' || key === 'deadline') {
+                    val = formatDateDisplay(data[key]);
+                } else {
+                    val = String(data[key] || '');
+                }
+                return val.toLowerCase().includes(columnFilters[key]);
+            });
+
+            return matchGlobal && matchStatus && matchColumns;
         });
 
-        if (filtered.length === 0) {
-            tbodyFull.innerHTML = '<tr><td colspan="11" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp với bộ lọc.</td></tr>';
+        // 2. SORTING
+        filtered.sort((a, b) => {
+            let valA = a[sortConfig.key] || '';
+            let valB = b[sortConfig.key] || '';
+            
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+            
+            if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // 3. PAGINATION SLICE
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const start = currentTablePage * itemsPerPage;
+        const pagedData = filtered.slice(start, start + itemsPerPage);
+
+        // Update count text
+        const countText = document.querySelector('.text-xs.text-slate-400.font-medium.italic');
+        if (countText) {
+            countText.textContent = `Hiển thị ${pagedData.length} trên tổng số ${totalItems} bản ghi (Trang ${currentTablePage + 1}/${totalPages || 1})`;
+        }
+
+        if (pagedData.length === 0) {
+            tbodyFull.innerHTML = `<tr><td colspan="13" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+            updatePaginationUI(0);
             return;
         }
 
         let fullHtml = '';
-        filtered.forEach((data) => {
+        pagedData.forEach((data) => {
             const initials = data.requester ? data.requester.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NV';
-            const dateText = data.deadline ? data.deadline.split('-').reverse().join('/') : '-';
+            const deadlineText = formatDateDisplay(data.deadline);
+            const createdText = formatDateDisplay(data.createdAt);
+            const deployText = formatDateDisplay(data.deployDate);
             
             // Dynamic status badge from orderStatusesData
             const currentStatus = (window.orderStatusesData || []).find(s => s.name === data.status);
             const badgeClasses = currentStatus ? currentStatus.color : 'bg-surface-container-highest text-on-secondary-container';
-            const statusBadgeFull = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${data.status || 'Chờ duyệt'}</span>`;
+            const statusBadgeFull = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${data.status || 'Chờ duyệt'}</span>`;
             
-            // Serialize data string safely for inline HTML invocation
             const dataStr = encodeURIComponent(JSON.stringify({
                 id: data.id, 
                 code: data.code, 
@@ -1574,6 +1787,7 @@
                 requester: data.requester, 
                 department: data.department, 
                 deadline: data.deadline, 
+                deployDate: data.deployDate,
                 content: data.content,
                 category: data.category,
                 stylist: data.stylist,
@@ -1582,61 +1796,85 @@
             }));
             
             fullHtml += `
-                    <tr class="hover:bg-slate-50/80 transition-colors group relative">
-                        <td class="px-6 py-4 font-headline font-bold text-sm text-primary">${data.code || '-'}</td>
-                        <td class="px-6 py-4 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'requester')">
-                            <div class="display-val flex items-center gap-3">
-                                <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">${initials}</div>
-                                <span class="text-sm font-semibold text-on-surface pointer-events-none">${data.requester || '-'}</span>
+                    <tr class="hover:bg-slate-50/80 transition-colors group relative border-b border-slate-50">
+                        <td class="font-headline font-bold text-[13px] text-primary">${data.code || '-'}</td>
+                        <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'requester')">
+                            <div class="display-val flex items-center gap-2">
+                                <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">${initials}</div>
+                                <span class="text-[13px] font-semibold text-on-surface">${data.requester || '-'}</span>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-xs font-medium text-slate-500 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'department')">
-                            <span class="display-val pointer-events-none">${data.department || '-'}</span>
+                        <td class="text-[12px] font-medium text-slate-500 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'department')">
+                            <span class="display-val">${data.department || '-'}</span>
                         </td>
-                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'category')">
-                            <span class="display-val pointer-events-none">${data.category || '-'}</span>
+                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
+                            <span class="display-val">${data.category || '-'}</span>
                         </td>
-                        <td class="px-6 py-4 max-w-[280px] cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'title')">
-                            <div class="display-val pointer-events-none">
-                                <div class="text-sm font-bold text-slate-700 truncate mb-1">${data.title || '-'}</div>
-                                <div class="text-xs text-slate-500 leading-relaxed truncate">${data.content || '-'}</div>
+                        <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'title')">
+                            <div class="display-val">
+                                <div class="text-[13px] font-bold text-slate-700 truncate">${data.title || '-'}</div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-sm font-bold text-primary cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
-                            <div class="display-val pointer-events-none">${dateText}</div>
+                        <td class="text-[11px] text-slate-400 font-medium">${createdText}</td>
+                        <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deployDate')">
+                            <div class="display-val">${deployText}</div>
                         </td>
-                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
-                            <span class="display-val pointer-events-none">${data.stylist || '-'}</span>
+                        <td class="text-[12px] font-bold text-primary cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
+                            <div class="display-val">${deadlineText}</div>
                         </td>
-                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
-                            <span class="display-val pointer-events-none">${data.assignedVideo || '-'}</span>
+                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
+                            <span class="display-val">${data.stylist || '-'}</span>
                         </td>
-                        <td class="px-6 py-4 text-xs font-semibold cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
-                            <span class="display-val pointer-events-none">${data.assignedPhoto || '-'}</span>
+                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
+                            <span class="display-val">${data.assignedVideo || '-'}</span>
                         </td>
-                        <td class="px-6 py-4 cursor-pointer hover:bg-slate-100/50 hover:ring-inset hover:ring-1 hover:ring-primary/40 transition-all relative group/cell" onclick="startInlineEdit(this, '${dataStr}', 'status')">
-                            <div class="display-val pointer-events-none">${statusBadgeFull}</div>
+                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
+                            <span class="display-val">${data.assignedPhoto || '-'}</span>
                         </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="relative inline-block text-left group/action">
-                                <button class="text-slate-400 hover:text-primary transition-colors focus:outline-none">
-                                    <span class="material-symbols-outlined text-lg">more_vert</span>
-                                </button>
-                                <div class="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-slate-100 opacity-0 invisible group-hover/action:opacity-100 group-hover/action:visible group-focus-within/action:opacity-100 group-focus-within/action:visible transition-all z-10">
-                                    <div class="py-1">
-                                        <button onclick="openEditModal('${dataStr}')" class="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-surface-container-low hover:text-primary flex items-center gap-2">
-                                            <span class="material-symbols-outlined text-[16px]">edit</span> Sửa
-                                        </button>
-                                        <button onclick="deleteOrder('${data.id}', '${data.code || ''}')" class="w-full text-left px-4 py-2 text-xs font-semibold text-error hover:bg-error/10 flex items-center gap-2">
-                                            <span class="material-symbols-outlined text-[16px]">delete</span> Xoá
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                        <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'status')">
+                            <div class="display-val">${statusBadgeFull}</div>
+                        </td>
+                        <td class="text-right">
+                            <button onclick="openEditModal('${dataStr}')" class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
                         </td>
                     </tr>`;
         });
         tbodyFull.innerHTML = fullHtml;
+        updatePaginationUI(totalPages);
+    };
+
+    function updatePaginationUI(totalPages) {
+        const container = document.querySelector('.p-4.md\\:p-6.border-t.border-slate-100');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = `<div class="text-xs text-slate-400 font-medium tracking-wide w-full text-center">Đang hiển thị trang duy nhất</div>`;
+            return;
+        }
+
+        let html = `<div class="flex items-center justify-between w-full">
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Trang ${currentTablePage + 1} / ${totalPages}</div>
+            <div class="flex gap-1.5">
+                <button onclick="changePage(${currentTablePage - 1})" class="pagination-btn" ${currentTablePage === 0 ? 'disabled' : ''}>Trước</button>`;
+        
+        let startPage = Math.max(0, currentTablePage - 2);
+        let endPage = Math.min(totalPages, startPage + 5);
+        if (endPage === totalPages) startPage = Math.max(0, endPage - 5);
+
+        for (let i = startPage; i < endPage; i++) {
+            html += `<button onclick="changePage(${i})" class="pagination-btn ${i === currentTablePage ? 'active' : ''}">${i + 1}</button>`;
+        }
+
+        html += `<button onclick="changePage(${currentTablePage + 1})" class="pagination-btn" ${currentTablePage === totalPages - 1 ? 'disabled' : ''}>Sau</button>
+            </div>
+        </div>`;
+        container.innerHTML = html;
+    }
+
+    window.changePage = function(p) {
+        currentTablePage = p;
+        window.renderOrdersTable();
+        document.getElementById('mainOrdersTable').scrollIntoView({ behavior: 'smooth' });
     };
 
     window.renderDashboardTable = function() {
@@ -1740,6 +1978,7 @@
         document.getElementById('editOrderTitle').value = data.title || '';
         document.getElementById('editOrderRequester').value = data.requester || '';
         document.getElementById('editOrderDeadline').value = data.deadline || '';
+        document.getElementById('editOrderDeployDate').value = data.deployDate || '';
         document.getElementById('editOrderCategory').value = data.category || 'Video';
         document.getElementById('editOrderStylist').value = data.stylist || '';
         document.getElementById('editOrderVideo').value = data.assignedVideo || '';
@@ -1764,6 +2003,7 @@
         const title = document.getElementById('editOrderTitle').value;
         const requester = document.getElementById('editOrderRequester').value;
         const deadline = document.getElementById('editOrderDeadline').value;
+        const deployDate = document.getElementById('editOrderDeployDate').value;
         const category = document.getElementById('editOrderCategory').value;
         const stylist = document.getElementById('editOrderStylist').value;
         const assignedVideo = document.getElementById('editOrderVideo').value;
@@ -1850,7 +2090,7 @@
                 <option value="Hình Ảnh" ${originalVal === 'Hình Ảnh' ? 'selected' : ''}>Hình Ảnh</option>
                 <option value="Giả Live" ${originalVal === 'Giả Live' ? 'selected' : ''}>Giả Live</option>
             </select>`;
-        } else if (field === 'deadline') {
+        } else if (field === 'deadline' || field === 'deployDate') {
             inputHtml = `<input type="date" class="w-full bg-white border border-primary rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow absolute inset-0 z-10 box-border h-[80%] m-auto w-[90%]" value="${originalVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" />`;
         } else {
             inputHtml = `<input type="text" class="w-full bg-white border border-primary rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow font-semibold absolute inset-0 z-10 box-border h-[80%] m-auto w-[90%]" value="${safeVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" onkeydown="if(event.key==='Enter') this.blur();" />`;
@@ -1950,19 +2190,15 @@
     })();
 
     // ===== USER MENU TOGGLE =====
-    function toggleUserMenu() {
+    window.toggleUserMenu = function() {
         const dropdown = document.getElementById('userDropdown');
-        dropdown.classList.toggle('open');
-    }
-
-    // Close user menu when clicking outside
-    document.addEventListener('click', function(e) {
-        const wrapper = document.getElementById('userMenuWrapper');
-        const dropdown = document.getElementById('userDropdown');
-        if (wrapper && !wrapper.contains(e.target)) {
-            dropdown.classList.remove('open');
+        if (!dropdown) return;
+        const isOpen = dropdown.classList.contains('open');
+        window.closeAllDropdowns(isOpen ? null : 'userDropdown');
+        if (!isOpen) {
+            dropdown.classList.add('open');
         }
-    });
+    }
 
     // ===== LOGOUT =====
     function handleLogout() {
