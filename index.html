@@ -1060,10 +1060,10 @@
                     <table class="w-full text-left min-w-[450px]">
                         <thead>
                             <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-surface-container-low">
-                                <th class="pb-4">Khách hàng</th>
                                 <th class="pb-4">Mã đơn</th>
-                                <th class="pb-4">Trạng thái</th>
-                                <th class="pb-4 text-right">Số tiền</th>
+                                <th class="pb-4">Thành viên</th>
+                                <th class="pb-4">Công việc</th>
+                                <th class="pb-4 text-right">Trạng thái</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-surface-container-low/50">
@@ -1885,25 +1885,23 @@
         const tbodyDash = document.getElementById('dashboardOrdersTableBody');
         if (!tbodyDash) return;
         if (window.allOrdersData.length === 0) {
-            tbodyDash.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400">Chưa có đơn hàng nào trực tuyến.</td></tr>';
+            tbodyDash.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">Chưa có đơn hàng nào trực tuyến.</td></tr>';
             return;
         }
         let dashHtml = '';
         let count = 0;
         window.allOrdersData.forEach((data) => {
-            if (count >= 4) return;
-            const moneyText = data.money ? (data.money.toLocaleString() + 'đ') : '-';
-            let statusBadgeDash = '<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-surface-container-highest text-on-secondary-container">Chờ duyệt</span>';
-            if (data.status === 'Đang xử lý') statusBadgeDash = '<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-primary-fixed text-primary">Đang xử lý</span>';
-            else if (data.status === 'Hoàn thành' || data.status === 'Hoàn tất') statusBadgeDash = '<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-tertiary/10 text-tertiary">Hoàn thành</span>';
+            if (count >= 5) return;
+            const currentStatus = (window.orderStatusesData || []).find(s => s.name === data.status);
+            const badgeClasses = currentStatus ? currentStatus.color : 'bg-surface-container-highest text-on-secondary-container';
+            const statusBadgeDash = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${data.status || 'Chờ duyệt'}</span>`;
             
             dashHtml += `
                 <tr class="hover:bg-surface-container-low transition-colors cursor-pointer">
                     <td class="py-4 font-mono font-semibold text-primary text-sm">${data.code || '-'}</td>
-                    <td class="py-4 font-medium text-sm">${data.requester || '-'}</td>
-                    <td class="py-4 text-on-surface-variant text-sm truncate max-w-[150px]">${data.title || '-'}</td>
-                    <td class="py-4 font-bold text-sm">${moneyText}</td>
-                    <td class="py-4">${statusBadgeDash}</td>
+                    <td class="py-4 font-medium text-sm text-slate-700">${data.requester || '-'}</td>
+                    <td class="py-4 text-on-surface-variant text-[13px] font-bold truncate max-w-[200px]">${data.title || '-'}</td>
+                    <td class="py-4 text-right">${statusBadgeDash}</td>
                 </tr>`;
             count++;
         });
