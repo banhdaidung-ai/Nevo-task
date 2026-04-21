@@ -1968,7 +1968,7 @@
             if (currentEdit !== element) window.saveInlineEdit(currentEdit, currentEdit.dataset.id, currentEdit.dataset.field, currentEdit.querySelector('.inline-input')?.value, currentEdit.dataset.original);
         }
         
-        element.classList.add('editing');
+        element.classList.add('editing', 'relative');
         const data = JSON.parse(decodeURIComponent(dataStr));
         const originalVal = data[field] || '';
         const id = data.id;
@@ -1980,12 +1980,15 @@
         const safeVal = originalVal.replace(/"/g, '&quot;');
         
         let inputHtml = '';
+        const commonSelectClass = "bg-white border-2 border-primary rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-4 focus:ring-primary/20 inline-input shadow-xl text-slate-700 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90%] min-w-[120px] max-w-full cursor-pointer transition-all";
+        const commonInputClass = "bg-white border-2 border-primary rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-4 focus:ring-primary/20 inline-input shadow-xl text-slate-700 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90%] min-w-[120px] max-w-full transition-all";
+
         if (field === 'status') {
             let optionsHtml = '';
             (window.orderStatusesData || []).forEach(s => {
                 optionsHtml += `<option value="${s.name}" ${originalVal === s.name ? 'selected' : ''}>${s.name}</option>`;
             });
-            inputHtml = `<select class="w-[120px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow font-bold text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+            inputHtml = `<select class="${commonSelectClass} font-bold text-primary" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
                 ${optionsHtml}
             </select>`;
         } else if (field === 'department') {
@@ -1993,19 +1996,19 @@
             (window.departmentsData || []).forEach(d => {
                 optionsHtml += `<option value="${d.name}" ${originalVal === d.name ? 'selected' : ''}>${d.name}</option>`;
             });
-            inputHtml = `<select class="w-[full] min-w-[200px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+            inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
                 ${optionsHtml}
             </select>`;
         } else if (field === 'category') {
-            inputHtml = `<select class="w-[full] min-w-[120px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+            inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
                 <option value="Video" ${originalVal === 'Video' ? 'selected' : ''}>Video</option>
                 <option value="Hình Ảnh" ${originalVal === 'Hình Ảnh' ? 'selected' : ''}>Hình Ảnh</option>
                 <option value="Giả Live" ${originalVal === 'Giả Live' ? 'selected' : ''}>Giả Live</option>
             </select>`;
         } else if (field === 'deadline' || field === 'deployDate') {
-            inputHtml = `<input type="date" class="w-full bg-white border border-primary rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow absolute inset-0 z-10 box-border h-[80%] m-auto w-[90%]" value="${originalVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" />`;
+            inputHtml = `<input type="date" class="${commonInputClass}" value="${originalVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" />`;
         } else {
-            inputHtml = `<input type="text" class="w-full bg-white border border-primary rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow font-semibold absolute inset-0 z-10 box-border h-[80%] m-auto w-[90%]" value="${safeVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" onkeydown="if(event.key==='Enter') this.blur();" />`;
+            inputHtml = `<input type="text" class="${commonInputClass} font-semibold" value="${safeVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" onkeydown="if(event.key==='Enter') this.blur();" />`;
         }
         
         const displayEl = element.querySelector('.display-val');
@@ -2025,7 +2028,7 @@
     window.saveInlineEdit = async function(element, id, field, newVal, oldVal) {
         if (!element) return;
         
-        element.classList.remove('editing');
+        element.classList.remove('editing', 'relative');
         const inputEl = element.querySelector('.inline-input');
         if(inputEl) inputEl.remove();
         const displayEl = element.querySelector('.display-val');
