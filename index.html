@@ -258,6 +258,46 @@
         }
         .clear-filters-btn:hover { background: #fecaca; transform: scale(1.05); }
         
+        /* Date Range Popover */
+        .date-range-container { position: relative; width: 100%; }
+        .date-range-trigger {
+            width: 100%; height: 32px; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 0 10px; font-size: 11px; font-weight: 500; background: #ffffff;
+            color: #475569; display: flex; items-center justify-between; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); user-select: none;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .date-range-trigger:before {
+            content: "\e916"; font-family: 'Material Symbols Outlined'; font-size: 14px;
+            color: #94a3b8; margin-right: 6px;
+        }
+        .date-range-menu {
+            position: absolute; top: 100%; left: 0; z-index: 50; width: 220px;
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 4px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; padding: 12px;
+        }
+        .date-range-menu.show { display: block; }
+        .date-range-menu input {
+            width: 100%; height: 32px; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 0 8px; font-size: 11px; margin-top: 4px;
+        }
+        .date-range-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 8px; display: block; }
+        .date-range-label:first-child { margin-top: 0; }
+        
+        /* Grouping Styles */
+        .group-header-row td {
+            background: #f1f5f9; border-top: 1px solid #e2e8f0; border-bottom: 2px solid #cbd5e1;
+            padding: 8px 16px !important;
+        }
+        .group-header-content {
+            display: flex; align-items: center; gap: 12px;
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 11px;
+            color: #1e293b; letter-spacing: 0.05em; text-transform: uppercase;
+        }
+        .group-badge {
+            background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700;
+        }
+        
         .pagination-btn {
             padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
             transition: all 0.2s; border: 1px solid #e2e8f0; background: #fff;
@@ -834,21 +874,36 @@
                             <th class="p-2"><input type="text" class="column-filter !min-w-[150px]" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
                             <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
                             <th class="p-2">
-                                <div class="flex flex-col gap-1">
-                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('createdAt_start', this.value)" title="Từ ngày">
-                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('createdAt_end', this.value)" title="Đến ngày">
+                                <div class="date-range-container">
+                                    <div class="date-range-trigger" id="trigger-createdAt" data-label="Ngày Đặt hàng" onclick="toggleDateRange('menu-createdAt')">Ngày Đặt hàng</div>
+                                    <div class="date-range-menu" id="menu-createdAt">
+                                        <span class="date-range-label">Từ ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('createdAt', this.value, 'start')">
+                                        <span class="date-range-label">Đến ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('createdAt', this.value, 'end')">
+                                    </div>
                                 </div>
                             </th>
                             <th class="p-2">
-                                <div class="flex flex-col gap-1">
-                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deployDate_start', this.value)" title="Từ ngày">
-                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deployDate_end', this.value)" title="Đến ngày">
+                                <div class="date-range-container">
+                                    <div class="date-range-trigger" id="trigger-deployDate" data-label="Ngày Triển khai" onclick="toggleDateRange('menu-deployDate')">Ngày Triển khai</div>
+                                    <div class="date-range-menu" id="menu-deployDate">
+                                        <span class="date-range-label">Từ ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('deployDate', this.value, 'start')">
+                                        <span class="date-range-label">Đến ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('deployDate', this.value, 'end')">
+                                    </div>
                                 </div>
                             </th>
                             <th class="p-2">
-                                <div class="flex flex-col gap-1">
-                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deadline_start', this.value)" title="Từ ngày">
-                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deadline_end', this.value)" title="Đến ngày">
+                                <div class="date-range-container">
+                                    <div class="date-range-trigger" id="trigger-deadline" data-label="Deadline" onclick="toggleDateRange('menu-deadline')">Deadline</div>
+                                    <div class="date-range-menu" id="menu-deadline">
+                                        <span class="date-range-label">Từ ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('deadline', this.value, 'start')">
+                                        <span class="date-range-label">Đến ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('deadline', this.value, 'end')">
+                                    </div>
                                 </div>
                             </th>
                             <th class="p-2">
@@ -1730,8 +1785,9 @@
     // ===== Load online data into tables with Filters and Actions =====
     window.allOrdersData = [];
     let currentTablePage = 0;
-    const itemsPerPage = 100;
+    const itemsPerPage = 50;
     let sortConfig = { key: 'createdAt', direction: 'desc' };
+    let isManualSortActive = false;
     let columnFilters = {};
 
     window.toggleSort = function(key) {
@@ -1739,20 +1795,10 @@
             sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
         } else {
             sortConfig.key = key;
-            sortConfig.direction = 'asc';
+            sortConfig.direction = 'desc';
         }
-        
-        // Update UI Icons
-        document.querySelectorAll('.sort-icon').forEach(icon => {
-            icon.textContent = 'unfold_more';
-            icon.classList.remove('active');
-        });
-        const activeIcon = document.getElementById('sort-' + key);
-        if (activeIcon) {
-            activeIcon.textContent = sortConfig.direction === 'asc' ? 'expand_less' : 'expand_more';
-            activeIcon.classList.add('active');
-        }
-        
+        isManualSortActive = true;
+        currentTablePage = 0;
         window.renderOrdersTable();
     };
 
@@ -1817,20 +1863,39 @@
             cb.checked = false;
         });
         
-        // Reset Multi-select Triggers
-        document.querySelectorAll('.multi-select-trigger').forEach(trigger => {
-            trigger.textContent = trigger.getAttribute('data-label');
+        // Reset Sort & Grouping
+        sortConfig = { key: 'createdAt', direction: 'desc' };
+        isManualSortActive = false;
+        
+        // Reset Sort Icons in Headers
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.textContent = 'unfold_more';
+            icon.classList.remove('active');
         });
+
+        // Reset Multi-select Triggers
+        document.querySelectorAll('.multi-select-trigger, .date-range-trigger').forEach(trigger => {
+            trigger.textContent = trigger.getAttribute('data-label');
+            trigger.style.color = '';
+            trigger.style.borderColor = '';
+            // Highlight "All" option
+            const key = trigger.id.replace('trigger-', '');
+            const allBtn = document.getElementById(`all-${key}`);
+            if(allBtn) allBtn.classList.add('all-active');
+        });
+
+        // Also close all menus
+        document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(m => m.classList.remove('show'));
 
         currentTablePage = 0;
         window.renderOrdersTable();
-        showToast('Đã xóa bộ lọc', 'Bộ lọc đã được đưa về mặc định', 'filter_list_off', 'text-slate-500');
+        showToast('Đã xóa bộ lọc', 'Bộ lọc và sắp xếp đã được đưa về mặc định', 'filter_list_off', 'text-slate-500');
     };
 
     // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.multi-select-container')) {
-            document.querySelectorAll('.multi-select-menu').forEach(menu => menu.classList.remove('show'));
+        if (!e.target.closest('.multi-select-container') && !e.target.closest('.date-range-container')) {
+            document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(menu => menu.classList.remove('show'));
         }
     });
 
@@ -1838,9 +1903,51 @@
         const menu = document.getElementById(id);
         if (!menu) return;
         const isShown = menu.classList.contains('show');
-        document.querySelectorAll('.multi-select-menu').forEach(m => m.classList.remove('show'));
+        document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(m => m.classList.remove('show'));
         if (!isShown) menu.classList.add('show');
     };
+
+    window.toggleDateRange = function(id) {
+        const menu = document.getElementById(id);
+        if (!menu) return;
+        const isShown = menu.classList.contains('show');
+        document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(m => m.classList.remove('show'));
+        if (!isShown) menu.classList.add('show');
+    };
+
+    window.updateDateRangeFilter = function(baseKey, val, suffix) {
+        const fullKey = baseKey + '_' + suffix;
+        if (!val) delete columnFilters[fullKey];
+        else columnFilters[fullKey] = val;
+        
+        // Update Trigger Label
+        const start = columnFilters[baseKey + '_start'];
+        const end = columnFilters[baseKey + '_end'];
+        const trigger = document.getElementById(`trigger-${baseKey}`);
+        if (trigger) {
+            if (start || end) {
+                const s = start ? start.split('-').slice(1).reverse().join('/') : '...';
+                const e = end ? end.split('-').slice(1).reverse().join('/') : '...';
+                trigger.textContent = `${s} - ${e}`;
+                trigger.style.color = '#b80035';
+                trigger.style.borderColor = '#b80035';
+            } else {
+                trigger.textContent = trigger.getAttribute('data-label');
+                trigger.style.color = '';
+                trigger.style.borderColor = '';
+            }
+        }
+        
+        currentTablePage = 0;
+        window.renderOrdersTable();
+    };
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape') {
+            document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(m => m.classList.remove('show'));
+        }
+    });
 
     function formatDateDisplay(dateStr) {
         if (!dateStr) return '-';
@@ -1856,6 +1963,64 @@
             return dateStr.split('-').reverse().join('/');
         }
         return dateStr;
+    }
+
+    function getDayOfWeekVN(date) {
+        const days = ['CHỦ NHẬT', 'THỨ 2', 'THỨ 3', 'THỨ 4', 'THỨ 5', 'THỨ 6', 'THỨ 7'];
+        return days[date.getDay()];
+    }
+
+    function formatGroupValue(val, key) {
+        if (!val) return 'KHÔNG XÁC ĐỊNH';
+        if (['createdAt', 'deployDate', 'deadline'].includes(key)) {
+            const d = (val.toDate ? val.toDate() : new Date(val));
+            if (isNaN(d.getTime())) return 'NGÀY KHÔNG HỢP LỆ';
+            const day = getDayOfWeekVN(d);
+            const datePart = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}`;
+            return `${day}, ${datePart}`;
+        }
+        
+        // Map keys to readable labels if needed
+        const labels = {
+            'department': 'Phòng ban',
+            'status': 'Trạng thái',
+            'category': 'Thể loại',
+            'requester': 'Thành viên',
+            'stylist': 'Stylist',
+            'assignedVideo': 'Video',
+            'assignedPhoto': 'Photo',
+            'code': 'Mã đơn'
+        };
+        const label = labels[key] || '';
+        return label ? `${label}: ${String(val).toUpperCase()}` : String(val).toUpperCase();
+    }
+
+    function getNormalizedGroupValue(data, key) {
+        const val = data[key];
+        if (!val) return 'null';
+        if (['createdAt', 'deployDate', 'deadline'].includes(key)) {
+            const d = (val.toDate ? val.toDate() : new Date(val));
+            if (isNaN(d.getTime())) return 'invalid';
+            return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+        }
+        return String(val);
+    }
+
+    function getGroupIcon(key) {
+        const icons = {
+            'createdAt': 'calendar_today',
+            'deployDate': 'event_available',
+            'deadline': 'timer',
+            'requester': 'person',
+            'stylist': 'palette',
+            'assignedVideo': 'video_library',
+            'assignedPhoto': 'photo_camera',
+            'department': 'domain',
+            'status': 'label',
+            'category': 'category',
+            'code': 'tag'
+        };
+        return icons[key] || 'folder';
     }
 
     window.renderOrdersTable = function() {
@@ -1950,8 +2115,43 @@
             return;
         }
 
+        // --- GROUPING LOGIC ---
+        let currentGroupValue = null;
+        const isGroupingActive = isManualSortActive && !!sortConfig.key; 
+        
         let fullHtml = '';
+        
+        // Pre-calculate group counts for filtered set (global counts for that day)
+        const groupCounts = {};
+        if (isGroupingActive) {
+            filtered.forEach(item => {
+                const gv = getNormalizedGroupValue(item, sortConfig.key);
+                groupCounts[gv] = (groupCounts[gv] || 0) + 1;
+            });
+        }
+
         pagedData.forEach((data) => {
+            // Check for group header
+            if (isGroupingActive) {
+                const groupValue = getNormalizedGroupValue(data, sortConfig.key);
+                if (groupValue !== currentGroupValue) {
+                    currentGroupValue = groupValue;
+                    const headerText = formatGroupValue(data[sortConfig.key], sortConfig.key);
+                    const count = groupCounts[groupValue];
+                    const icon = getGroupIcon(sortConfig.key);
+                    fullHtml += `
+                        <tr class="group-header-row">
+                            <td colspan="13">
+                                <div class="group-header-content">
+                                    <span class="material-symbols-outlined text-[16px] text-slate-400">${icon}</span>
+                                    <span>${headerText}</span>
+                                    <span class="group-badge">${count} orders</span>
+                                </div>
+                            </td>
+                        </tr>`;
+                }
+            }
+
             const initials = data.requester ? data.requester.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NV';
             const deadlineText = formatDateDisplay(data.deadline);
             const createdText = formatDateDisplay(data.createdAt);
@@ -1989,9 +2189,21 @@
             
             const isAdmin = (sessionStorage.getItem('nevo_role') === 'admin');
             
+            // Function to get row background color based on status
+            const getRowBgClass = (status) => {
+                const s = String(status || '').toLowerCase();
+                if (s.includes('hoàn thành')) return 'bg-emerald-50/30 hover:bg-emerald-50/60';
+                if (s.includes('đang xử lý') || s.includes('triển khai')) return 'bg-blue-50/30 hover:bg-blue-50/60';
+                if (s.includes('chờ duyệt') || s.includes('tạm dừng')) return 'bg-amber-50/30 hover:bg-amber-50/60';
+                if (s.includes('hủy')) return 'bg-rose-50/30 hover:bg-rose-50/60';
+                return 'bg-white hover:bg-slate-50/80';
+            };
+
+            const rowBgClass = getRowBgClass(data.status);
+            
             fullHtml += `
-                    <tr class="hover:bg-slate-50/80 transition-colors group relative border-b border-slate-50">
-                        <td class="font-headline font-bold text-[13px] text-primary col-code">${data.code || '-'}</td>
+                    <tr class="${rowBgClass} transition-colors group relative border-b border-slate-100/50">
+                        <td class="font-headline font-bold text-[13px] text-primary col-code pl-4">${data.code || '-'}</td>
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'requester')">
                             <div class="display-val flex items-center gap-2">
                                 <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">${initials}</div>
