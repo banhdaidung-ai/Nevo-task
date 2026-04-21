@@ -167,171 +167,267 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-<!-- ====== TOP NAVIGATION ====== -->
-<nav class="bg-white/70 backdrop-blur-xl sticky top-0 z-50 shadow-[0_4px_24px_-6px_rgba(15,23,46,0.08)] border-b border-slate-100">
-    <div class="flex justify-between items-center px-4 md:px-8 py-3 max-w-[1600px] mx-auto">
-        <!-- Brand -->
-        <div class="flex items-center gap-4">
-            <a href="index.html" class="flex items-center gap-2.5 text-[#131b2e]">
-                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Task Manager Logo" class="w-8 h-auto"/>
-                <span class="font-headline font-800 text-lg tracking-tight hidden sm:block">Task Manager</span>
-            </a>
-            <!-- Breadcrumb -->
-            <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 font-medium">
-                <span class="material-symbols-outlined text-sm">chevron_right</span>
-                <span class="flex items-center gap-1.5 bg-red-50 text-red-700 px-3 py-1 rounded-full font-bold text-[11px] uppercase tracking-wider">
-                    <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">admin_panel_settings</span>
-                    Quản trị hệ thống
-                </span>
-            </div>
-        </div>
-        <!-- Actions -->
-        <div class="flex items-center gap-3">
-            <a href="index.html" class="btn-secondary text-xs hidden sm:inline-flex">
-                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-                Về trang chính
-            </a>
-            <!-- Avatar -->
-            <div class="relative" id="navUserWrapper">
-                <button onclick="toggleNavUser()" class="flex items-center gap-2 p-1 pr-2.5 rounded-full hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
-                    <div class="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold text-xs border-2 border-white shadow-sm">
-                        <span id="navInit">AD</span>
-                    </div>
-                    <span id="navName" class="hidden md:block text-xs font-semibold text-slate-700 max-w-[80px] truncate"></span>
-                    <span class="material-symbols-outlined text-slate-400 text-sm hidden md:block">expand_more</span>
-                </button>
-                <div id="navUserDropdown" class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50 opacity-0 pointer-events-none transform -translate-y-2 transition-all duration-200">
-                    <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
-                        <p class="text-xs font-bold text-slate-700" id="dropName">Admin</p>
-                        <p class="text-[10px] text-red-600 font-semibold mt-0.5">Quản trị viên</p>
-                    </div>
-                    <div class="p-1.5">
-                        <button onclick="handleLogout()" class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
-                            <span class="material-symbols-outlined text-sm">logout</span> Đăng xuất
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </nav>
 
-<!-- ====== MAIN CONTENT ====== -->
-<main class="p-4 md:p-8 max-w-[1400px] mx-auto">
+<!-- ====== SIDEBAR LAYOUT ====== -->
+<div class="max-w-[1700px] mx-auto flex flex-col md:flex-row min-h-[calc(100vh-64px)]">
+    <!-- Sidebar -->
+    <aside class="w-full md:w-[280px] bg-white border-r border-slate-100 p-6 space-y-8 shrink-0">
+        <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Hệ thống</p>
+            <nav class="space-y-1">
+                <button onclick="switchTab('users')" id="tab-users" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all bg-red-50 text-red-700 shadow-sm border border-red-100/50">
+                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 1">group</span>
+                    Người dùng
+                </button>
+                <button onclick="switchTab('depts')" id="tab-depts" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">corporate_fare</span>
+                    Phòng ban
+                </button>
+                <button onclick="switchTab('statuses')" id="tab-statuses" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">rule_settings</span>
+                    Trạng thái Đơn
+                </button>
+            </nav>
+        </div>
 
-    <!-- Page Header -->
-    <div class="mb-8 animate-fade-in-up">
-        <p class="text-red-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Hệ thống · Quản trị</p>
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-                <h1 class="font-headline font-extrabold text-3xl md:text-4xl text-slate-900 tracking-tight">
-                    Quản lý Người dùng
-                    <span class="text-primary">.</span>
-                </h1>
-                <p class="text-slate-500 text-sm mt-1.5">Thêm, chỉnh sửa và phân quyền tài khoản trong hệ thống</p>
-            </div>
-            <button onclick="openAddModal()" id="btnAddUser" class="btn-primary animate-fade-in-up delay-2">
-                <span class="material-symbols-outlined text-[18px]">person_add</span>
-                Thêm người dùng
-            </button>
+        <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Cài đặt khác</p>
+            <nav class="space-y-1">
+                <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    Cấu hình chung
+                </button>
+                <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed">
+                    <span class="material-symbols-outlined text-[20px]">description</span>
+                    Nhật ký hệ thống
+                </button>
+            </nav>
         </div>
-    </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-1">
-            <div class="flex items-center justify-between mb-3">
-                <div class="p-2 bg-slate-100 rounded-lg"><span class="material-symbols-outlined text-slate-500">group</span></div>
-                <span id="statTotal" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
-            </div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tổng người dùng</p>
-        </div>
-        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-2">
-            <div class="flex items-center justify-between mb-3">
-                <div class="p-2 bg-amber-50 rounded-lg"><span class="material-symbols-outlined text-amber-600">admin_panel_settings</span></div>
-                <span id="statAdmin" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
-            </div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Admin</p>
-        </div>
-        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-3">
-            <div class="flex items-center justify-between mb-3">
-                <div class="p-2 bg-green-50 rounded-lg"><span class="material-symbols-outlined text-green-600">check_circle</span></div>
-                <span id="statActive" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
-            </div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Đang hoạt động</p>
-        </div>
-        <div class="bg-white rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(15,23,46,0.06)] border border-white animate-fade-in-up delay-4">
-            <div class="flex items-center justify-between mb-3">
-                <div class="p-2 bg-red-50 rounded-lg"><span class="material-symbols-outlined text-red-500">block</span></div>
-                <span id="statInactive" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
-            </div>
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bị khóa</p>
-        </div>
-    </div>
-
-    <!-- Table Card -->
-    <div class="bg-white rounded-2xl shadow-[0_8px_40px_-8px_rgba(15,23,46,0.08)] overflow-hidden border border-slate-100 animate-fade-in-up delay-2">
-        <!-- Toolbar -->
-        <div class="p-4 md:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
-            <div class="flex items-center gap-3 flex-wrap">
-                <!-- Search -->
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[17px]">search</span>
-                    <input id="searchInput" type="text" class="search-input" placeholder="Tìm tên, mã, email..." oninput="renderTable()"/>
+        <div class="pt-8">
+            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <div class="flex items-center gap-2 mb-2 text-primary">
+                    <span class="material-symbols-outlined text-sm">shield_person</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">Hỗ trợ kỹ thuật</span>
                 </div>
-                <!-- Role Filter -->
-                <select id="roleFilter" class="form-input text-xs py-2" style="width:auto; min-width:130px;" onchange="renderTable()">
-                    <option value="">Tất cả quyền</option>
-                    <option value="admin">Admin</option>
-                    <option value="manager">Manager</option>
-                    <option value="user">User</option>
-                    <option value="viewer">Viewer</option>
-                </select>
-                <!-- Status Filter -->
-                <select id="statusFilter" class="form-input text-xs py-2" style="width:auto; min-width:130px;" onchange="renderTable()">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Bị khóa</option>
-                </select>
+                <p class="text-[11px] text-slate-500 leading-relaxed mb-3">Nếu gặp sự cố vận hành, vui lòng liên hệ bộ phận IT Creative.</p>
+                <button class="w-full py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors">Gửi yêu cầu</button>
             </div>
-            <span id="tableCount" class="text-xs text-slate-400 font-medium italic"></span>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow p-4 md:p-8 bg-slate-50/50 overflow-hidden">
+        <!-- SECTION: USERS -->
+        <div id="section-users" class="tab-content">
+            <!-- Page Header -->
+            <div class="mb-8 animate-fade-in-up">
+                <p class="text-red-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Quản trị viên</p>
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 class="font-headline font-extrabold text-3xl md:text-3xl text-slate-900 tracking-tight">Quản lý Người dùng<span class="text-primary">.</span></h1>
+                        <p class="text-slate-500 text-sm mt-1.5">Khai báo tài khoản, phân quyền và phòng ban làm việc</p>
+                    </div>
+                    <button onclick="openAddModal()" id="btnAddUser" class="btn-primary">
+                        <span class="material-symbols-outlined text-[18px]">person_add</span>
+                        Thêm người dùng
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-1">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2 bg-slate-100 rounded-lg"><span class="material-symbols-outlined text-slate-500">group</span></div>
+                        <span id="statTotal" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng nhân sự</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-2">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2 bg-amber-50 rounded-lg"><span class="material-symbols-outlined text-amber-600">admin_panel_settings</span></div>
+                        <span id="statAdmin" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quản trị viên</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-3">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2 bg-green-50 rounded-lg"><span class="material-symbols-outlined text-green-600">check_circle</span></div>
+                        <span id="statActive" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hoạt động</p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="p-2 bg-red-50 rounded-lg"><span class="material-symbols-outlined text-red-500">block</span></div>
+                        <span id="statInactive" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Vô hiệu hóa</p>
+                </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up delay-2">
+                <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[17px]">search</span>
+                            <input id="searchInput" type="text" class="search-input !w-[280px]" placeholder="Tìm nhân viên..." oninput="renderTable()"/>
+                        </div>
+                    </div>
+                    <span id="tableCount" class="text-xs text-slate-400 font-medium"></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left min-w-[900px]">
+                        <thead class="bg-slate-50/80 border-b border-slate-100">
+                            <tr>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nhân sự</th>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã NV</th>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phòng ban</th>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quyền</th>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trạng thái</th>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="hidden py-16 text-center">
+                    <p class="text-slate-400 text-sm">Không tìm thấy dữ liệu phù hợp</p>
+                </div>
+            </div>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto">
-            <table class="w-full text-left min-w-[900px]">
-                <thead class="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Người dùng</th>
-                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Mã nhân viên</th>
-                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Email</th>
-                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Phòng ban</th>
-                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Quyền</th>
-                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                        <th class="px-5 py-3.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="userTableBody" class="divide-y divide-slate-50">
-                    <!-- rendered by JS -->
-                </tbody>
-            </table>
+        <!-- SECTION: DEPARTMENTS -->
+        <div id="section-depts" class="tab-content hidden">
+            <div class="mb-8">
+                <p class="text-blue-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Tổ chức</p>
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Quản lý Phòng ban<span class="text-blue-600">.</span></h1>
+                        <p class="text-slate-500 text-sm mt-1.5">Danh sách các phòng ban tham gia vận hành hệ thống</p>
+                    </div>
+                    <button onclick="openDeptModal()" class="btn-primary !bg-blue-600">
+                        <span class="material-symbols-outlined text-[18px]">add_business</span>
+                        Thêm phòng ban
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50/80 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tên phòng ban</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ngày tạo</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deptTableBody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <!-- Empty state -->
-        <div id="emptyState" class="hidden py-20 text-center">
-            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="material-symbols-outlined text-slate-400 text-2xl">person_off</span>
+        <!-- SECTION: STATUSES -->
+        <div id="section-statuses" class="tab-content hidden">
+            <div class="mb-8">
+                <p class="text-emerald-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Quy trình</p>
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Trạng thái Đơn hàng<span class="text-emerald-600">.</span></h1>
+                        <p class="text-slate-500 text-sm mt-1.5">Tùy chỉnh quy trình và trạng thái xử lý đơn hàng</p>
+                    </div>
+                    <button onclick="openStatusModal()" class="btn-primary !bg-emerald-600">
+                        <span class="material-symbols-outlined text-[18px]">settings_suggest</span>
+                        Thêm trạng thái
+                    </button>
+                </div>
             </div>
-            <p class="font-headline font-bold text-slate-500 text-sm">Không tìm thấy người dùng</p>
-            <p class="text-slate-400 text-xs mt-1">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50/80 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tên trạng thái</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thứ tự</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Xem trước</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusTableBody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-12 py-8 border-t border-slate-200/60 text-center">
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600 transition-colors transition-all cursor-default">
+                © 2026 Admin Dashboard · Nevo-Task System
+            </p>
+        </footer>
+    </main>
+</div>
+
+<!-- ====== DEPARTMENT MODAL ====== -->
+<div id="deptModal" class="modal-overlay hidden">
+    <div class="modal-box !max-w-[440px]">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 id="deptModalTitle" class="font-headline font-bold text-slate-900">Thêm phòng ban</h2>
+            <button onclick="closeDeptModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors"><span class="material-symbols-outlined text-slate-400">close</span></button>
+        </div>
+        <div class="p-6">
+            <input type="hidden" id="editDeptId"/>
+            <label class="block text-xs font-semibold text-slate-600 mb-2">Tên phòng ban <span class="text-red-500">*</span></label>
+            <input type="text" id="deptNameInput" class="form-input" placeholder="VD: Phòng Marketing"/>
+        </div>
+        <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+            <button onclick="closeDeptModal()" class="btn-secondary">Hủy</button>
+            <button onclick="saveDept()" class="btn-primary !bg-blue-600" id="btnSaveDept">Lưu thông tin</button>
         </div>
     </div>
+</div>
 
-    <!-- Footer -->
-    <footer class="mt-12 py-8 border-t border-slate-200 text-center">
-        <p class="text-xs text-slate-400 font-medium">© 2026 Hệ thống được phát triển bởi Bành Đại Dũng - Creative</p>
-    </footer>
-</main>
+<!-- ====== STATUS MODAL ====== -->
+<div id="statusModal" class="modal-overlay hidden">
+    <div class="modal-box !max-w-[440px]">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 id="statusModalTitle" class="font-headline font-bold text-slate-900">Cài đặt trạng thái</h2>
+            <button onclick="closeStatusModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors"><span class="material-symbols-outlined text-slate-400">close</span></button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="editStatusId"/>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-2">Tên trạng thái <span class="text-red-500">*</span></label>
+                <input type="text" id="statusNameInput" class="form-input" placeholder="VD: Đang sản xuất"/>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Thứ tự hiển thị</label>
+                    <input type="number" id="statusOrderInput" class="form-input" value="1"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Màu sắc (CSS)</label>
+                    <select id="statusColorInput" class="form-input">
+                        <option value="bg-slate-100 text-slate-600">Xám (Mặc định)</option>
+                        <option value="bg-blue-50 text-blue-700">Xanh dương (Chờ)</option>
+                        <option value="bg-amber-50 text-amber-700">Vàng (Đang làm)</option>
+                        <option value="bg-emerald-50 text-emerald-700">Xanh lá (Xong)</option>
+                        <option value="bg-rose-50 text-rose-700">Đỏ (Hủy/Lỗi)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+            <button onclick="closeStatusModal()" class="btn-secondary">Hủy</button>
+            <button onclick="saveStatus()" class="btn-primary !bg-emerald-600" id="btnSaveStatus">Lưu trạng thái</button>
+        </div>
+    </div>
+</div>
 
 <!-- ====== ADD / EDIT MODAL ====== -->
 <div id="userModal" class="modal-overlay hidden">
@@ -385,15 +481,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">Phòng ban</label>
                     <select id="fieldDept" class="form-input">
-                        <option value="">-- Chọn phòng ban --</option>
-                        <option>Ban Giám Đốc</option>
-                        <option>Kế toán</option>
-                        <option>Kỹ thuật</option>
-                        <option>Logistics</option>
-                        <option>Marketing</option>
-                        <option>Nhân sự</option>
-                        <option>Sản xuất</option>
-                        <option>IT</option>
+                        <option value="">-- Tải dữ liệu... --</option>
                     </select>
                 </div>
                 <div>
@@ -554,8 +642,26 @@
     // GLOBAL STATE & CONSTANTS
     // =============================================
     let users = [];
+    let departments = [];
+    let orderStatuses = [];
     let deleteTargetId = null;
+    let deleteTargetType = 'user'; // 'user', 'dept', 'status'
+    
     const USERS_COLLECTION = "users";
+    const DEPTS_COLLECTION = "departments";
+    const STATUS_COLLECTION = "order_statuses";
+
+    const DEFAULT_DEPTS = [
+        "Ban Giám Đốc", "Kế toán", "Kỹ thuật", "Logistics", "Marketing", "Nhân sự", "Sản xuất", "IT",
+        "Phòng Kế hoạch & Kinh doanh", "Ban Điều hành Dự án", "Phòng Nhân sự", "Tổ Kỹ thuật - Hạ tầng"
+    ];
+
+    const DEFAULT_STATUSES = [
+        { name: "Chờ duyệt", order: 1, color: "bg-blue-50 text-blue-700" },
+        { name: "Đang xử lý", order: 2, color: "bg-amber-50 text-amber-700" },
+        { name: "Hoàn thành", order: 3, color: "bg-emerald-50 text-emerald-700" },
+        { name: "Từ chối", order: 4, color: "bg-rose-50 text-rose-700" }
+    ];
 
     const DEFAULT_USERS = [
         { empId: 'admin',    name: 'Admin Hệ thống', password: 'admin123', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
@@ -571,24 +677,51 @@
     window.startSync = async function() {
         if (!window.db) return;
         
-        const q = window.fs.query(window.fs.collection(window.db, USERS_COLLECTION));
-        const snapshot = await window.fs.getDocs(q);
-        
-        if (snapshot.empty) {
-            console.log("Firestore users collection is empty. Initializing defaults...");
+        // --- 1. USERS SYNC ---
+        const qUsers = window.fs.query(window.fs.collection(window.db, USERS_COLLECTION));
+        const snapUsers = await window.fs.getDocs(qUsers);
+        if (snapUsers.empty) {
+            console.log("Initializing default users...");
             for (const u of DEFAULT_USERS) {
                 await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, u.empId), u);
             }
         }
-
-        // Subscribe to real-time updates
-        window.fs.onSnapshot(q, (snapshot) => {
+        window.fs.onSnapshot(qUsers, (snap) => {
             users = [];
-            snapshot.forEach((doc) => {
-                users.push({ id: doc.id, ...doc.data() });
-            });
+            snap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
             renderTable();
             updateStats();
+        });
+
+        // --- 2. DEPARTMENTS SYNC ---
+        const qDepts = window.fs.query(window.fs.collection(window.db, DEPTS_COLLECTION), window.fs.orderBy("name"));
+        const snapDepts = await window.fs.getDocs(qDepts);
+        if (snapDepts.empty) {
+            console.log("Initializing default departments...");
+            for (const name of DEFAULT_DEPTS) {
+                await window.fs.addDoc(window.fs.collection(window.db, DEPTS_COLLECTION), { name, createdAt: new Date().toISOString() });
+            }
+        }
+        window.fs.onSnapshot(qDepts, (snap) => {
+            departments = [];
+            snap.forEach(doc => departments.push({ id: doc.id, ...doc.data() }));
+            renderDepts();
+            populateDeptDropdowns();
+        });
+
+        // --- 3. STATUSES SYNC ---
+        const qStatus = window.fs.query(window.fs.collection(window.db, STATUS_COLLECTION), window.fs.orderBy("order"));
+        const snapStatus = await window.fs.getDocs(qStatus);
+        if (snapStatus.empty) {
+            console.log("Initializing default statuses...");
+            for (const s of DEFAULT_STATUSES) {
+                await window.fs.addDoc(window.fs.collection(window.db, STATUS_COLLECTION), { ...s, createdAt: new Date().toISOString() });
+            }
+        }
+        window.fs.onSnapshot(qStatus, (snap) => {
+            orderStatuses = [];
+            snap.forEach(doc => orderStatuses.push({ id: doc.id, ...doc.data() }));
+            renderStatuses();
         });
     }
 
@@ -667,6 +800,63 @@
 
     function escHtml(str) {
         return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // =============================================
+    // DEPARTMENT & STATUS RENDERING
+    // =============================================
+    function renderDepts() {
+        const tbody = document.getElementById('deptTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = departments.map(d => `
+            <tr class="table-row">
+                <td class="px-6 py-4">
+                    <span class="text-sm font-bold text-slate-800">${escHtml(d.name)}</span>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-400">
+                    ${d.createdAt ? d.createdAt.slice(0, 10) : '—'}
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                        <button class="btn-icon-sm" onclick="openDeptModal('${d.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
+                        <button class="btn-icon-sm text-red-500 hover:bg-red-50" onclick="openDeleteModal('${d.id}', 'dept')"><span class="material-symbols-outlined text-[17px]">delete</span></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderStatuses() {
+        const tbody = document.getElementById('statusTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = orderStatuses.map(s => `
+            <tr class="table-row">
+                <td class="px-6 py-4">
+                    <span class="text-sm font-bold text-slate-800">${escHtml(s.name)}</span>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 bg-slate-100 rounded text-xs font-mono font-bold text-slate-500">${s.order}</span>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${s.color}">${escHtml(s.name)}</span>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                        <button class="btn-icon-sm" onclick="openStatusModal('${s.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
+                        <button class="btn-icon-sm text-red-500 hover:bg-red-50" onclick="openDeleteModal('${s.id}', 'status')"><span class="material-symbols-outlined text-[17px]">delete</span></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function populateDeptDropdowns() {
+        const select = document.getElementById('fieldDept');
+        if (!select) return;
+        const current = select.value;
+        select.innerHTML = '<option value="">-- Chọn phòng ban --</option>' + 
+            departments.map(d => `<option value="${escHtml(d.name)}">${escHtml(d.name)}</option>`).join('');
+        select.value = current;
     }
 
     // =============================================
@@ -784,12 +974,126 @@
     window.confirmDelete = async function() {
         if (!deleteTargetId || !window.db) return;
         try {
-            await window.fs.deleteDoc(window.fs.doc(window.db, USERS_COLLECTION, deleteTargetId));
+            let collectionName = USERS_COLLECTION;
+            if (deleteTargetType === 'dept') collectionName = DEPTS_COLLECTION;
+            if (deleteTargetType === 'status') collectionName = STATUS_COLLECTION;
+
+            await window.fs.deleteDoc(window.fs.doc(window.db, collectionName, deleteTargetId));
             showToast('Đã xóa thành công!');
             closeDeleteModal();
         } catch (e) {
-            showToast('Lỗi khi xóa người dùng', 'error');
+            showToast('Lỗi khi xóa dữ liệu', 'error');
         }
+    }
+
+    // =============================================
+    // TAB SWITCHER
+    // =============================================
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById('section-' + tabId).classList.remove('hidden');
+
+        ['users', 'depts', 'statuses'].forEach(id => {
+            const btn = document.getElementById('tab-' + id);
+            if (!btn) return;
+            const icon = btn.querySelector('.material-symbols-outlined');
+            if (id === tabId) {
+                btn.classList.add('bg-red-50', 'text-red-700', 'border-red-100/50');
+                btn.classList.remove('text-slate-500', 'hover:bg-slate-50');
+                if (icon) icon.style.fontVariationSettings = "'FILL' 1";
+            } else {
+                btn.classList.remove('bg-red-50', 'text-red-700', 'border-red-100/50');
+                btn.classList.add('text-slate-500', 'hover:bg-slate-50');
+                if (icon) icon.style.fontVariationSettings = "";
+            }
+        });
+    }
+
+    // =============================================
+    // DEPT & STATUS ACTIONS
+    // =============================================
+    window.openDeptModal = function(id = '') {
+        const d = departments.find(x => x.id === id);
+        document.getElementById('deptModalTitle').textContent = id ? 'Chỉnh sửa phòng ban' : 'Thêm phòng ban';
+        document.getElementById('editDeptId').value = id;
+        document.getElementById('deptNameInput').value = d ? d.name : '';
+        document.getElementById('deptModal').classList.remove('hidden');
+    }
+    window.closeDeptModal = () => document.getElementById('deptModal').classList.add('hidden');
+
+    window.saveDept = async function() {
+        const name = document.getElementById('deptNameInput').value.trim();
+        const id = document.getElementById('editDeptId').value;
+        if (!name) return showToast('Vui lòng nhập tên phòng ban', 'error');
+
+        const btn = document.getElementById('btnSaveDept');
+        btn.disabled = true;
+        try {
+            if (id) {
+                await window.fs.updateDoc(window.fs.doc(window.db, DEPTS_COLLECTION, id), { name });
+            } else {
+                await window.fs.addDoc(window.fs.collection(window.db, DEPTS_COLLECTION), { name, createdAt: new Date().toISOString() });
+            }
+            showToast('Lưu phòng ban thành công');
+            closeDeptModal();
+        } catch (e) {
+            showToast('Lỗi lưu dữ liệu', 'error');
+        } finally { btn.disabled = false; }
+    }
+
+    window.openStatusModal = function(id = '') {
+        const s = orderStatuses.find(x => x.id === id);
+        document.getElementById('statusModalTitle').textContent = id ? 'Chỉnh sửa trạng thái' : 'Thêm trạng thái';
+        document.getElementById('editStatusId').value = id;
+        document.getElementById('statusNameInput').value = s ? s.name : '';
+        document.getElementById('statusOrderInput').value = s ? s.order : 1;
+        document.getElementById('statusColorInput').value = s ? s.color : 'bg-slate-100 text-slate-600';
+        document.getElementById('statusModal').classList.remove('hidden');
+    }
+    window.closeStatusModal = () => document.getElementById('statusModal').classList.add('hidden');
+
+    window.saveStatus = async function() {
+        const name = document.getElementById('statusNameInput').value.trim();
+        const order = parseInt(document.getElementById('statusOrderInput').value) || 0;
+        const color = document.getElementById('statusColorInput').value;
+        const id = document.getElementById('editStatusId').value;
+
+        if (!name) return showToast('Vui lòng nhập tên trạng thái', 'error');
+
+        const btn = document.getElementById('btnSaveStatus');
+        btn.disabled = true;
+        try {
+            const data = { name, order, color };
+            if (id) {
+                await window.fs.updateDoc(window.fs.doc(window.db, STATUS_COLLECTION, id), data);
+            } else {
+                data.createdAt = new Date().toISOString();
+                await window.fs.addDoc(window.fs.collection(window.db, STATUS_COLLECTION), data);
+            }
+            showToast('Lưu trạng thái thành công');
+            closeStatusModal();
+        } catch (e) {
+            showToast('Lỗi lưu dữ liệu', 'error');
+        } finally { btn.disabled = false; }
+    }
+
+    window.openDeleteModal = function(id, type = 'user') {
+        const u = users.find(x => x.id === id);
+        const d = departments.find(x => x.id === id);
+        const s = orderStatuses.find(x => x.id === id);
+        
+        let name = '';
+        if (type === 'user') name = u ? u.name : '';
+        if (type === 'dept') name = d ? d.name : '';
+        if (type === 'status') name = s ? s.name : '';
+
+        if (type === 'user' && u && u.empId === 'admin') return;
+
+        deleteTargetId = id;
+        deleteTargetType = type;
+        document.getElementById('deleteUserName').textContent  = name;
+        document.getElementById('deleteUserEmpId').textContent = type === 'user' ? (u ? u.empId : '') : '';
+        document.getElementById('deleteModal').classList.remove('hidden');
     }
 
     // UI Helper Functions

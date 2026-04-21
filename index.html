@@ -1560,9 +1560,10 @@
             const initials = data.requester ? data.requester.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NV';
             const dateText = data.deadline ? data.deadline.split('-').reverse().join('/') : '-';
             
-            let statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-highest text-on-secondary-container uppercase">Chờ duyệt</span>';
-            if (data.status === 'Đang xử lý') statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-fixed text-on-primary-fixed-variant uppercase">Đang xử lý</span>';
-            else if (data.status === 'Hoàn thành' || data.status === 'Hoàn tất') statusBadgeFull = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant uppercase">Hoàn thành</span>';
+            // Dynamic status badge from orderStatusesData
+            const currentStatus = (window.orderStatusesData || []).find(s => s.name === data.status);
+            const badgeClasses = currentStatus ? currentStatus.color : 'bg-surface-container-highest text-on-secondary-container';
+            const statusBadgeFull = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${data.status || 'Chờ duyệt'}</span>`;
             
             // Serialize data string safely for inline HTML invocation
             const dataStr = encodeURIComponent(JSON.stringify({
@@ -1667,11 +1668,35 @@
         tbodyDash.innerHTML = dashHtml;
     };
 
+    window.departmentsData = [];
+    window.orderStatusesData = [];
+
     window.initOrdersTracker = function() {
         if (!window.db) return;
+        
+        // --- 1. DEPARTMENTS SYNC ---
+        const deptsRef = window.fsCollection(window.db, "departments");
+        const qDepts = window.fsQuery(deptsRef, window.fsOrderBy("name"));
+        window.fsOnSnapshot(qDepts, (snapshot) => {
+            window.departmentsData = [];
+            snapshot.forEach(doc => window.departmentsData.push({ id: doc.id, ...doc.data() }));
+            populateDropdown('department', window.departmentsData);
+        });
+
+        // --- 2. ORDER STATUSES SYNC ---
+        const statusRef = window.fsCollection(window.db, "order_statuses");
+        const qStatus = window.fsQuery(statusRef, window.fsOrderBy("order"));
+        window.fsOnSnapshot(qStatus, (snapshot) => {
+            window.orderStatusesData = [];
+            snapshot.forEach(doc => window.orderStatusesData.push({ id: doc.id, ...doc.data() }));
+            populateDropdown('editOrderStatus', window.orderStatusesData);
+            populateDropdown('filterStatus', window.orderStatusesData, 'Tất cả trạng thái');
+            if (window.allOrdersData.length > 0) window.renderOrdersTable();
+        });
+
+        // --- 3. ORDERS SYNC ---
         const ordersRef = window.fsCollection(window.db, "orders");
         const qAll = window.fsQuery(ordersRef, window.fsOrderBy("createdAt", "desc"));
-        
         window.fsOnSnapshot(qAll, (snapshot) => {
             window.allOrdersData = [];
             snapshot.forEach((doc) => {
@@ -1681,6 +1706,18 @@
             window.renderDashboardTable();
         });
     };
+
+    function populateDropdown(selectId, data, defaultText = null) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        const currentVal = select.value;
+        let html = defaultText ? `<option value="">${defaultText}</option>` : '';
+        html += data.map(item => `<option value="${item.name}">${item.name}</option>`).join('');
+        select.innerHTML = html;
+        if (currentVal && data.some(d => d.name === currentVal)) {
+            select.value = currentVal;
+        }
+    }
 
     // ===== Action Functions =====
     window.deleteOrder = async function(id, code) {
