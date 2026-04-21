@@ -176,9 +176,10 @@
         .sort-icon.active { color: #b80035; }
         .column-filter {
             width: 100%; height: 32px; min-width: 110px;
-            border: none; border-radius: 999px; padding: 0 12px;
-            font-size: 11px; font-weight: 600; outline: none; transition: all 0.2s;
-            background: #f1f5f9; color: #475569;
+            border: 1px solid #e2e8f0; border-radius: 12px; padding: 0 12px;
+            font-size: 11px; font-weight: 500; outline: none; transition: all 0.2s;
+            background: #ffffff; color: #475569;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         .column-filter:focus { 
             background: #ffffff;
@@ -208,6 +209,20 @@
         .badge-default { background: #f1f5f9; color: #475569; }
 
         .col-code { min-width: 90px !important; width: 95px !important; }
+        
+        /* Column Width Optimization */
+        #mainOrdersTable th, #mainOrdersTable td { 
+            min-width: 100px; /* Base min-width for all columns */
+        }
+        #mainOrdersTable .col-code { min-width: 85px !important; }
+        #mainOrdersTable th:nth-child(2), #mainOrdersTable td:nth-child(2) { min-width: 140px; } /* Thành viên */
+        #mainOrdersTable th:nth-child(3), #mainOrdersTable td:nth-child(3) { min-width: 120px; } /* Phòng ban */
+        #mainOrdersTable th:nth-child(5), #mainOrdersTable td:nth-child(5) { min-width: 250px; width: 25%; } /* Nội dung */
+        #mainOrdersTable th:nth-child(6), #mainOrdersTable td:nth-child(6) { min-width: 150px; width: 15%; } /* Ghi chú */
+        #mainOrdersTable th:nth-child(7), #mainOrdersTable td:nth-child(7),
+        #mainOrdersTable th:nth-child(8), #mainOrdersTable td:nth-child(8),
+        #mainOrdersTable th:nth-child(9), #mainOrdersTable td:nth-child(9) { min-width: 110px; } /* Dates */
+        #mainOrdersTable th:last-child, #mainOrdersTable td:last-child { min-width: 80px; } /* Thao tác */
         
         .pagination-btn {
             padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
@@ -622,7 +637,7 @@
 
 <!-- ==================== PAGE 2: ORDER MANAGEMENT ==================== -->
 <div id="page-orders" class="page">
-    <div class="p-4 md:p-8 max-w-[1600px] mx-auto">
+    <div class="p-4 md:p-8 max-w-full mx-auto">
         <!-- Header & Stats -->
         <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
             <div>
@@ -671,7 +686,7 @@
             </div>
             <!-- Table -->
             <div class="overflow-x-auto">
-                <table id="mainOrdersTable" class="w-full text-left border-collapse table-auto min-w-[1500px] table-compact">
+                <table id="mainOrdersTable" class="w-full text-left border-collapse table-auto min-w-full table-compact">
                     <thead class="bg-surface-container-high border-b border-surface-variant/30 text-slate-500">
                         <tr>
                             <th class="cursor-pointer group/h col-code" onclick="toggleSort('code')">
