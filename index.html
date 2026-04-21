@@ -2186,6 +2186,17 @@
                 const roleClass = u ? `badge-${u.role}` : 'badge-default';
                 return `<span class="name-badge ${roleClass}">${name}</span>`;
             };
+
+            // Function to get category badge
+            const getCategoryBadge = (cat) => {
+                if (!cat || cat === '-') return '<span class="text-slate-400">-</span>';
+                let classes = 'bg-slate-100 text-slate-600';
+                if (cat.includes('Video')) classes = 'bg-blue-100 text-blue-700 border-blue-200';
+                if (cat.includes('Hình Ảnh')) classes = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                if (cat.includes('Livestream')) classes = 'bg-rose-100 text-rose-700 border-rose-200';
+                if (cat.includes('Giả Live')) classes = 'bg-amber-100 text-amber-700 border-amber-200';
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${classes} uppercase tracking-wider">${cat}</span>`;
+            };
             
             const isAdmin = (sessionStorage.getItem('nevo_role') === 'admin');
             
@@ -2214,7 +2225,7 @@
                             <span class="display-val">${data.department || '-'}</span>
                         </td>
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
-                            <span class="display-val">${data.category || '-'}</span>
+                            <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" onclick="openEditModal('${dataStr}')">
                             <div class="display-val">
