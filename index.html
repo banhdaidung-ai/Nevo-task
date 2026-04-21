@@ -2416,7 +2416,8 @@
                 if (!name || name === '-') return '<span class="text-slate-400">-</span>';
                 const u = (window.allUsersData || []).find(x => x.name === name);
                 const roleClass = u ? `badge-${u.role}` : 'badge-default';
-                return `<span class="name-badge ${roleClass}">${name}</span>`;
+                const info = u ? `Mã NV: ${u.empId || '?'}\nSĐT: ${u.phone || '?'}` : '';
+                return `<span class="name-badge ${roleClass} cursor-help" title="${info}">${name}</span>`;
             };
 
             // Function to get category badge

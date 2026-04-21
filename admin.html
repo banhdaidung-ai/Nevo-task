@@ -398,6 +398,7 @@
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nhân sự</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã NV</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</th>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Số điện thoại</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phòng ban</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quyền</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trạng thái</th>
@@ -895,6 +896,7 @@
                 </td>
                 <td class="px-5 py-3.5 font-mono text-sm font-semibold text-primary">${escHtml(u.empId)}</td>
                 <td class="px-5 py-3.5 text-sm text-slate-500">${escHtml(u.email||'—')}</td>
+                <td class="px-5 py-3.5 text-sm text-slate-500 font-medium">${escHtml(u.phone||'—')}</td>
                 <td class="px-5 py-3.5 text-xs font-medium text-slate-500">${escHtml(u.dept||'—')}</td>
                 <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${ROLE_LABELS[u.role]||u.role}</span></td>
                 <td class="px-5 py-3.5"><span class="badge ${STATUS_BADGE[u.status]}">${STATUS_LABEL[u.status]||u.status}</span></td>
