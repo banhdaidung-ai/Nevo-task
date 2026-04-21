@@ -224,6 +224,40 @@
         #mainOrdersTable th:nth-child(9), #mainOrdersTable td:nth-child(9) { min-width: 110px; } /* Dates */
         #mainOrdersTable th:last-child, #mainOrdersTable td:last-child { min-width: 80px; } /* Thao tác */
         
+        /* Multi-select Dropdown */
+        .multi-select-container { position: relative; width: 100%; }
+        .multi-select-trigger {
+            width: 100%; height: 32px; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 0 12px; font-size: 11px; font-weight: 500; background: #ffffff;
+            color: #475569; display: flex; items-center justify-between; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); user-select: none;
+        }
+        .multi-select-trigger:after {
+            content: "\e5cf"; font-family: 'Material Symbols Outlined'; font-size: 14px;
+            color: #94a3b8; margin-left: 4px;
+        }
+        .multi-select-menu {
+            position: absolute; top: 100%; left: 0; z-index: 50; width: 100%; min-width: 180px;
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 4px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; padding: 6px;
+            max-height: 250px; overflow-y: auto;
+        }
+        .multi-select-menu.show { display: block; }
+        .multi-select-item {
+            display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px;
+            cursor: pointer; transition: background 0.15s; font-size: 11px; font-weight: 500; border: none; width: 100%; text-align: left;
+        }
+        .multi-select-item:hover { background: #f1f5f9; }
+        .multi-select-item input { width: 14px; height: 14px; border-radius: 4px; cursor: pointer; }
+        .multi-select-item.all-active { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 700; }
+        
+        .clear-filters-btn {
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; background: #fee2e2; color: #ef4444; border: none; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .clear-filters-btn:hover { background: #fecaca; transform: scale(1.05); }
+        
         .pagination-btn {
             padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
             transition: all 0.2s; border: 1px solid #e2e8f0; background: #fff;
@@ -759,20 +793,43 @@
                         <!-- Filter Row -->
                         <tr class="bg-surface-container-high/30">
                             <th class="p-2"><input type="text" class="column-filter !min-w-[80px]" onkeyup="updateColumnFilter('code', this.value)" placeholder="ID..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('requester', this.value)" placeholder="Người yc..."></th>
                             <th class="p-2">
-                                <select class="column-filter" id="colFilterDepartment" onchange="updateColumnFilter('department', this.value)">
-                                    <option value="">Phòng ban</option>
-                                </select>
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-requester" data-label="Thành viên" onclick="toggleMultiSelect('menu-requester')">Thành viên</div>
+                                    <div class="multi-select-menu" id="menu-requester"></div>
+                                </div>
                             </th>
                             <th class="p-2">
-                                <select class="column-filter" id="colFilterCategory" onchange="updateColumnFilter('category', this.value)">
-                                    <option value="">Loại</option>
-                                    <option value="Video">Video</option>
-                                    <option value="Hình Ảnh">Hình Ảnh</option>
-                                    <option value="Livestream">Livestream</option>
-                                    <option value="Giả Live">Giả Live</option>
-                                </select>
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-department" data-label="Phòng ban" onclick="toggleMultiSelect('menu-department')">Phòng ban</div>
+                                    <div class="multi-select-menu" id="menu-department">
+                                        <!-- Will be populated dynamicly -->
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-2">
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-category" data-label="Loại" onclick="toggleMultiSelect('menu-category')">Loại</div>
+                                    <div class="multi-select-menu" id="menu-category">
+                                        <div class="multi-select-item all-active" id="all-category" onclick="toggleColumnFilter('category', 'ALL', true)"><span>Tất cả</span></div>
+                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Video', cb.checked)">
+                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Video', this.checked)">
+                                            <span>Video</span>
+                                        </div>
+                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Hình Ảnh', cb.checked)">
+                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Hình Ảnh', this.checked)">
+                                            <span>Hình Ảnh</span>
+                                        </div>
+                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Livestream', cb.checked)">
+                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Livestream', this.checked)">
+                                            <span>Livestream</span>
+                                        </div>
+                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Giả Live', cb.checked)">
+                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Giả Live', this.checked)">
+                                            <span>Giả Live</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </th>
                             <th class="p-2"><input type="text" class="column-filter !min-w-[150px]" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
                             <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
@@ -795,26 +852,36 @@
                                 </div>
                             </th>
                             <th class="p-2">
-                                <select class="column-filter" id="colFilterStylist" onchange="updateColumnFilter('stylist', this.value)">
-                                    <option value="">Stylist</option>
-                                </select>
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-stylist" data-label="Stylist" onclick="toggleMultiSelect('menu-stylist')">Stylist</div>
+                                    <div class="multi-select-menu" id="menu-stylist"></div>
+                                </div>
                             </th>
                             <th class="p-2">
-                                <select class="column-filter" id="colFilterVideo" onchange="updateColumnFilter('assignedVideo', this.value)">
-                                    <option value="">Video</option>
-                                </select>
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-assignedVideo" data-label="Video" onclick="toggleMultiSelect('menu-video')">Video</div>
+                                    <div class="multi-select-menu" id="menu-video"></div>
+                                </div>
                             </th>
                             <th class="p-2">
-                                <select class="column-filter" id="colFilterPhoto" onchange="updateColumnFilter('assignedPhoto', this.value)">
-                                    <option value="">Photo</option>
-                                </select>
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-assignedPhoto" data-label="Photo" onclick="toggleMultiSelect('menu-photo')">Photo</div>
+                                    <div class="multi-select-menu" id="menu-photo"></div>
+                                </div>
                             </th>
                             <th class="p-2">
-                                <select class="column-filter" id="colFilterStatus" onchange="updateColumnFilter('status', this.value)">
-                                    <option value="">Trạng thái</option>
-                                </select>
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-status" data-label="Trạng thái" onclick="toggleMultiSelect('menu-status')">Trạng thái</div>
+                                    <div class="multi-select-menu" id="menu-status">
+                                        <!-- Populated from statuses collection -->
+                                    </div>
+                                </div>
                             </th>
-                            <th></th>
+                            <th class="p-2 text-center">
+                                <button class="clear-filters-btn" onclick="clearAllFilters()" title="Xóa tất cả bộ lọc">
+                                    <span class="material-symbols-outlined">close</span>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-slate-100">
@@ -1696,6 +1763,85 @@
         window.renderOrdersTable();
     };
 
+    window.toggleColumnFilter = function(key, val, isChecked) {
+        if (!columnFilters[key]) columnFilters[key] = [];
+        if (!Array.isArray(columnFilters[key])) columnFilters[key] = []; // Safety
+
+        if (val === 'ALL') {
+            columnFilters[key] = [];
+            // Uncheck other checkboxes in this specific menu
+            const menu = document.getElementById(`menu-${key}`) || (key === 'assignedVideo' ? document.getElementById('menu-video') : null) || (key === 'assignedPhoto' ? document.getElementById('menu-photo') : null);
+            if(menu) menu.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+        } else {
+            if (isChecked) {
+                if (!columnFilters[key].includes(val)) columnFilters[key].push(val);
+            } else {
+                columnFilters[key] = columnFilters[key].filter(v => v !== val);
+            }
+        }
+
+        if (columnFilters[key].length === 0) delete columnFilters[key];
+        
+        // Update Trigger Label
+        const trigger = document.getElementById(`trigger-${key}`);
+        if(trigger) {
+            const count = columnFilters[key] ? columnFilters[key].length : 0;
+            const originalLabel = trigger.getAttribute('data-label');
+            trigger.textContent = count > 0 ? `${originalLabel} (${count})` : originalLabel;
+        }
+
+        // Highlight "All" option if no filters
+        const allBtn = document.getElementById(`all-${key}`);
+        if(allBtn) {
+            if(!columnFilters[key] || columnFilters[key].length === 0) allBtn.classList.add('all-active');
+            else allBtn.classList.remove('all-active');
+        }
+
+        currentTablePage = 0;
+        window.renderOrdersTable();
+    };
+
+    window.clearAllFilters = function() {
+        columnFilters = {};
+        // Reset Search Inputs
+        if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
+        if (document.getElementById('filterStatus')) document.getElementById('filterStatus').value = '';
+        
+        // Reset Filter Row Inputs
+        document.querySelectorAll('.column-filter').forEach(input => {
+            input.value = '';
+        });
+        
+        // Uncheck all Multi-selects
+        document.querySelectorAll('.multi-select-menu input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+        
+        // Reset Multi-select Triggers
+        document.querySelectorAll('.multi-select-trigger').forEach(trigger => {
+            trigger.textContent = trigger.getAttribute('data-label');
+        });
+
+        currentTablePage = 0;
+        window.renderOrdersTable();
+        showToast('Đã xóa bộ lọc', 'Bộ lọc đã được đưa về mặc định', 'filter_list_off', 'text-slate-500');
+    };
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.multi-select-container')) {
+            document.querySelectorAll('.multi-select-menu').forEach(menu => menu.classList.remove('show'));
+        }
+    });
+
+    window.toggleMultiSelect = function(id) {
+        const menu = document.getElementById(id);
+        if (!menu) return;
+        const isShown = menu.classList.contains('show');
+        document.querySelectorAll('.multi-select-menu').forEach(m => m.classList.remove('show'));
+        if (!isShown) menu.classList.add('show');
+    };
+
     function formatDateDisplay(dateStr) {
         if (!dateStr) return '-';
         if (dateStr.toDate) { // Check for Firestore Timestamp
@@ -1736,7 +1882,7 @@
             // Column filters match
             const matchColumns = Object.keys(columnFilters).every(key => {
                 const filterVal = columnFilters[key];
-                if (!filterVal) return true;
+                if (!filterVal || (Array.isArray(filterVal) && filterVal.length === 0)) return true;
 
                 // Date Range Handling
                 if (key.includes('_start') || key.includes('_end')) {
@@ -1754,11 +1900,18 @@
                     return true;
                 }
 
+                const rawVal = data[key] || '';
+                
+                // Multi-select Match
+                if (Array.isArray(filterVal)) {
+                    return filterVal.includes(String(rawVal));
+                }
+
                 let val = '';
                 if (key === 'createdAt' || key === 'deployDate' || key === 'deadline') {
                     val = formatDateDisplay(data[key]);
                 } else {
-                    val = String(data[key] || '');
+                    val = String(rawVal);
                 }
                 return val.toLowerCase().includes(filterVal);
             });
@@ -1965,13 +2118,13 @@
             window.allUsersData = [];
             snapshot.forEach(doc => window.allUsersData.push({ id: doc.id, ...doc.data() }));
             
-            // Populate staff filters
             const staff = window.allUsersData.sort((a,b) => a.name.localeCompare(b.name));
-            populateDropdown('colFilterStylist', staff, 'Stylist');
-            populateDropdown('colFilterVideo', staff, 'Video');
-            populateDropdown('colFilterPhoto', staff, 'Photo');
+            // Multi-select staff
+            populateMultiSelect('menu-requester', staff, 'requester');
+            populateMultiSelect('menu-stylist', staff, 'stylist');
+            populateMultiSelect('menu-video', staff, 'assignedVideo');
+            populateMultiSelect('menu-photo', staff, 'assignedPhoto');
             
-            // Trigger table refresh to apply name colorization if names are already loaded
             if (window.allOrdersData && window.allOrdersData.length > 0) window.renderOrdersTable();
         });
 
@@ -1982,7 +2135,7 @@
             window.departmentsData = [];
             snapshot.forEach(doc => window.departmentsData.push({ id: doc.id, ...doc.data() }));
             populateDropdown('department', window.departmentsData);
-            populateDropdown('colFilterDepartment', window.departmentsData, 'Tất cả phòng');
+            populateMultiSelect('menu-department', window.departmentsData, 'department');
         });
 
         // --- 2. ORDER STATUSES SYNC ---
@@ -1993,7 +2146,7 @@
             snapshot.forEach(doc => window.orderStatusesData.push({ id: doc.id, ...doc.data() }));
             populateDropdown('editOrderStatus', window.orderStatusesData);
             populateDropdown('filterStatus', window.orderStatusesData, 'Tất cả trạng thái');
-            populateDropdown('colFilterStatus', window.orderStatusesData, 'Trạng thái');
+            populateMultiSelect('menu-status', window.orderStatusesData, 'status');
             if (window.allOrdersData.length > 0) window.renderOrdersTable();
         });
 
@@ -2020,6 +2173,26 @@
         if (currentVal && data.some(d => d.name === currentVal)) {
             select.value = currentVal;
         }
+    }
+
+    function populateMultiSelect(containerId, data, key) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        let html = `
+            <div class="multi-select-item ${(!columnFilters[key] || columnFilters[key].length === 0) ? 'all-active' : ''}" id="all-${key}" onclick="toggleColumnFilter('${key}', 'ALL', true)">
+                <span>Tất cả</span>
+            </div>`;
+            
+        data.forEach(item => {
+            const isChecked = columnFilters[key] && columnFilters[key].includes(item.name);
+            html += `
+                <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('${key}', '${item.name}', cb.checked)">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="toggleColumnFilter('${key}', '${item.name}', this.checked)">
+                    <span>${item.name}</span>
+                </div>`;
+        });
+        container.innerHTML = html;
     }
 
     // ===== Action Functions =====
