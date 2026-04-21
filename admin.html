@@ -224,9 +224,13 @@
                     <div id="navUserDropdown" class="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50 opacity-0 pointer-events-none translate-y-[-8px] transition-all">
                         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
                             <p class="text-xs font-bold text-slate-700 truncate" id="dropName">Admin</p>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Quản trị viên hệ thống</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5" id="dropRole">Quản trị viên hệ thống</p>
                         </div>
                         <div class="p-1.5">
+                            <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">account_circle</span>
+                                Hồ sơ cá nhân
+                            </a>
                             <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
                                 <span class="material-symbols-outlined text-[18px]">logout</span>
                                 Đăng xuất
@@ -1279,8 +1283,10 @@
     }
 
     window.handleLogout = function() {
-        sessionStorage.clear();
-        window.location.href = 'login.html';
+        Object.keys(sessionStorage).forEach(key => {
+            if (key.startsWith('nevo_')) sessionStorage.removeItem(key);
+        });
+        window.location.replace('login.html');
     }
 
     window.openMobileMenu = function() {
@@ -1355,9 +1361,17 @@
         });
 
         const navName = sessionStorage.getItem('nevo_user') || 'Admin';
+        const role = sessionStorage.getItem('nevo_role') || 'user';
+        
         document.getElementById('navInit').textContent = navName.substring(0,2).toUpperCase();
         document.getElementById('navName').textContent = navName;
         document.getElementById('dropName').textContent = navName;
+
+        const roleLabel = document.getElementById('dropRole');
+        if (roleLabel) {
+            const roleNames = { admin: 'Quản trị viên', manager: 'Quản lý', user: 'Nhân viên', viewer: 'Người xem' };
+            roleLabel.textContent = roleNames[role] || 'Nhân viên';
+        }
 
         // Try sync if db ready
         if (window.db) window.startSync();

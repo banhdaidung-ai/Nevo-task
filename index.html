@@ -405,9 +405,14 @@
                     <div id="userDropdown" class="notification-dropdown absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50">
                         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
                             <p class="text-xs font-bold text-slate-700 truncate" id="dropUserName">Admin</p>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Quản trị viên hệ thống</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5" id="dropUserRole">Quản trị viên hệ thống</p>
                         </div>
                         <div class="p-1.5">
+                            <button onclick="navigateTo('profile')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                <span class="material-symbols-outlined text-[18px] text-primary">person</span>
+                                Hồ sơ cá nhân
+                            </button>
+                            <div class="h-px bg-slate-100 my-1"></div>
                             <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
                                 <span class="material-symbols-outlined text-[18px]">logout</span>
                                 Đăng xuất
@@ -443,6 +448,9 @@
         </a>
         <a href="#" onclick="navigateTo('create-order'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">add_circle</span> Tạo đơn mới
+        </a>
+        <a href="#" onclick="navigateTo('profile'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+            <span class="material-symbols-outlined text-primary">person</span> Hồ sơ cá nhân
         </a>
         <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">support_agent</span> Trung tâm hỗ trợ
@@ -1242,7 +1250,131 @@
     </div>
 </div>
 
-<!-- ==================== PAGE 4: CREATE ORDER ==================== -->
+<!-- ==================== PAGE 4: PROFILE ==================== -->
+<div id="page-profile" class="page">
+    <div class="max-w-[1200px] mx-auto px-4 md:px-8 py-6 md:py-10">
+        <!-- Profile Header -->
+        <div class="bg-surface-container-lowest p-8 rounded-2xl shadow-xl border border-outline-variant/10 mb-8 animate-fade-in-up">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="relative">
+                    <div class="w-32 h-32 rounded-3xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white text-4xl font-extrabold shadow-2xl border-4 border-white">
+                        <span id="profileInitial">AD</span>
+                    </div>
+                    <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-tertiary rounded-full border-4 border-white flex items-center justify-center text-white shadow-lg">
+                        <span class="material-symbols-outlined text-[18px]">verified</span>
+                    </div>
+                </div>
+                <div class="text-center md:text-left flex-1">
+                    <div class="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                        <h1 id="profileName" class="text-3xl font-extrabold tracking-tight font-headline">Admin User</h1>
+                        <span id="profileRoleBadge" class="w-fit px-3 py-1 rounded-full text-[10px] font-bold bg-primary-fixed text-primary uppercase tracking-widest mx-auto md:mx-0">Quản trị viên</span>
+                    </div>
+                    <p id="profileEmail" class="text-on-surface-variant font-medium flex items-center justify-center md:justify-start gap-2 mb-4">
+                        <span class="material-symbols-outlined text-[18px]">mail</span>
+                        admin@nevosport.vn
+                    </p>
+                    <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                        <div class="bg-surface-container-low px-4 py-2 rounded-xl flex items-center gap-2 border border-outline-variant/10">
+                            <span class="material-symbols-outlined text-primary text-[18px]">corporate_fare</span>
+                            <span id="profileDept" class="text-sm font-bold">Phòng IT</span>
+                        </div>
+                        <div class="bg-surface-container-low px-4 py-2 rounded-xl flex items-center gap-2 border border-outline-variant/10">
+                            <span class="material-symbols-outlined text-tertiary text-[18px]">badge</span>
+                            <span id="profileEmpId" class="text-sm font-bold">EMP-0001</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in-up delay-100">
+            <div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-blue-50 rounded-xl text-blue-600">
+                        <span class="material-symbols-outlined">shopping_cart</span>
+                    </div>
+                </div>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Tổng đơn đã tạo</p>
+                <p id="statTotalOrders" class="text-3xl font-extrabold font-headline">0</p>
+            </div>
+            <div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-amber-50 rounded-xl text-amber-600">
+                        <span class="material-symbols-outlined">pending_actions</span>
+                    </div>
+                </div>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Đang chờ xử lý</p>
+                <p id="statPendingOrders" class="text-3xl font-extrabold font-headline">0</p>
+            </div>
+            <div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-lg">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600">
+                        <span class="material-symbols-outlined">task_alt</span>
+                    </div>
+                </div>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Đã hoàn thành</p>
+                <p id="statCompletedOrders" class="text-3xl font-extrabold font-headline">0</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in-up delay-200">
+            <!-- Account Settings -->
+            <div class="bg-surface-container-lowest p-8 rounded-2xl shadow-xl border border-outline-variant/10">
+                <h2 class="text-xl font-bold font-headline mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">manage_accounts</span>
+                    Cài đặt tài khoản
+                </h2>
+                <form id="profileForm" class="space-y-6" onsubmit="return false;">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Họ và tên</label>
+                        <input id="editProfileName" type="text" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="Họ và tên">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Email công việc</label>
+                        <input id="editProfileEmail" type="email" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="Email">
+                    </div>
+                    <div class="pt-4 border-t border-slate-100">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4">Đổi mật khẩu</h3>
+                        <div class="space-y-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Mật khẩu hiện tại</label>
+                                <input id="oldPassword" type="password" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="••••••••">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Mật khẩu mới</label>
+                                <input id="newPassword" type="password" class="w-full bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-xl px-4 py-3 text-sm transition-all outline-none font-semibold" placeholder="••••••••">
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="handleUpdateProfile()" class="w-full bg-gradient-primary text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all mt-6">
+                        Lưu thay đổi
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="bg-surface-container-lowest p-8 rounded-2xl shadow-xl border border-outline-variant/10">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold font-headline flex items-center gap-2">
+                        <span class="material-symbols-outlined text-tertiary">history</span>
+                        Đơn hàng của tôi
+                    </h2>
+                    <button onclick="navigateTo('orders')" class="text-xs font-bold text-primary hover:underline">Tất cả</button>
+                </div>
+                <div id="profileRecentOrders" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                    <!-- Orders will be loaded here -->
+                    <div class="flex items-center justify-center py-10 text-slate-400">
+                        <span class="material-symbols-outlined animate-spin mr-2">progress_activity</span>
+                        Đang tải đơn hàng...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PAGE 5: CREATE ORDER ==================== -->
 <div id="page-create-order" class="page">
     <div class="max-w-[1440px] mx-auto px-4 md:px-8 py-6 md:py-10">
         <!-- Header -->
@@ -1316,15 +1448,6 @@
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                            Ngày triển khai
-                        </label>
-                        <div class="relative">
-                            <input id="orderDeployDate" class="w-full bg-surface-container-highest border-none rounded-lg px-10 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" type="date"/>
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-secondary material-symbols-outlined">event_available</span>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                             Thể loại <span class="text-primary">*</span>
                         </label>
                         <select id="orderCategory" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer">
@@ -1333,24 +1456,34 @@
                             <option value="Giả Live">Giả Live</option>
                         </select>
                     </div>
-                    <!-- Detailed Assigned Persons -->
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                            Stylist
-                        </label>
-                        <input id="assignedStylist" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên người phụ trách Stylist" type="text"/>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                            Video (Phụ trách)
-                        </label>
-                        <input id="assignedVideo" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên người phụ trách Video" type="text"/>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                            Photo (Phụ trách)
-                        </label>
-                        <input id="assignedPhoto" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên người phụ trách Photo" type="text"/>
+                    <div id="assignmentsSection" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                                Ngày triển khai
+                            </label>
+                            <div class="relative">
+                                <input id="orderDeployDate" class="w-full bg-surface-container-highest border-none rounded-lg px-10 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" type="date"/>
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-secondary material-symbols-outlined">event_available</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                                Stylist
+                            </label>
+                            <input id="assignedStylist" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên Stylist" type="text"/>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                                Video (Phụ trách)
+                            </label>
+                            <input id="assignedVideo" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên Video" type="text"/>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                                Photo (Phụ trách)
+                            </label>
+                            <input id="assignedPhoto" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên Photo" type="text"/>
+                        </div>
                     </div>
                     <div class="md:col-span-2 space-y-2">
                         <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
@@ -1578,6 +1711,16 @@
 
 <!-- ====== JAVASCRIPT ====== -->
 <script>
+    // ===== RBAC HELPERS =====
+    function checkPermission(field) {
+        const role = sessionStorage.getItem('nevo_role') || 'user';
+        if (role === 'admin' || role === 'manager') return true;
+        
+        // Fields that regular users CANNOT edit
+        const restrictedFields = ['status', 'deployDate', 'stylist', 'assignedVideo', 'assignedPhoto', 'note', 'department', 'requester'];
+        return !restrictedFields.includes(field);
+    }
+
     // ===== Page Navigation =====
     let currentPage = 'dashboard';
     
@@ -1626,6 +1769,74 @@
             });
 
             currentPage = pageId;
+
+            // SPECIAL LOGIC FOR PAGES
+            if (pageId === 'create-order') {
+                const role = sessionStorage.getItem('nevo_role') || 'user';
+                const userName = sessionStorage.getItem('nevo_user') || '';
+                const userDept = sessionStorage.getItem('nevo_dept') || '';
+                
+                const reqEl = document.getElementById('requester');
+                const deptEl = document.getElementById('department');
+                
+                if (reqEl) {
+                    // Set default requester if it exists in options, else add it
+                    let found = false;
+                    for (let i = 0; i < reqEl.options.length; i++) {
+                        if (reqEl.options[i].text === userName) {
+                            reqEl.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        const opt = document.createElement('option');
+                        opt.text = userName;
+                        opt.selected = true;
+                        reqEl.add(opt);
+                    }
+                    if (role === 'user') {
+                        reqEl.parentElement.classList.add('opacity-70', 'pointer-events-none');
+                        reqEl.disabled = true;
+                    } else {
+                        reqEl.parentElement.classList.remove('opacity-70', 'pointer-events-none');
+                        reqEl.disabled = false;
+                    }
+                }
+                
+                if (deptEl) {
+                    let found = false;
+                    for (let i = 0; i < deptEl.options.length; i++) {
+                        if (deptEl.options[i].text === userDept) {
+                            deptEl.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && userDept) {
+                        const opt = document.createElement('option');
+                        opt.text = userDept;
+                        opt.selected = true;
+                        deptEl.add(opt);
+                    }
+                    if (role === 'user') {
+                        deptEl.classList.add('opacity-70', 'pointer-events-none');
+                        deptEl.disabled = true;
+                    } else {
+                        deptEl.classList.remove('opacity-70', 'pointer-events-none');
+                        deptEl.disabled = false;
+                    }
+                }
+
+                // Hide restricted sections for users
+                const assignmentsSection = document.getElementById('assignmentsSection');
+                if (assignmentsSection) {
+                    if (role === 'user') assignmentsSection.classList.add('hidden');
+                    else assignmentsSection.classList.remove('hidden');
+                }
+            } else if (pageId === 'profile') {
+                updateProfilePage();
+            }
         }, currentEl ? 200 : 0);
     }
 
@@ -2433,6 +2644,8 @@
 
     window.openEditModal = function(dataStr) {
         const data = JSON.parse(decodeURIComponent(dataStr));
+        const role = sessionStorage.getItem('nevo_role') || 'user';
+        
         document.getElementById('editOrderId').value = data.id;
         document.getElementById('editOrderCode').value = data.code || '';
         document.getElementById('editOrderStatus').value = data.status || 'Chờ duyệt';
@@ -2447,6 +2660,29 @@
         document.getElementById('editOrderContent').value = data.content || '';
         document.getElementById('editOrderNote').value = data.note || '';
         
+        // RBAC: Disable fields if not permitted
+        const fieldsToProtect = [
+            { id: 'editOrderStatus', field: 'status' },
+            { id: 'editOrderDeployDate', field: 'deployDate' },
+            { id: 'editOrderStylist', field: 'stylist' },
+            { id: 'editOrderVideo', field: 'assignedVideo' },
+            { id: 'editOrderPhoto', field: 'assignedPhoto' },
+            { id: 'editOrderNote', field: 'note' }
+        ];
+
+        fieldsToProtect.forEach(item => {
+            const el = document.getElementById(item.id);
+            if (el) {
+                if (!checkPermission(item.field)) {
+                    el.disabled = true;
+                    el.classList.add('bg-slate-50', 'opacity-70', 'cursor-not-allowed');
+                } else {
+                    el.disabled = false;
+                    el.classList.remove('bg-slate-50', 'opacity-70', 'cursor-not-allowed');
+                }
+            }
+        });
+
         const modal = document.getElementById('editOrderModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -2513,6 +2749,12 @@
     // ===== Inline Edit =====
     window.startInlineEdit = function(element, dataStr, field) {
         if (element.classList.contains('editing')) return;
+
+        // RBAC Check
+        if (!checkPermission(field)) {
+            showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa nhanh trường này.', 'block', 'text-error');
+            return;
+        }
         
         // Prevent editing if multiple elements clicked too fast
         if (document.querySelector('.editing')) {
@@ -2603,6 +2845,12 @@
              return;
         }
         
+        if (!checkPermission(field)) {
+            showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa trường này.', 'block', 'text-error');
+            if(displayEl) displayEl.style.opacity = '1';
+            return;
+        }
+
         if(displayEl) {
             displayEl.style.opacity = '0.5';
         }
@@ -2616,6 +2864,132 @@
         } catch (error) {
             showToast('Lỗi!', 'Không thể lưu thay đổi.', 'error', 'text-error');
             if(displayEl) displayEl.style.opacity = '1';
+        }
+    };
+
+    // ===== Profile Page Logic =====
+    window.updateProfilePage = async function() {
+        const userName = sessionStorage.getItem('nevo_user') || 'Admin';
+        const userRole = sessionStorage.getItem('nevo_role') || 'user';
+        const userDept = sessionStorage.getItem('nevo_dept') || 'N/A';
+        const userEmpId = sessionStorage.getItem('nevo_empId') || 'N/A';
+        const userEmail = sessionStorage.getItem('nevo_email') || 'N/A';
+        
+        document.getElementById('profileName').textContent = userName;
+        document.getElementById('profileInitial').textContent = userName.substring(0, 2).toUpperCase();
+        document.getElementById('profileEmail').innerHTML = `<span class="material-symbols-outlined text-[18px]">mail</span> ${userEmail}`;
+        document.getElementById('profileDept').textContent = userDept;
+        document.getElementById('profileEmpId').textContent = userEmpId;
+        
+        const roleNames = { admin: 'Quản trị viên', manager: 'Quản lý', user: 'Nhân viên', viewer: 'Người xem' };
+        document.getElementById('profileRoleBadge').textContent = roleNames[userRole] || 'Nhân viên';
+        
+        // Fill form
+        document.getElementById('editProfileName').value = userName;
+        document.getElementById('editProfileEmail').value = userEmail;
+
+        // Fetch stats
+        try {
+            const q = window.fsQuery(window.fsCollection(window.db, "orders"));
+            const querySnapshot = await window.fsGetDocs(q);
+            let total = 0;
+            let pending = 0;
+            let completed = 0;
+            let personalOrders = [];
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.requester === userName) {
+                    total++;
+                    if (data.status === 'Chờ duyệt' || data.status === 'Đang xử lý') pending++;
+                    if (data.status === 'Hoàn thành') completed++;
+                    personalOrders.push({ id: doc.id, ...data });
+                }
+            });
+
+            document.getElementById('statTotalOrders').textContent = total;
+            document.getElementById('statPendingOrders').textContent = pending;
+            document.getElementById('statCompletedOrders').textContent = completed;
+
+            // Render personal orders
+            const container = document.getElementById('profileRecentOrders');
+            if (personalOrders.length === 0) {
+                container.innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Bạn chưa có đơn hàng nào.</div>';
+            } else {
+                personalOrders.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                let html = '';
+                personalOrders.slice(0, 5).forEach(order => {
+                    html += `
+                        <div class="p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all border border-slate-100 flex justify-between items-center group cursor-pointer" onclick="navigateTo('orders')">
+                            <div>
+                                <p class="text-xs font-bold text-primary mb-1">${order.code || 'N/A'}</p>
+                                <p class="text-sm font-bold text-slate-700 truncate max-w-[200px]">${order.title}</p>
+                                <p class="text-[10px] text-slate-400 mt-1">${order.category} • ${order.deadline}</p>
+                            </div>
+                            <span class="px-2 py-1 rounded-lg text-[10px] font-bold ${getStatusColor(order.status)}">${order.status}</span>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+        } catch (e) {
+            console.error("Profile load error:", e);
+        }
+    };
+
+    function getStatusColor(status) {
+        if (status === 'Hoàn thành') return 'bg-emerald-100 text-emerald-700';
+        if (status === 'Hủy') return 'bg-rose-100 text-rose-700';
+        if (status === 'Đang xử lý') return 'bg-blue-100 text-blue-700';
+        return 'bg-amber-100 text-amber-700';
+    }
+
+    window.handleUpdateProfile = async function() {
+        const name = document.getElementById('editProfileName').value;
+        const email = document.getElementById('editProfileEmail').value;
+        const oldPass = document.getElementById('oldPassword').value;
+        const newPass = document.getElementById('newPassword').value;
+        const empId = sessionStorage.getItem('nevo_empId');
+
+        if (!name || !email) {
+            showToast('Lỗi!', 'Vui lòng điền đủ tên và email.', 'error', 'text-error');
+            return;
+        }
+
+        try {
+            const userRef = window.fsDoc(window.db, "users", empId);
+            const userDoc = await window.fsGetDoc(userRef);
+            if (!userDoc.exists()) return;
+            const userData = userDoc.data();
+
+            let updateData = { name, email };
+            
+            if (newPass) {
+                if (userData.password !== oldPass) {
+                    showToast('Lỗi!', 'Mật khẩu hiện tại không đúng.', 'error', 'text-error');
+                    return;
+                }
+                updateData.password = newPass;
+            }
+
+            await window.fsUpdateDoc(userRef, updateData);
+            
+            // Update session
+            sessionStorage.setItem('nevo_user', name);
+            sessionStorage.setItem('nevo_email', email);
+            
+            // Refresh UI
+            document.getElementById('navUserName').textContent = name;
+            document.getElementById('dropUserName').textContent = name;
+            document.getElementById('navUserInitial').textContent = name.substring(0, 2).toUpperCase();
+            
+            showToast('Thành công!', 'Thông tin cá nhân đã được cập nhật.', 'check_circle', 'text-tertiary');
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            updateProfilePage();
+        } catch (e) {
+            console.error(e);
+            showToast('Lỗi!', 'Không thể cập nhật thông tin.', 'error', 'text-error');
         }
     };
 
@@ -2662,7 +3036,7 @@
         }
 
         // Update role label in dropdown if it exists
-        const roleLabel = document.querySelector('#userDropdown p.text-slate-400');
+        const roleLabel = document.getElementById('dropUserRole');
         if (roleLabel) {
             const roleNames = { admin: 'Quản trị viên', manager: 'Quản lý', user: 'Nhân viên', viewer: 'Người xem' };
             roleLabel.textContent = roleNames[role] || 'Nhân viên';
@@ -2682,9 +3056,9 @@
 
     // ===== LOGOUT =====
     function handleLogout() {
-        sessionStorage.removeItem('nevo_logged_in');
-        sessionStorage.removeItem('nevo_user');
-        sessionStorage.removeItem('nevo_role');
+        Object.keys(sessionStorage).forEach(key => {
+            if (key.startsWith('nevo_')) sessionStorage.removeItem(key);
+        });
         window.location.href = 'login.html';
     }
 </script>

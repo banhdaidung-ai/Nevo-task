@@ -612,6 +612,9 @@
                         sessionStorage.setItem('nevo_logged_in', 'true');
                         sessionStorage.setItem('nevo_user', userData.name || empId);
                         sessionStorage.setItem('nevo_role', userData.role || 'user');
+                        sessionStorage.setItem('nevo_dept', userData.dept || '');
+                        sessionStorage.setItem('nevo_empId', userData.empId || empId);
+                        sessionStorage.setItem('nevo_email', userData.email || '');
 
                         btn.innerHTML = `
                             <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 600;font-size:20px;">check_circle</span>
