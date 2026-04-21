@@ -167,7 +167,101 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 
+<!-- ====== TOP NAVIGATION BAR (Đồng bộ với index.html) ====== -->
+<nav id="topNav" class="bg-white/60 backdrop-blur-xl top-0 sticky z-50 shadow-[0_12px_40px_-12px_rgba(19,27,46,0.08)]">
+    <div class="flex justify-between items-center w-full px-4 md:px-8 py-3 md:py-4 max-w-full">
+        <!-- Brand & Menu Toggle -->
+        <div class="flex items-center gap-4 md:gap-8">
+            <button id="mobileMenuBtn" class="md:hidden p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <a href="index.html" class="text-xl font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
+                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Task Manager Logo" class="w-8 h-auto object-contain"/>
+                <span class="hidden sm:inline">Task Manager</span>
+            </a>
+            <!-- Desktop Nav Links -->
+            <div id="navLinks" class="hidden md:flex items-center gap-6 font-headline tracking-tight font-semibold text-sm">
+                <a href="index.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Bảng điều khiển</a>
+                <a href="index.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
+                <a href="index.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Báo cáo</a>
+                <a href="admin.html" id="navAdminLink" class="nav-link text-red-600 border-b-2 border-red-600 pb-1 transition-all duration-200">Quản trị</a>
+                <a href="#" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
+            </div>
+        </div>
+        <!-- Actions -->
+        <div class="flex items-center gap-2 md:gap-4">
+            <!-- Search (desktop) -->
+            <div class="relative hidden lg:block">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                <input id="globalSearch" class="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm w-64 focus:ring-2 focus:ring-red-600/20 transition-all" placeholder="Tìm kiếm nhanh..." type="text"/>
+            </div>
+            <div class="flex items-center gap-1 md:gap-2">
+                <!-- Notifications -->
+                <div class="relative">
+                    <button class="p-2 rounded-full hover:bg-slate-50 transition-all duration-200 relative">
+                        <span class="material-symbols-outlined text-slate-600">notifications</span>
+                    </button>
+                </div>
+                <button class="p-2 rounded-full hover:bg-slate-50 transition-all duration-200 hidden sm:block">
+                    <span class="material-symbols-outlined text-slate-600">settings</span>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+                <!-- Create Order CTA -->
+                <a href="index.html" class="bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 md:px-4 py-2 rounded-lg font-headline font-semibold text-sm flex items-center gap-2 shadow-lg shadow-red-600/20 active:scale-95 transition-transform duration-150 hover:opacity-90">
+                    <span class="material-symbols-outlined text-sm">add</span>
+                    <span class="hidden sm:inline">Tạo đơn mới</span>
+                </a>
+                <!-- Avatar + User Menu -->
+                <div class="relative ml-1 md:ml-2" id="navUserWrapper">
+                    <button onclick="toggleNavUser()" class="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-slate-50 transition-all duration-200 border border-transparent hover:border-slate-200">
+                        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center text-white font-bold text-xs border-2 border-white shadow-sm">
+                            <span id="navInit">AD</span>
+                        </div>
+                        <span id="navName" class="hidden md:block text-xs font-semibold text-slate-700 max-w-[80px] truncate">Admin</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm hidden md:block">expand_more</span>
+                    </button>
+                    <!-- User Dropdown -->
+                    <div id="navUserDropdown" class="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50 opacity-0 pointer-events-none translate-y-[-8px] transition-all">
+                        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                            <p class="text-xs font-bold text-slate-700 truncate" id="dropName">Admin</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Quản trị viên hệ thống</p>
+                        </div>
+                        <div class="p-1.5">
+                            <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">logout</span>
+                                Đăng xuất
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </nav>
+
+<!-- ====== MOBILE MENU OVERLAY ====== -->
+<div id="mobileOverlay" class="fixed inset-0 bg-black/40 z-[60] hidden" onclick="closeMobileMenu()"></div>
+<div id="mobileMenu" class="fixed top-0 left-0 w-72 h-full bg-white z-[70] shadow-2xl -translate-x-full transition-transform duration-300">
+    <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center justify-between">
+            <span class="text-lg font-bold tracking-tighter text-[#131b2e] font-headline">Menu</span>
+            <button onclick="closeMobileMenu()" class="p-2 hover:bg-slate-50 rounded-lg">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+    </div>
+    <div class="p-4 space-y-2">
+        <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">dashboard</span> Bảng điều khiển
+        </a>
+        <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">shopping_cart</span> Đơn hàng
+        </a>
+        <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-600 transition-colors text-sm font-semibold">
+            <span class="material-symbols-outlined">admin_panel_settings</span> Quản trị Hệ thống
+        </a>
+    </div>
+</div>
 
 <!-- ====== SIDEBAR LAYOUT ====== -->
 <div class="max-w-[1700px] mx-auto flex flex-col md:flex-row min-h-[calc(100vh-64px)]">
@@ -623,7 +717,7 @@
 <!-- ====== FIREBASE SYSTEM ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -641,7 +735,7 @@
     window.db = db;
     window.fs = {
         collection, addDoc, getDocs, onSnapshot, query, orderBy, 
-        serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc
+        serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch
     };
     
     console.log("Firebase System Initialized");
@@ -1044,13 +1138,42 @@
         btn.disabled = true;
         try {
             if (id) {
+                const existingDept = departments.find(d => d.id === id);
                 await window.fs.updateDoc(window.fs.doc(window.db, DEPTS_COLLECTION, id), { name });
+                
+                // Batch Update Data Consistency
+                if (existingDept && existingDept.name !== name) {
+                    const batch = window.fs.writeBatch(window.db);
+                    let batchCount = 0;
+                    
+                    // Update Users Collection
+                    const qUsers = window.fs.query(window.fs.collection(window.db, "users"), window.fs.where("dept", "==", existingDept.name));
+                    const snapUsers = await window.fs.getDocs(qUsers);
+                    snapUsers.forEach(docSnap => {
+                        batch.update(docSnap.ref, { dept: name });
+                        batchCount++;
+                    });
+                    
+                    // Update Orders Collection
+                    const qOrders = window.fs.query(window.fs.collection(window.db, "orders"), window.fs.where("department", "==", existingDept.name));
+                    const snapOrders = await window.fs.getDocs(qOrders);
+                    snapOrders.forEach(docSnap => {
+                        batch.update(docSnap.ref, { department: name });
+                        batchCount++;
+                    });
+                    
+                    if (batchCount > 0) {
+                        await batch.commit();
+                        console.log(`Tiến hành đồng bộ (Batch Update) đổi tên phòng ban trên ${batchCount} bản ghi.`);
+                    }
+                }
             } else {
                 await window.fs.addDoc(window.fs.collection(window.db, DEPTS_COLLECTION), { name, createdAt: new Date().toISOString() });
             }
             showToast('Lưu phòng ban thành công');
             closeDeptModal();
         } catch (e) {
+            console.error(e);
             showToast('Lỗi lưu dữ liệu', 'error');
         } finally { btn.disabled = false; }
     }
@@ -1079,7 +1202,26 @@
         try {
             const data = { name, order, color };
             if (id) {
+                const existingStatus = orderStatuses.find(s => s.id === id);
                 await window.fs.updateDoc(window.fs.doc(window.db, STATUS_COLLECTION, id), data);
+                
+                // Batch Update Data Consistency
+                if (existingStatus && existingStatus.name !== name) {
+                    const batch = window.fs.writeBatch(window.db);
+                    let batchCount = 0;
+                    
+                    const qOrders = window.fs.query(window.fs.collection(window.db, "orders"), window.fs.where("status", "==", existingStatus.name));
+                    const snapOrders = await window.fs.getDocs(qOrders);
+                    snapOrders.forEach(docSnap => {
+                        batch.update(docSnap.ref, { status: name });
+                        batchCount++;
+                    });
+                    
+                    if (batchCount > 0) {
+                        await batch.commit();
+                        console.log(`Tiến hành đồng bộ (Batch Update) đổi tên trạng thái trên ${batchCount} bản ghi.`);
+                    }
+                }
             } else {
                 data.createdAt = new Date().toISOString();
                 await window.fs.addDoc(window.fs.collection(window.db, STATUS_COLLECTION), data);
@@ -1087,6 +1229,7 @@
             showToast('Lưu trạng thái thành công');
             closeStatusModal();
         } catch (e) {
+            console.error(e);
             showToast('Lỗi lưu dữ liệu', 'error');
         } finally { btn.disabled = false; }
     }
@@ -1133,6 +1276,26 @@
         sessionStorage.clear();
         window.location.href = 'login.html';
     }
+
+    window.openMobileMenu = function() {
+        document.getElementById('mobileOverlay').classList.remove('hidden');
+        document.getElementById('mobileMenu').classList.remove('-translate-x-full');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    window.closeMobileMenu = function() {
+        document.getElementById('mobileMenu').classList.add('-translate-x-full');
+        document.getElementById('mobileOverlay').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Attach event listener for mobile menu button
+    document.addEventListener('DOMContentLoaded', () => {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', window.openMobileMenu);
+        }
+    });
 
     const ROLE_PERMS = {
         admin:   ['view','create','edit','delete','approve','report','admin'],

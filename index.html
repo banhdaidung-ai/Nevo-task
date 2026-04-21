@@ -1829,17 +1829,20 @@
         
         let inputHtml = '';
         if (field === 'status') {
+            let optionsHtml = '';
+            (window.orderStatusesData || []).forEach(s => {
+                optionsHtml += `<option value="${s.name}" ${originalVal === s.name ? 'selected' : ''}>${s.name}</option>`;
+            });
             inputHtml = `<select class="w-[120px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow font-bold text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
-                <option value="Chờ duyệt" ${originalVal === 'Chờ duyệt' ? 'selected' : ''}>Chờ duyệt</option>
-                <option value="Đang xử lý" ${originalVal === 'Đang xử lý' ? 'selected' : ''}>Đang xử lý</option>
-                <option value="Hoàn thành" ${originalVal === 'Hoàn thành' ? 'selected' : ''}>Hoàn thành</option>
+                ${optionsHtml}
             </select>`;
         } else if (field === 'department') {
+            let optionsHtml = '';
+            (window.departmentsData || []).forEach(d => {
+                optionsHtml += `<option value="${d.name}" ${originalVal === d.name ? 'selected' : ''}>${d.name}</option>`;
+            });
             inputHtml = `<select class="w-[full] min-w-[200px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
-                <option value="Phòng Kế hoạch & Kinh doanh" ${originalVal === 'Phòng Kế hoạch & Kinh doanh' ? 'selected' : ''}>Phòng Kế hoạch & Kinh doanh</option>
-                <option value="Ban Điều hành Dự án" ${originalVal === 'Ban Điều hành Dự án' ? 'selected' : ''}>Ban Điều hành Dự án</option>
-                <option value="Phòng Nhân sự" ${originalVal === 'Phòng Nhân sự' ? 'selected' : ''}>Phòng Nhân sự</option>
-                <option value="Tổ Kỹ thuật - Hạ tầng" ${originalVal === 'Tổ Kỹ thuật - Hạ tầng' ? 'selected' : ''}>Tổ Kỹ thuật - Hạ tầng</option>
+                ${optionsHtml}
             </select>`;
         } else if (field === 'category') {
             inputHtml = `<select class="w-[full] min-w-[120px] bg-white border border-primary rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary inline-input shadow text-slate-700 absolute inset-0 z-10 m-auto h-[70%]" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
