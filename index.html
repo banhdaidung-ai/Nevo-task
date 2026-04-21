@@ -684,7 +684,7 @@
                             </th>
                             <th class="cursor-pointer group/h" onclick="toggleSort('title')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Công việc <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
+                                    Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
                                 </div>
                             </th>
                             <th class="cursor-pointer group/h" onclick="toggleSort('createdAt')">
@@ -1758,6 +1758,7 @@
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'title')">
                             <div class="display-val">
                                 <div class="text-[13px] font-bold text-slate-700 truncate">${data.title || '-'}</div>
+                                <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${data.content || ''}</div>
                             </div>
                         </td>
                         <td class="text-[11px] text-slate-400 font-medium">${createdText}</td>
