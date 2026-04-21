@@ -1363,7 +1363,16 @@
     let currentPage = 'dashboard';
     
     function navigateTo(pageId) {
-        event && event.preventDefault();
+        try {
+            if (typeof event !== 'undefined' && event && event.preventDefault) {
+                event.preventDefault();
+            }
+        } catch (e) {}
+
+        if (currentPage === pageId) {
+            const el = document.getElementById('page-' + pageId);
+            if (el && el.classList.contains('active')) return;
+        }
         
         // Hide current page
         const currentEl = document.getElementById('page-' + currentPage);
