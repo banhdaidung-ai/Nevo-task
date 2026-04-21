@@ -176,26 +176,38 @@
         .sort-icon.active { color: #b80035; }
         .column-filter {
             width: 100%; height: 32px; min-width: 110px;
-            border: 1px solid #e2e8f0; border-radius: 8px; padding: 0 10px;
-            font-size: 11px; font-weight: 500; outline: none; transition: all 0.2s;
-            background: #ffffff; color: #475569;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            border: none; border-radius: 999px; padding: 0 12px;
+            font-size: 11px; font-weight: 600; outline: none; transition: all 0.2s;
+            background: #f1f5f9; color: #475569;
         }
         .column-filter:focus { 
-            border-color: #b80035; 
-            box-shadow: 0 0 0 2px rgba(184, 0, 53, 0.15); 
-            background: #ffffff; 
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(184, 0, 53, 0.1); 
+            color: #0f172a;
         }
         .column-filter::placeholder { color: #94a3b8; font-weight: 400; }
         select.column-filter {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
-            background-position: right 6px center;
+            background-position: right 10px center;
             background-size: 12px;
-            padding-right: 20px;
+            padding-right: 24px;
             cursor: pointer;
         }
+
+        /* Person Bage Styles */
+        .name-badge {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+            border-radius: 999px; font-size: 11px; font-weight: 700;
+        }
+        .badge-admin   { background: #fff7ed; color: #c2410c; }
+        .badge-manager { background: #fef2f2; color: #b91c1c; }
+        .badge-user    { background: #eff6ff; color: #1d4ed8; }
+        .badge-viewer  { background: #f5f3ff; color: #4338ca; }
+        .badge-default { background: #f1f5f9; color: #475569; }
+
+        .col-code { min-width: 90px !important; width: 95px !important; }
         
         .pagination-btn {
             padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
@@ -662,9 +674,9 @@
                 <table id="mainOrdersTable" class="w-full text-left border-collapse table-auto min-w-[1500px] table-compact">
                     <thead class="bg-surface-container-high border-b border-surface-variant/30 text-slate-500">
                         <tr>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('code')">
+                            <th class="cursor-pointer group/h col-code" onclick="toggleSort('code')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Mã đơn <span class="material-symbols-outlined sort-icon" id="sort-code">unfold_more</span>
+                                    Mã <span class="material-symbols-outlined sort-icon" id="sort-code">unfold_more</span>
                                 </div>
                             </th>
                             <th class="cursor-pointer group/h" onclick="toggleSort('requester')">
@@ -685,6 +697,11 @@
                             <th class="cursor-pointer group/h" onclick="toggleSort('title')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
                                     Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h" onclick="toggleSort('note')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                                    Ghi chú <span class="material-symbols-outlined sort-icon" id="sort-note">unfold_more</span>
                                 </div>
                             </th>
                             <th class="cursor-pointer group/h" onclick="toggleSort('createdAt')">
@@ -726,28 +743,57 @@
                         </tr>
                         <!-- Filter Row -->
                         <tr class="bg-surface-container-high/30">
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('code', this.value)" placeholder="Tìm ID..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('requester', this.value)" placeholder="Tìm tên..."></th>
+                            <th class="p-2"><input type="text" class="column-filter !min-w-[80px]" onkeyup="updateColumnFilter('code', this.value)" placeholder="ID..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('requester', this.value)" placeholder="Người yc..."></th>
                             <th class="p-2">
                                 <select class="column-filter" id="colFilterDepartment" onchange="updateColumnFilter('department', this.value)">
-                                    <option value="">Tất cả phòng</option>
+                                    <option value="">Phòng ban</option>
                                 </select>
                             </th>
                             <th class="p-2">
-                                <select class="column-filter" onchange="updateColumnFilter('category', this.value)">
-                                    <option value="">Theo loại</option>
+                                <select class="column-filter" id="colFilterCategory" onchange="updateColumnFilter('category', this.value)">
+                                    <option value="">Loại</option>
                                     <option value="Video">Video</option>
                                     <option value="Hình Ảnh">Hình Ảnh</option>
+                                    <option value="Livestream">Livestream</option>
                                     <option value="Giả Live">Giả Live</option>
                                 </select>
                             </th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('title', this.value)" placeholder="Công việc..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('createdAt', this.value)" placeholder="Ngày..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('deployDate', this.value)" placeholder="Ngày..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('deadline', this.value)" placeholder="Ngày..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('stylist', this.value)" placeholder="Lọc..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedVideo', this.value)" placeholder="Lọc..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('assignedPhoto', this.value)" placeholder="Lọc..."></th>
+                            <th class="p-2"><input type="text" class="column-filter !min-w-[150px]" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
+                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
+                            <th class="p-2">
+                                <div class="flex flex-col gap-1">
+                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('createdAt_start', this.value)" title="Từ ngày">
+                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('createdAt_end', this.value)" title="Đến ngày">
+                                </div>
+                            </th>
+                            <th class="p-2">
+                                <div class="flex flex-col gap-1">
+                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deployDate_start', this.value)" title="Từ ngày">
+                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deployDate_end', this.value)" title="Đến ngày">
+                                </div>
+                            </th>
+                            <th class="p-2">
+                                <div class="flex flex-col gap-1">
+                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deadline_start', this.value)" title="Từ ngày">
+                                    <input type="date" class="column-filter !h-6 !text-[10px] !px-1" onchange="updateColumnFilter('deadline_end', this.value)" title="Đến ngày">
+                                </div>
+                            </th>
+                            <th class="p-2">
+                                <select class="column-filter" id="colFilterStylist" onchange="updateColumnFilter('stylist', this.value)">
+                                    <option value="">Stylist</option>
+                                </select>
+                            </th>
+                            <th class="p-2">
+                                <select class="column-filter" id="colFilterVideo" onchange="updateColumnFilter('assignedVideo', this.value)">
+                                    <option value="">Video</option>
+                                </select>
+                            </th>
+                            <th class="p-2">
+                                <select class="column-filter" id="colFilterPhoto" onchange="updateColumnFilter('assignedPhoto', this.value)">
+                                    <option value="">Photo</option>
+                                </select>
+                            </th>
                             <th class="p-2">
                                 <select class="column-filter" id="colFilterStatus" onchange="updateColumnFilter('status', this.value)">
                                     <option value="">Trạng thái</option>
@@ -1319,6 +1365,7 @@
                     <select id="editOrderCategory" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
                         <option value="Video">Video</option>
                         <option value="Hình Ảnh">Hình Ảnh</option>
+                        <option value="Livestream">Livestream</option>
                         <option value="Giả Live">Giả Live</option>
                     </select>
                 </div>
@@ -1338,8 +1385,12 @@
                 </div>
             </div>
             <div class="space-y-1.5">
+                <label class="text-xs font-bold uppercase text-on-surface-variant">Nội dung chi tiết</label>
+                <textarea id="editOrderContent" rows="3" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary h-24 resize-none"></textarea>
+            </div>
+            <div class="space-y-1.5">
                 <label class="text-xs font-bold uppercase text-on-surface-variant">Ghi chú</label>
-                <textarea id="editOrderContent" rows="3" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary"></textarea>
+                <input id="editOrderNote" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary" placeholder="Ghi chú nhanh...">
             </div>
         </div>
         <!-- Footer -->
@@ -1669,13 +1720,32 @@
             
             // Column filters match
             const matchColumns = Object.keys(columnFilters).every(key => {
+                const filterVal = columnFilters[key];
+                if (!filterVal) return true;
+
+                // Date Range Handling
+                if (key.includes('_start') || key.includes('_end')) {
+                    const baseKey = key.split('_')[0];
+                    const itemDateVal = data[baseKey];
+                    if (!itemDateVal) return false;
+                    
+                    // Normalize item date to YYYY-MM-DD
+                    let itemDateStr = '';
+                    if (itemDateVal.toDate) itemDateStr = itemDateVal.toDate().toISOString().split('T')[0];
+                    else if (typeof itemDateVal === 'string') itemDateStr = itemDateVal.split('T')[0];
+                    
+                    if (key.endsWith('_start')) return itemDateStr >= filterVal;
+                    if (key.endsWith('_end')) return itemDateStr <= filterVal;
+                    return true;
+                }
+
                 let val = '';
                 if (key === 'createdAt' || key === 'deployDate' || key === 'deadline') {
                     val = formatDateDisplay(data[key]);
                 } else {
                     val = String(data[key] || '');
                 }
-                return val.toLowerCase().includes(columnFilters[key]);
+                return val.toLowerCase().includes(filterVal);
             });
 
             return matchGlobal && matchStatus && matchColumns;
@@ -1737,16 +1807,27 @@
                 category: data.category,
                 stylist: data.stylist,
                 assignedVideo: data.assignedVideo,
-                assignedPhoto: data.assignedPhoto
+                assignedPhoto: data.assignedPhoto,
+                note: data.note || ''
             }));
+
+            // Function to get user badge
+            const getUserBadge = (name) => {
+                if (!name || name === '-') return '<span class="text-slate-400">-</span>';
+                const u = (window.allUsersData || []).find(x => x.name === name);
+                const roleClass = u ? `badge-${u.role}` : 'badge-default';
+                return `<span class="name-badge ${roleClass}">${name}</span>`;
+            };
+            
+            const isAdmin = (sessionStorage.getItem('nevo_role') === 'admin');
             
             fullHtml += `
                     <tr class="hover:bg-slate-50/80 transition-colors group relative border-b border-slate-50">
-                        <td class="font-headline font-bold text-[13px] text-primary">${data.code || '-'}</td>
+                        <td class="font-headline font-bold text-[13px] text-primary col-code">${data.code || '-'}</td>
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'requester')">
                             <div class="display-val flex items-center gap-2">
                                 <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">${initials}</div>
-                                <span class="text-[13px] font-semibold text-on-surface">${data.requester || '-'}</span>
+                                <div class="text-[13px] font-semibold text-on-surface">${getUserBadge(data.requester)}</div>
                             </div>
                         </td>
                         <td class="text-[12px] font-medium text-slate-500 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'department')">
@@ -1755,11 +1836,14 @@
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${data.category || '-'}</span>
                         </td>
-                        <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'title')">
+                        <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" onclick="openEditModal('${dataStr}')">
                             <div class="display-val">
                                 <div class="text-[13px] font-bold text-slate-700 truncate">${data.title || '-'}</div>
                                 <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${data.content || ''}</div>
                             </div>
+                        </td>
+                        <td class="text-[12px] text-slate-500 italic cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'note')">
+                            <span class="display-val truncate max-w-[120px] inline-block">${data.note || '-'}</span>
                         </td>
                         <td class="text-[11px] text-slate-400 font-medium">${createdText}</td>
                         <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deployDate')">
@@ -1769,19 +1853,22 @@
                             <div class="display-val">${deadlineText}</div>
                         </td>
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
-                            <span class="display-val">${data.stylist || '-'}</span>
+                            <div class="display-val">${getUserBadge(data.stylist)}</div>
                         </td>
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
-                            <span class="display-val">${data.assignedVideo || '-'}</span>
+                            <div class="display-val">${getUserBadge(data.assignedVideo)}</div>
                         </td>
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
-                            <span class="display-val">${data.assignedPhoto || '-'}</span>
+                            <div class="display-val">${getUserBadge(data.assignedPhoto)}</div>
                         </td>
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'status')">
                             <div class="display-val">${statusBadgeFull}</div>
                         </td>
                         <td class="text-right">
-                            <button onclick="openEditModal('${dataStr}')" class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+                            <div class="flex items-center justify-end gap-1">
+                                <button onclick="openEditModal('${dataStr}')" class="p-1.5 hover:bg-slate-100 rounded-full hover:text-primary transition-all"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+                                ${isAdmin ? `<button onclick="deleteOrder('${data.id}', '${data.code}')" class="p-1.5 hover:bg-red-50 rounded-full hover:text-red-600 transition-all"><span class="material-symbols-outlined text-[18px]">delete</span></button>` : ''}
+                            </div>
                         </td>
                     </tr>`;
         });
@@ -1852,10 +1939,27 @@
 
     window.departmentsData = [];
     window.orderStatusesData = [];
+    window.allUsersData = [];
 
     window.initOrdersTracker = function() {
         if (!window.db) return;
         
+        // --- 0. USERS SYNC ---
+        const usersRef = window.fsCollection(window.db, "users");
+        window.fsOnSnapshot(usersRef, (snapshot) => {
+            window.allUsersData = [];
+            snapshot.forEach(doc => window.allUsersData.push({ id: doc.id, ...doc.data() }));
+            
+            // Populate staff filters
+            const staff = window.allUsersData.sort((a,b) => a.name.localeCompare(b.name));
+            populateDropdown('colFilterStylist', staff, 'Stylist');
+            populateDropdown('colFilterVideo', staff, 'Video');
+            populateDropdown('colFilterPhoto', staff, 'Photo');
+            
+            // Trigger table refresh to apply name colorization if names are already loaded
+            if (window.allOrdersData && window.allOrdersData.length > 0) window.renderOrdersTable();
+        });
+
         // --- 1. DEPARTMENTS SYNC ---
         const deptsRef = window.fsCollection(window.db, "departments");
         const qDepts = window.fsQuery(deptsRef, window.fsOrderBy("name"));
@@ -1930,6 +2034,7 @@
         document.getElementById('editOrderVideo').value = data.assignedVideo || '';
         document.getElementById('editOrderPhoto').value = data.assignedPhoto || '';
         document.getElementById('editOrderContent').value = data.content || '';
+        document.getElementById('editOrderNote').value = data.note || '';
         
         const modal = document.getElementById('editOrderModal');
         modal.classList.remove('hidden');
@@ -1973,11 +2078,13 @@
                 title: title,
                 requester: requester,
                 deadline: deadline,
+                deployDate: deployDate,
                 category: category,
                 stylist: stylist,
                 assignedVideo: assignedVideo,
                 assignedPhoto: assignedPhoto,
-                content: content
+                content: content,
+                note: document.getElementById('editOrderNote').value || ''
             });
             
             btn.innerHTML = originalText;
@@ -2037,7 +2144,18 @@
             inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
                 <option value="Video" ${originalVal === 'Video' ? 'selected' : ''}>Video</option>
                 <option value="Hình Ảnh" ${originalVal === 'Hình Ảnh' ? 'selected' : ''}>Hình Ảnh</option>
+                <option value="Livestream" ${originalVal === 'Livestream' ? 'selected' : ''}>Livestream</option>
                 <option value="Giả Live" ${originalVal === 'Giả Live' ? 'selected' : ''}>Giả Live</option>
+            </select>`;
+        } else if (field === 'requester' || field === 'stylist' || field === 'assignedVideo' || field === 'assignedPhoto') {
+            let optionsHtml = '<option value="-">-</option>';
+            // Sort users by name
+            const sortedUsers = (window.allUsersData || []).sort((a,b) => a.name.localeCompare(b.name));
+            sortedUsers.forEach(u => {
+                optionsHtml += `<option value="${u.name}" ${originalVal === u.name ? 'selected' : ''}>${u.name}</option>`;
+            });
+            inputHtml = `<select class="${commonSelectClass} font-bold" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+                ${optionsHtml}
             </select>`;
         } else if (field === 'deadline' || field === 'deployDate') {
             inputHtml = `<input type="date" class="${commonInputClass}" value="${originalVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" />`;
