@@ -196,6 +196,33 @@
             padding-right: 24px;
             cursor: pointer;
         }
+        /* Editor Styles */
+        #orderEditor:empty:before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-style: italic;
+        }
+        #orderEditor table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1rem 0;
+        }
+        #orderEditor table, #orderEditor th, #orderEditor td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+        }
+        #orderEditor th {
+            background-color: #f8fafc;
+            font-weight: bold;
+        }
+        #orderEditor img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        #orderEditor:focus {
+            outline: none;
+        }
 
         /* Person Bage Styles */
         .name-badge {
@@ -1456,35 +1483,6 @@
                             <option value="Giả Live">Giả Live</option>
                         </select>
                     </div>
-                    <div id="assignmentsSection" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                                Ngày triển khai
-                            </label>
-                            <div class="relative">
-                                <input id="orderDeployDate" class="w-full bg-surface-container-highest border-none rounded-lg px-10 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" type="date"/>
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-secondary material-symbols-outlined">event_available</span>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                                Stylist
-                            </label>
-                            <input id="assignedStylist" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên Stylist" type="text"/>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                                Video (Phụ trách)
-                            </label>
-                            <input id="assignedVideo" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên Video" type="text"/>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                                Photo (Phụ trách)
-                            </label>
-                            <input id="assignedPhoto" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="Tên Photo" type="text"/>
-                        </div>
-                    </div>
                     <div class="md:col-span-2 space-y-2">
                         <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                             Tiêu đề đơn hàng <span class="text-primary">*</span>
@@ -1497,44 +1495,47 @@
                             Nội dung chi tiết
                         </label>
                         <div class="w-full bg-surface-container-high border-b border-outline-variant/30 rounded-t-lg flex flex-wrap items-center gap-1 p-2">
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('bold')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="In đậm">
                                 <span class="material-symbols-outlined text-lg">format_bold</span>
                             </button>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('italic')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="In nghiêng">
                                 <span class="material-symbols-outlined text-lg">format_italic</span>
                             </button>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('underline')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Gạch chân">
                                 <span class="material-symbols-outlined text-lg">format_underlined</span>
                             </button>
                             <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('insertUnorderedList')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Danh sách">
                                 <span class="material-symbols-outlined text-lg">format_list_bulleted</span>
                             </button>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('insertOrderedList')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Danh sách số">
                                 <span class="material-symbols-outlined text-lg">format_list_numbered</span>
                             </button>
                             <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('justifyLeft')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn trái">
                                 <span class="material-symbols-outlined text-lg">format_align_left</span>
                             </button>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('justifyCenter')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn giữa">
                                 <span class="material-symbols-outlined text-lg">format_align_center</span>
                             </button>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorCmd('justifyRight')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn phải">
                                 <span class="material-symbols-outlined text-lg">format_align_right</span>
                             </button>
                             <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorInsertLink()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn liên kết">
                                 <span class="material-symbols-outlined text-lg">link</span>
                             </button>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors">
+                            <button onclick="editorInsertImage()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn hình ảnh">
                                 <span class="material-symbols-outlined text-lg">image</span>
+                            </button>
+                             <button onclick="editorInsertTable()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn bảng tính">
+                                <span class="material-symbols-outlined text-lg">table_view</span>
                             </button>
                             <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors ml-auto">
                                 <span class="material-symbols-outlined text-lg">fullscreen</span>
                             </button>
                         </div>
-                        <textarea id="orderContent" class="w-full bg-surface-container-highest border-none rounded-b-lg px-4 py-4 text-sm focus:ring-2 focus:ring-primary transition-all resize-none min-h-[300px] md:min-h-[400px]" placeholder="Mô tả chi tiết các hạng mục cần thực hiện..."></textarea>
+                        <div id="orderEditor" contenteditable="true" class="w-full bg-surface-container-highest border-none rounded-b-lg px-4 py-4 text-sm focus:ring-2 focus:ring-primary transition-all overflow-y-auto min-h-[400px] md:min-h-[500px]" placeholder="Mô tả chi tiết các hạng mục cần thực hiện..."></div>
                     </div>
                     <!-- Note -->
                     <div class="md:col-span-2 p-4 rounded-lg bg-surface-container-low border border-outline-variant/10">
@@ -1656,7 +1657,12 @@
             </div>
             <div class="space-y-1.5">
                 <label class="text-xs font-bold uppercase text-on-surface-variant">Nội dung chi tiết</label>
-                <textarea id="editOrderContent" rows="3" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary h-24 resize-none"></textarea>
+                <div class="w-full bg-surface-container-high border border-outline-variant/30 rounded-t-lg flex flex-wrap items-center gap-0.5 p-1">
+                    <button onclick="editorCmd('bold')" class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant"><span class="material-symbols-outlined text-base">format_bold</span></button>
+                    <button onclick="editorCmd('italic')" class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant"><span class="material-symbols-outlined text-base">format_italic</span></button>
+                    <button onclick="editorInsertTable()" class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant"><span class="material-symbols-outlined text-base">table_view</span></button>
+                </div>
+                <div id="editOrderContent" contenteditable="true" class="w-full bg-surface-container-highest border-none rounded-b-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary h-48 overflow-y-auto"></div>
             </div>
             <div class="space-y-1.5">
                 <label class="text-xs font-bold uppercase text-on-surface-variant">Ghi chú</label>
@@ -1922,12 +1928,15 @@
         const department = document.getElementById('department').value;
         const requester = document.getElementById('requester').value;
         const deadline = document.getElementById('deadline').value;
-        const deployDate = document.getElementById('orderDeployDate').value;
-        const content = document.getElementById('orderContent').value;
+        const content = document.getElementById('orderEditor').innerHTML;
         const category = document.getElementById('orderCategory').value;
-        const stylist = document.getElementById('assignedStylist').value;
-        const assignedVideo = document.getElementById('assignedVideo').value;
-        const assignedPhoto = document.getElementById('assignedPhoto').value;
+        
+        // Removed fields default to empty
+        const deployDate = '';
+        const stylist = '';
+        const assignedVideo = '';
+        const assignedPhoto = '';
+        const note = '';
         
         if (!title || !deadline) {
             showToast('Lỗi!', 'Vui lòng điền đủ tiêu đề và hạn chót.', 'error', 'text-error');
@@ -2441,7 +2450,7 @@
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" onclick="openEditModal('${dataStr}')">
                             <div class="display-val">
                                 <div class="text-[13px] font-bold text-slate-700 truncate">${data.title || '-'}</div>
-                                <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${data.content || ''}</div>
+                                <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${(data.content || '').replace(/<[^>]*>/g, ' ')}</div>
                             </div>
                         </td>
                         <td class="text-[12px] text-slate-500 italic cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'note')">
@@ -2657,7 +2666,7 @@
         document.getElementById('editOrderStylist').value = data.stylist || '';
         document.getElementById('editOrderVideo').value = data.assignedVideo || '';
         document.getElementById('editOrderPhoto').value = data.assignedPhoto || '';
-        document.getElementById('editOrderContent').value = data.content || '';
+        document.getElementById('editOrderContent').innerHTML = data.content || '';
         document.getElementById('editOrderNote').value = data.note || '';
         
         // RBAC: Disable fields if not permitted
@@ -2706,7 +2715,7 @@
         const stylist = document.getElementById('editOrderStylist').value;
         const assignedVideo = document.getElementById('editOrderVideo').value;
         const assignedPhoto = document.getElementById('editOrderPhoto').value;
-        const content = document.getElementById('editOrderContent').value;
+        const content = document.getElementById('editOrderContent').innerHTML;
         
         if (!title || !requester || !deadline) {
             showToast('Lỗi!', 'Vui lòng điền đủ các trường bắt buộc.', 'error', 'text-error');
@@ -3002,6 +3011,38 @@
             if (search) search.focus();
         }
     });
+
+    // ===== Rich Text Editor Logic =====
+    window.editorCmd = function(cmd, val = null) {
+        document.execCommand(cmd, false, val);
+    };
+
+    window.editorInsertLink = function() {
+        const url = prompt("Nhập URL liên kết:");
+        if (url) window.editorCmd('createLink', url);
+    };
+
+    window.editorInsertImage = function() {
+        const url = prompt("Nhập URL hình ảnh:");
+        if (url) window.editorCmd('insertImage', url);
+    };
+
+    window.editorInsertTable = function() {
+        const rows = prompt("Số hàng:", "3");
+        const cols = prompt("Số cột:", "3");
+        if (rows && cols) {
+            let html = '<table>';
+            for (let i = 0; i < rows; i++) {
+                html += '<tr>';
+                for (let j = 0; j < cols; j++) {
+                    html += i === 0 ? '<th>Tiêu đề</th>' : '<td>Nội dung</td>';
+                }
+                html += '</tr>';
+            }
+            html += '</table><p><br></p>';
+            window.editorCmd('insertHTML', html);
+        }
+    };
 
     // ===== Initialize =====
     document.addEventListener('DOMContentLoaded', () => {
