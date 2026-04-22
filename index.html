@@ -866,56 +866,61 @@
                 <table id="mainOrdersTable" class="w-full text-left border-separate border-spacing-0 table-auto min-w-full table-compact">
                     <thead class="text-[#64748b] bg-[#e0e7ff] sticky top-0 z-20 shadow-sm text-[10px] font-extrabold uppercase tracking-widest">
                         <tr>
-                            <th class="cursor-pointer group/h pl-4 py-4 bg-[#e0e7ff]" onclick="toggleSort('code')">
+                            <th class="cursor-pointer group/h pl-4 py-4 bg-[#e0e7ff] min-w-[100px]" onclick="toggleSort('code')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Mã đơn hàng <span class="material-symbols-outlined sort-icon" id="sort-code">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('requester')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[130px]" onclick="toggleSort('requester')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Người yêu cầu <span class="material-symbols-outlined sort-icon" id="sort-requester">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('department')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[110px]" onclick="toggleSort('department')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Phòng ban <span class="material-symbols-outlined sort-icon" id="sort-department">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('category')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[100px]" onclick="toggleSort('category')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
-                                    Công việc <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
+                                    Thể loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('note')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[200px] w-[25%]" onclick="toggleSort('title')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[150px]" onclick="toggleSort('note')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Ghi chú <span class="material-symbols-outlined sort-icon" id="sort-note">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('title')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[110px]" onclick="toggleSort('orderDate')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
-                                    Yêu cầu <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
+                                    Ngày order <span class="material-symbols-outlined sort-icon" id="sort-orderDate">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('deployDate')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('deployDate')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
-                                    Triển khai <span class="material-symbols-outlined sort-icon" id="sort-deployDate">unfold_more</span>
+                                    Ngày triển khai <span class="material-symbols-outlined sort-icon" id="sort-deployDate">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('deadline')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[110px]" onclick="toggleSort('deadline')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Deadline <span class="material-symbols-outlined sort-icon" id="sort-deadline">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('status')">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('status')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Trạng thái <span class="material-symbols-outlined sort-icon" id="sort-status">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="text-right py-4 pr-4 bg-[#e0e7ff]">Thao tác</th>
+                            <th class="text-right py-4 pr-4 bg-[#e0e7ff] min-w-[80px]">Thao tác</th>
                         </tr>
                         <!-- Filter Row -->
                         <tr class="bg-slate-50 border-b border-indigo-100">
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter !min-w-[80px]" onkeyup="updateColumnFilter('code', this.value)" placeholder="ID..."></th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('code', this.value)" placeholder="ID..."></th>
                             <th class="p-2 bg-slate-50">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-requester" data-label="Người yêu cầu" onclick="toggleMultiSelect('menu-requester')">Người yêu cầu</div>
@@ -932,7 +937,7 @@
                             </th>
                             <th class="p-2 bg-slate-50">
                                 <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-category" data-label="Công việc" onclick="toggleMultiSelect('menu-category')">Công việc</div>
+                                    <div class="multi-select-trigger" id="trigger-category" data-label="Thể loại" onclick="toggleMultiSelect('menu-category')">Thể loại</div>
                                     <div class="multi-select-menu" id="menu-category">
                                         <div class="multi-select-item all-active" id="all-category" onclick="toggleColumnFilter('category', 'ALL', true)"><span>Tất cả</span></div>
                                         <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Video', cb.checked)">
@@ -954,11 +959,22 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter !min-w-[150px]" onkeyup="updateColumnFilter('title', this.value)" placeholder="Yêu cầu..."></th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
                             <th class="p-2 bg-slate-50">
                                 <div class="date-range-container">
-                                    <div class="date-range-trigger" id="trigger-deployDate" data-label="Triển khai" onclick="toggleDateRange('menu-deployDate')">Triển khai</div>
+                                    <div class="date-range-trigger" id="trigger-orderDate" data-label="Ngày order" onclick="toggleDateRange('menu-orderDate')">Ngày order</div>
+                                    <div class="date-range-menu" id="menu-orderDate">
+                                        <span class="date-range-label">Từ ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('orderDate', this.value, 'start')">
+                                        <span class="date-range-label">Đến ngày</span>
+                                        <input type="date" onchange="updateDateRangeFilter('orderDate', this.value, 'end')">
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-2 bg-slate-50">
+                                <div class="date-range-container">
+                                    <div class="date-range-trigger" id="trigger-deployDate" data-label="Ngày triển khai" onclick="toggleDateRange('menu-deployDate')">Ngày triển khai</div>
                                     <div class="date-range-menu" id="menu-deployDate">
                                         <span class="date-range-label">Từ ngày</span>
                                         <input type="date" onchange="updateDateRangeFilter('deployDate', this.value, 'start')">
@@ -2525,7 +2541,7 @@
         }
 
         if (pagedData.length === 0) {
-            tbodyFull.innerHTML = `<tr><td colspan="10" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+            tbodyFull.innerHTML = `<tr><td colspan="11" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
             updatePaginationUI(0);
             return;
         }
@@ -2559,7 +2575,7 @@
                     const icon = getGroupIcon(sortConfig.key);
                     fullHtml += `
                         <tr class="group-header-row">
-                            <td colspan="10">
+                            <td colspan="11">
                                 <div class="group-header-content">
                                     <span class="material-symbols-outlined text-[16px] text-slate-400">${icon}</span>
                                     <span>${headerText}</span>
@@ -2574,6 +2590,7 @@
             const deadlineText = formatDateDisplay(data.deadline);
             const createdText = formatDateDisplay(data.createdAt);
             const deployText = formatDateDisplay(data.deployDate);
+            const orderText = formatDateDisplay(data.orderDate || data.createdAt);
             
             // Dynamic status badge from orderStatusesData
             const currentStatus = (window.orderStatusesData || []).find(s => s.name === data.status);
@@ -2589,6 +2606,7 @@
                 department: data.department, 
                 deadline: data.deadline, 
                 deployDate: data.deployDate,
+                orderDate: data.orderDate || data.createdAt,
                 content: data.content,
                 category: data.category,
                 stylist: data.stylist,
@@ -2647,9 +2665,6 @@
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
-                        <td class="text-[12px] text-slate-500 italic cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'note')">
-                            <span class="display-val truncate max-w-[120px] inline-block">${data.note || '-'}</span>
-                        </td>
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
                             onclick="openEditModal('${dataStr}')"
                             onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
@@ -2658,6 +2673,12 @@
                                 <div class="text-[13px] font-bold text-slate-700 truncate">${data.title || '-'}</div>
                                 <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${(data.content || '').replace(/<[^>]*>/g, ' ')}</div>
                             </div>
+                        </td>
+                        <td class="text-[12px] text-slate-500 italic cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'note')">
+                            <span class="display-val truncate max-w-[150px] inline-block">${data.note || '-'}</span>
+                        </td>
+                        <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'orderDate')">
+                            <div class="display-val">${orderText}</div>
                         </td>
                         <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deployDate')">
                             <div class="display-val">${deployText}</div>
