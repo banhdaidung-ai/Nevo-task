@@ -835,10 +835,10 @@
             <div class="flex flex-wrap items-center gap-3">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Lọc Nhanh:</span>
                 <button id="qf-all" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-primary text-white" onclick="setQuickFilter('')">Tất cả</button>
-                <button id="qf-processing" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang xử lý')">Đang xử lý</button>
+                <button id="qf-production" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang sản xuất')">Đang sản xuất</button>
+                <button id="qf-postproduction" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang hậu kỳ')">Đang hậu kỳ</button>
                 <button id="qf-completed" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Hoàn thành')">Hoàn thành</button>
                 <button id="qf-pending" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Chờ duyệt')">Chờ duyệt</button>
-                <button id="qf-cancelled" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đã hủy')">Đã hủy</button>
                 <!-- Hidden input to store status for renderOrdersTable -->
                 <input type="hidden" id="filterStatus" value="">
             </div>
@@ -2427,10 +2427,10 @@
         });
         
         let btnId = 'qf-all';
-        if (status === 'Đang xử lý') btnId = 'qf-processing';
+        if (status === 'Đang sản xuất') btnId = 'qf-production';
+        else if (status === 'Đang hậu kỳ') btnId = 'qf-postproduction';
         else if (status === 'Hoàn thành') btnId = 'qf-completed';
         else if (status === 'Chờ duyệt') btnId = 'qf-pending';
-        else if (status === 'Đã hủy') btnId = 'qf-cancelled';
         
         const activeBtn = document.getElementById(btnId);
         if (activeBtn) {
