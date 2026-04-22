@@ -1104,6 +1104,9 @@
                 <button id="tabBtnReport" onclick="window.switchPlanningTab('report')" class="px-6 py-2.5 rounded-lg text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-all whitespace-nowrap">Báo cáo Thực tế vs Kế hoạch</button>
             </div>
             <div class="flex items-center gap-3 mt-4 md:mt-0 w-full md:w-auto overflow-x-auto">
+                <button id="btnDeleteSelectedPlanning" onclick="window.deleteSelectedPlanningRows()" class="hidden flex items-center gap-2 bg-rose-50 text-rose-600 px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm border border-rose-100 hover:bg-rose-100 transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[18px]">delete_sweep</span> Xoá đã chọn (<span id="selectedPlanningCount">0</span>)
+                </button>
                 <button id="btnAddPlanningRow" onclick="if(typeof window.addPlanningRow === 'function') window.addPlanningRow()" class="flex items-center gap-2 bg-[#be123c] text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md hover:bg-[#9f1239] transition-all whitespace-nowrap">
                     <span class="material-symbols-outlined text-[18px]">add</span> Thêm dòng
                 </button>
@@ -1127,11 +1130,14 @@
                 <table class="w-full text-left border-separate border-spacing-0 whitespace-nowrap min-w-max">
                     <thead class="text-[#64748b] bg-[#f8fafc] sticky top-0 z-20 text-[10px] font-extrabold uppercase tracking-widest">
                         <tr id="planningTableHeaderRow">
-                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-0 z-30 min-w-[160px] border-r border-slate-100 border-b">PHÒNG BAN</th>
-                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[160px] z-30 min-w-[200px] border-r border-slate-100 border-b">CHIẾN DỊCH</th>
-                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[360px] z-30 min-w-[250px] border-r border-slate-100 border-b">GHI CHÚ</th>
-                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[610px] z-30 min-w-[120px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
-                            <th class="py-4 px-1 bg-[#f8fafc] sticky left-[730px] z-30 min-w-[36px] text-right border-r-2 border-slate-200 border-b"><div class="text-[8px] leading-tight">NGÂN<br>SÁCH</div></th>
+                            <th class="py-4 px-4 bg-[#f8fafc] sticky left-0 z-40 min-w-[50px] text-center border-r border-slate-100 border-b">
+                                <input type="checkbox" id="selectAllPlanning" onchange="window.toggleAllPlanningRows(this.checked)" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                            </th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[50px] z-30 min-w-[160px] border-r border-slate-100 border-b">PHÒNG BAN</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[210px] z-30 min-w-[200px] border-r border-slate-100 border-b">CHIẾN DỊCH</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[410px] z-30 min-w-[250px] border-r border-slate-100 border-b">GHI CHÚ</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[660px] z-30 min-w-[120px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
+                            <th class="py-4 px-1 bg-[#f8fafc] sticky left-[780px] z-30 min-w-[36px] text-right border-r-2 border-slate-200 border-b"><div class="text-[8px] leading-tight">NGÂN<br>SÁCH</div></th>
                             <!-- Dynamic Day Columns will be injected here -->
                             <th class="py-4 px-4 bg-[#f8fafc] sticky right-0 z-30 min-w-[80px] text-center border-l border-slate-100 border-b">XÓA</th>
                         </tr>
@@ -1141,8 +1147,8 @@
                     </tbody>
                     <tfoot class="bg-[#f8fafc] font-bold text-[#1e293b] sticky bottom-0 z-20">
                         <tr id="planningTableFooterRow">
-                            <td colspan="4" class="py-4 px-6 text-rose-600 uppercase tracking-widest sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right">TỔNG CỘNG</td>
-                            <td id="planningTotalBudget" class="py-4 px-6 text-right sticky left-[730px] z-20 bg-[#f8fafc] border-r-2 border-slate-200 text-rose-600 font-bold">0</td>
+                            <td colspan="5" class="py-4 px-6 text-rose-600 uppercase tracking-widest sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right">TỔNG CỘNG</td>
+                            <td id="planningTotalBudget" class="py-4 px-6 text-right sticky left-[780px] z-20 bg-[#f8fafc] border-r-2 border-slate-200 text-rose-600 font-bold">0</td>
                             <!-- Daily totals will be injected here -->
                             <td class="py-4 px-4 text-center sticky right-0 z-20 bg-[#f8fafc] border-l border-slate-100 text-slate-400">--</td>
                         </tr>
@@ -3848,7 +3854,7 @@
         const footerRow = document.getElementById('planningTableFooterRow');
         if(headerRow && footerRow) {
             const cols = headerRow.querySelectorAll('th');
-            for(let i=5; i<cols.length - 1; i++) cols[i].remove();
+            for(let i=6; i<cols.length - 1; i++) cols[i].remove();
             const lastHeader = headerRow.querySelector('th:last-child');
             const fCols = footerRow.querySelectorAll('td');
             for(let i=2; i<fCols.length - 1; i++) fCols[i].remove();
@@ -4011,6 +4017,44 @@
             .catch(err => alert("Lỗi khi thêm: " + err.message));
     };
 
+    window.toggleAllPlanningRows = function(checked) {
+        const checkboxes = document.querySelectorAll('.planning-row-checkbox');
+        checkboxes.forEach(cb => cb.checked = checked);
+        window.updateSelectedPlanningCount();
+    };
+
+    window.updateSelectedPlanningCount = function() {
+        const checkboxes = document.querySelectorAll('.planning-row-checkbox:checked');
+        const count = checkboxes.length;
+        const btn = document.getElementById('btnDeleteSelectedPlanning');
+        const countSpan = document.getElementById('selectedPlanningCount');
+        
+        if(count > 0) {
+            btn.classList.remove('hidden');
+            countSpan.textContent = count;
+        } else {
+            btn.classList.add('hidden');
+        }
+    };
+
+    window.deleteSelectedPlanningRows = function() {
+        const checkboxes = document.querySelectorAll('.planning-row-checkbox:checked');
+        if(checkboxes.length === 0) return;
+        
+        if(confirm(`Bạn có chắc chắn muốn xoá ${checkboxes.length} dòng đã chọn?`)) {
+            const ids = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
+            const promises = ids.map(id => window.fsDeleteDoc(window.fsDoc(window.db, "planning", id)));
+            
+            Promise.all(promises)
+                .then(() => {
+                    document.getElementById('selectAllPlanning').checked = false;
+                    window.updateSelectedPlanningCount();
+                    console.log("Selected planning rows deleted");
+                })
+                .catch(err => alert("Lỗi khi xoá hàng loạt: " + err.message));
+        }
+    };
+
     window.deletePlanningRow = function(id) {
         if(confirm('Bạn có chắc chắn muốn xoá dòng kế hoạch này?')) {
             window.fsDeleteDoc(window.fsDoc(window.db, "planning", id))
@@ -4029,7 +4073,7 @@
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
-        let filteredData = window.planningRowsData.filter(row => {
+        let filteredData = (window.planningRowsData || []).filter(row => {
             const matchesMonth = row.month === monthFilter.value;
             const matchesDept = !deptFilter.value || row.dept === deptFilter.value;
             return matchesMonth && matchesDept;
@@ -4045,7 +4089,7 @@
         Object.keys(grouped).sort().forEach(deptName => {
             const groupTr = document.createElement('tr');
             groupTr.className = "bg-slate-50/80";
-            groupTr.innerHTML = `<td colspan="${6 + daysInMonth}" class="py-2.5 px-6 text-[10px] font-bold text-rose-600 uppercase tracking-widest border-b border-slate-200/60 shadow-sm">${deptName}</td>`;
+            groupTr.innerHTML = `<td colspan="${7 + daysInMonth}" class="py-2.5 px-6 text-[10px] font-bold text-rose-600 uppercase tracking-widest border-b border-slate-200/60 shadow-sm">${deptName}</td>`;
             tbody.appendChild(groupTr);
 
             grouped[deptName].forEach(row => {
@@ -4071,23 +4115,26 @@
                 });
 
                 tr.innerHTML = `
-                    <td class="py-3 px-6 font-bold text-slate-700 sticky left-0 z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[160px] align-top">
+                    <td class="py-3 px-4 sticky left-0 z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[50px] text-center align-top">
+                        <input type="checkbox" class="planning-row-checkbox rounded border-slate-300 text-rose-600 focus:ring-rose-500" data-id="${row.id}" onchange="window.updateSelectedPlanningCount()">
+                    </td>
+                    <td class="py-3 px-6 font-bold text-slate-700 sticky left-[50px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[160px] align-top">
                         <select onchange="window.updateRowField('${row.id}', 'dept', this.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-sm font-bold text-[#1e293b] outline-none">
                             ${window.getPlanningDeptOptions(row.dept)}
                         </select>
                     </td>
-                    <td class="py-3 px-6 sticky left-[160px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[200px] align-top">
+                    <td class="py-3 px-6 sticky left-[210px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[200px] align-top">
                         <textarea rows="2" onblur="window.updateRowField('${row.id}', 'campaign', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-bold text-[#1e293b] outline-none resize-none">${row.campaign || ''}</textarea>
                     </td>
-                    <td class="py-3 px-6 sticky left-[360px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[250px] align-top">
+                    <td class="py-3 px-6 sticky left-[410px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[250px] align-top">
                         <textarea rows="2" onblur="window.updateRowField('${row.id}', 'note', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 outline-none resize-none leading-relaxed">${row.note || ''}</textarea>
                     </td>
-                    <td class="py-3 px-6 sticky left-[610px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 text-center min-w-[120px] align-top">
+                    <td class="py-3 px-6 sticky left-[660px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 text-center min-w-[120px] align-top">
                         <select onchange="window.updateRowField('${row.id}', 'type', this.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 outline-none">
                             ${typeOptions}
                         </select>
                     </td>
-                    <td class="py-3 px-1 sticky left-[730px] z-10 bg-white group-hover:bg-blue-50/30 border-r-2 border-b border-slate-200 min-w-[36px] align-top">
+                    <td class="py-3 px-1 sticky left-[780px] z-10 bg-white group-hover:bg-blue-50/30 border-r-2 border-b border-slate-200 min-w-[36px] align-top">
                         <input type="text" onblur="window.updateRowBudget('${row.id}', this.value)" class="w-full border border-slate-200 rounded px-1 py-2 text-right text-[10px] font-bold text-rose-600 outline-none" placeholder="0" value="${row.budget || ''}">
                     </td>
                     ${daysHtml}
@@ -4097,7 +4144,6 @@
                         </button>
                     </td>
                 `;
-
                 tbody.appendChild(tr);
             });
         });
