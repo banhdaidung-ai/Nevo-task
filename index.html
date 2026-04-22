@@ -401,6 +401,7 @@
             <div id="navLinks" class="hidden md:flex items-center gap-6 font-headline tracking-tight font-semibold text-sm">
                 <a href="#" data-page="dashboard" onclick="navigateTo('dashboard')" class="nav-link text-rose-600 border-b-2 border-rose-600 pb-1 transition-all duration-200">Bảng điều khiển</a>
                 <a href="#" data-page="orders" onclick="navigateTo('orders')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
+                <a href="#" data-page="planning" onclick="navigateTo('planning')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
                 <a href="#" data-page="reports" onclick="navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Báo cáo</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-slate-500 hover:text-red-600 transition-all duration-200 hidden">Quản trị</a>
                 <a href="#" data-page="support" onclick="return false" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
@@ -808,16 +809,32 @@
                 <h1 class="font-headline font-extrabold text-3xl tracking-tight text-[#1e293b]">Danh sách Đơn hàng <span class="text-primary">.</span></h1>
             </div>
             <div class="flex flex-wrap gap-4">
+                <!-- Tổng đơn hàng -->
+                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0"></span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tổng đơn hàng</span>
+                    </div>
+                    <span id="statTotal" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
+                </div>
                 <!-- Đang xử lý -->
-                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[180px] shadow-sm">
+                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
                     <div class="flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đang xử lý</span>
                     </div>
                     <span id="statProcessing" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
                 </div>
+                <!-- Chờ duyệt -->
+                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chờ duyệt</span>
+                    </div>
+                    <span id="statPending" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
+                </div>
                 <!-- Hoàn thành -->
-                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[180px] shadow-sm">
+                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
                     <div class="flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hoàn thành</span>
@@ -1043,7 +1060,168 @@
     </div>
 </div>
 
-<!-- ==================== PAGE 3: REPORTS ==================== -->
+<!-- ==================== PAGE 4: PLANNING ==================== -->
+<div id="page-planning" class="page">
+    <div class="p-4 md:p-8 max-w-[1800px] mx-auto w-full"> <!-- wider for the matrix -->
+        <!-- Header -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-[#1e293b] font-headline mb-2">Lập kế hoạch & Báo cáo Tháng</h1>
+                <p class="text-slate-500 font-medium">Quản lý mục tiêu và hiệu suất chiến dịch vận hành.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Selectors -->
+                <div class="bg-surface-container-lowest p-3 rounded-xl border border-slate-100 shadow-sm min-w-[200px]">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">PHÒNG BAN</p>
+                    <select id="planningDepartmentFilter" class="w-full font-bold text-sm text-[#1e293b] bg-transparent border-none focus:ring-0 p-0 cursor-pointer outline-none">
+                        <option value="">Tất cả phòng ban</option>
+                    </select>
+                </div>
+                <div class="bg-surface-container-lowest p-3 rounded-xl border border-slate-100 shadow-sm min-w-[150px]">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">THÁNG</p>
+                    <input type="month" id="planningMonthFilter" class="w-full font-bold text-sm text-[#1e293b] bg-transparent border-none focus:ring-0 p-0 cursor-pointer outline-none" value="2023-10">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs and Actions -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 animate-fade-in-up delay-100">
+            <div class="flex items-center bg-surface-container-lowest p-1 rounded-xl shadow-sm border border-slate-100 overflow-x-auto w-full md:w-auto">
+                <button class="px-6 py-2.5 rounded-lg bg-white text-primary text-sm font-bold shadow-sm whitespace-nowrap">Bảng Kế hoạch</button>
+                <button class="px-6 py-2.5 rounded-lg text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-all whitespace-nowrap">Báo cáo Thực tế vs Kế hoạch</button>
+            </div>
+            <div class="flex items-center gap-4 mt-4 md:mt-0 w-full md:w-auto overflow-x-auto">
+                <button id="btnAddPlanningRow" class="flex items-center gap-2 bg-[#be123c] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-[#9f1239] transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[18px]">add</span> Thêm dòng mới
+                </button>
+                <button class="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[18px]">upload</span> Import Excel
+                </button>
+                <div class="flex items-center gap-2 ml-2 md:ml-4 whitespace-nowrap">
+                    <div class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">LIVE PLANNING MODE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planning Matrix Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8 animate-fade-in-up delay-200 flex flex-col" style="height: 600px;">
+            <div class="overflow-auto flex-1 planning-table-container custom-scrollbar">
+                <table class="w-full text-left border-separate border-spacing-0 whitespace-nowrap min-w-max">
+                    <thead class="text-[#64748b] bg-[#f8fafc] sticky top-0 z-20 text-[10px] font-extrabold uppercase tracking-widest">
+                        <tr>
+                            <!-- Fixed Columns -->
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-0 z-30 min-w-[160px] border-r border-slate-100 border-b">PHÒNG BAN</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[160px] z-30 min-w-[200px] border-r border-slate-100 border-b">CHIẾN DỊCH</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[360px] z-30 min-w-[250px] border-r border-slate-100 border-b">GHI CHÚ</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[610px] z-30 min-w-[120px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[730px] z-30 min-w-[150px] text-right border-r-2 border-slate-200 border-b">NGÂN SÁCH (VNĐ)</th>
+                            <!-- Dynamic Day Columns -->
+                            <th class="py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc]">
+                                <div class="text-[9px] text-rose-500 mb-1">CN</div>
+                                <div class="text-xs text-slate-700">1</div>
+                            </th>
+                            <th class="py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc]">
+                                <div class="text-[9px] mb-1">T2</div>
+                                <div class="text-xs text-slate-700">2</div>
+                            </th>
+                            <th class="py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc]">
+                                <div class="text-[9px] mb-1">T3</div>
+                                <div class="text-xs text-slate-700">3</div>
+                            </th>
+                            <th class="py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc]">
+                                <div class="text-[9px] mb-1">T4</div>
+                                <div class="text-xs text-slate-700">4</div>
+                            </th>
+                            <th class="py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc]">
+                                <div class="text-[9px] mb-1">T5</div>
+                                <div class="text-xs text-slate-700">5</div>
+                            </th>
+                            <th class="py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc]">
+                                <div class="text-[9px] mb-1">T6</div>
+                                <div class="text-xs text-slate-700">6</div>
+                            </th>
+                            <th class="py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc]">
+                                <div class="text-[9px] text-rose-500 mb-1">T7</div>
+                                <div class="text-xs text-slate-700">7</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="planningTableBody" class="text-sm">
+                        <!-- Rows will be injected by JS -->
+                    </tbody>
+                    <tfoot class="bg-[#f8fafc] font-bold text-[#1e293b]">
+                        <tr>
+                            <td colspan="4" class="py-4 px-6 text-rose-600 uppercase tracking-widest sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right">TỔNG CỘNG</td>
+                            <td class="py-4 px-6 text-right text-rose-600 sticky left-[730px] z-20 bg-[#f8fafc] border-r-2 border-slate-200">455.000.000</td>
+                            <td class="py-4 px-3 text-center border-r border-slate-100 text-slate-400">--</td>
+                            <td class="py-4 px-3 text-center border-r border-slate-100 text-slate-400">--</td>
+                            <td class="py-4 px-3 text-center border-r border-slate-100 text-slate-400">--</td>
+                            <td class="py-4 px-3 text-center border-r border-slate-100 text-slate-400">--</td>
+                            <td class="py-4 px-3 text-center border-r border-slate-100 text-slate-400">--</td>
+                            <td class="py-4 px-3 text-center border-r border-slate-100 text-slate-400">--</td>
+                            <td class="py-4 px-3 text-center border-r border-slate-100 text-slate-400">--</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary Cards Bottom -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up delay-300">
+            <!-- TỔNG NGÂN SÁCH DỰ KIẾN -->
+            <div class="bg-[#1b1c2e] text-white p-8 rounded-2xl flex flex-col justify-between shadow-lg relative overflow-hidden h-full">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
+                <div class="relative z-10">
+                    <h3 class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Tổng Ngân sách Dự kiến</h3>
+                    <div class="text-5xl font-extrabold font-headline tracking-tighter flex items-end gap-2">
+                        1.25B <span class="text-sm text-slate-400 font-medium mb-1.5">VNĐ</span>
+                    </div>
+                </div>
+                <div class="mt-8 flex items-center gap-3 relative z-10">
+                    <div class="flex -space-x-3">
+                        <img class="w-8 h-8 rounded-full border-2 border-[#1b1c2e]" src="https://i.pravatar.cc/100?img=1" alt="Avatar">
+                        <img class="w-8 h-8 rounded-full border-2 border-[#1b1c2e]" src="https://i.pravatar.cc/100?img=2" alt="Avatar">
+                        <img class="w-8 h-8 rounded-full border-2 border-[#1b1c2e]" src="https://i.pravatar.cc/100?img=3" alt="Avatar">
+                    </div>
+                    <span class="text-xs text-slate-400">+ 12 cộng tác viên tham gia lập kế hoạch</span>
+                </div>
+            </div>
+
+            <!-- TIẾN ĐỘ PHÊ DUYỆT -->
+            <div class="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center h-full">
+                <h3 class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-4">Tiến độ phê duyệt</h3>
+                <div class="mb-2">
+                    <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[10px] font-bold">ĐÃ PHÊ DUYỆT 65%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5 mb-4 mt-2">
+                    <div class="bg-[#312e81] h-2.5 rounded-full" style="width: 65%"></div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    <span class="font-bold text-slate-700">3/5</span> cấp quản lý đã ký duyệt điện tử cho kế hoạch tháng này.
+                </p>
+            </div>
+
+            <!-- ACTION CARD -->
+            <div class="bg-[#be123c] text-white p-8 rounded-2xl shadow-lg relative flex flex-col justify-between group cursor-pointer hover:bg-[#9f1239] transition-colors h-full overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+                <div class="flex justify-between items-start relative z-10">
+                    <span class="material-symbols-outlined text-[28px] opacity-80">trending_up</span>
+                    <span class="material-symbols-outlined transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </div>
+                <div class="mt-8 relative z-10">
+                    <h2 class="text-xl font-bold font-headline mb-2">Xuất báo cáo chi tiết tháng 10</h2>
+                    <p class="text-sm opacity-80 mb-6 leading-relaxed">Tự động tổng hợp dữ liệu và gửi qua email cho hội đồng quản trị.</p>
+                    <div class="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-medium backdrop-blur-sm">
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> Đã lưu tự động cách đây 2 phút
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PAGE 5: REPORTS ==================== -->
 <div id="page-reports" class="page">
     <div class="p-4 md:p-8 max-w-[1600px] mx-auto w-full">
         <!-- Header -->
@@ -2450,18 +2628,34 @@
         if (!tbodyFull) return;
 
         // Update Stats based on allOrdersData (Global Totals)
-        const counts = {
-            'Đang xử lý': 0,
-            'Hoàn thành': 0
-        };
+        let totalOrders = 0;
+        let processingOrders = 0;
+        let pendingOrders = 0;
+        let completedOrders = 0;
+
         (window.allOrdersData || []).forEach(o => {
-            if (counts[o.status] !== undefined) counts[o.status]++;
+            const status = o.status || '';
+            if (status !== 'Đã hủy') {
+                totalOrders++;
+            }
+            if (status === 'Đang hậu kỳ' || status === 'Đang sản xuất') {
+                processingOrders++;
+            } else if (status === 'Chờ duyệt') {
+                pendingOrders++;
+            } else if (status === 'Hoàn thành') {
+                completedOrders++;
+            }
         });
         
+        const stotal = document.getElementById('statTotal');
         const spr = document.getElementById('statProcessing');
+        const spend = document.getElementById('statPending');
         const sc = document.getElementById('statCompleted');
-        if (spr) spr.textContent = counts['Đang xử lý'].toLocaleString();
-        if (sc) sc.textContent = counts['Hoàn thành'].toLocaleString();
+        
+        if (stotal) stotal.textContent = totalOrders.toLocaleString();
+        if (spr) spr.textContent = processingOrders.toLocaleString();
+        if (spend) spend.textContent = pendingOrders.toLocaleString();
+        if (sc) sc.textContent = completedOrders.toLocaleString();
 
         const globalSearch = (filterSearchEle ? filterSearchEle.value : '').toLowerCase();
         const statusSearch = filterStatusEle ? filterStatusEle.value : '';
@@ -2801,6 +2995,10 @@
             populateDropdown('department', window.departmentsData);
             populateDropdown('editOrderDepartment', window.departmentsData);
             populateMultiSelect('menu-department', window.departmentsData, 'department');
+            if (typeof window.updatePlanningDepartmentFilter === 'function') {
+                window.updatePlanningDepartmentFilter();
+                window.initMockupPlanningRows();
+            }
         });
 
         // --- 2. ORDER STATUSES SYNC ---
@@ -3578,12 +3776,103 @@
         tooltip.style.left = finalX + 'px';
         tooltip.style.top = finalY + 'px';
     }
+    }
     window.hidePremiumTooltip = function() {
         window.tooltipTimeout = setTimeout(() => {
             const tooltip = document.getElementById('premium-tooltip');
             if (tooltip) tooltip.classList.remove('show');
         }, 150);
     }
+
+    // ===== PLANNING PAGE LOGIC =====
+    window.planningMockupInitialized = false;
+
+    window.updatePlanningDepartmentFilter = function() {
+        const select = document.getElementById('planningDepartmentFilter');
+        if(!select) return;
+        
+        const currentVal = select.value;
+        let html = `<option value="">Tất cả phòng ban</option>`;
+        (window.departmentsData || []).forEach(d => {
+            html += `<option value="${d.name}">${d.name}</option>`;
+        });
+        select.innerHTML = html;
+        if(currentVal) select.value = currentVal;
+    };
+
+    window.getPlanningDeptOptions = function(selectedValue) {
+        let html = `<option value="">Chọn phòng ban</option>`;
+        (window.departmentsData || []).forEach(d => {
+            const selected = selectedValue === d.name ? 'selected' : '';
+            html += `<option value="${d.name}" ${selected}>${d.name}</option>`;
+        });
+        return html;
+    };
+
+    window.addPlanningRow = function(data = {}) {
+        const tbody = document.getElementById('planningTableBody');
+        if(!tbody) return;
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition-colors group";
+
+        const orderTypes = ['PREMIUM', 'STANDARD', 'INTERNAL', 'BASIC'];
+        let typeOptions = `<option value="">Chọn</option>`;
+        orderTypes.forEach(t => {
+            const selected = data.type === t ? 'selected' : '';
+            typeOptions += `<option value="${t}" ${selected}>${t}</option>`;
+        });
+
+        let daysHtml = '';
+        for(let i=1; i<=31; i++) {
+            const val = data[`d${i}`] || '0';
+            daysHtml += `<td class="py-5 px-3 text-center border-r border-b border-slate-100"><input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm font-bold text-slate-700 hover:bg-slate-100 transition-colors" value="${val}"></td>`;
+        }
+
+        tr.innerHTML = `
+            <td class="py-3 px-6 font-bold text-slate-700 sticky left-0 z-10 bg-white group-hover:bg-slate-50 border-r border-b border-slate-100 min-w-[160px] align-top">
+                <select class="w-full border border-slate-200 rounded px-2 py-2 text-sm font-bold text-[#1e293b] focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer">
+                    ${window.getPlanningDeptOptions(data.dept)}
+                </select>
+            </td>
+            <td class="py-3 px-6 sticky left-[160px] z-10 bg-white group-hover:bg-slate-50 border-r border-b border-slate-100 min-w-[200px] align-top">
+                <textarea rows="2" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-bold text-[#1e293b] focus:ring-2 focus:ring-primary/20 outline-none resize-none placeholder-slate-300">${data.campaign || ''}</textarea>
+            </td>
+            <td class="py-3 px-6 sticky left-[360px] z-10 bg-white group-hover:bg-slate-50 border-r border-b border-slate-100 min-w-[250px] align-top">
+                <textarea rows="2" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 focus:ring-2 focus:ring-primary/20 outline-none resize-none placeholder-slate-300 leading-relaxed">${data.note || ''}</textarea>
+            </td>
+            <td class="py-3 px-6 sticky left-[610px] z-10 bg-white group-hover:bg-slate-50 border-r border-b border-slate-100 text-center min-w-[120px] align-top">
+                <select class="w-full border border-slate-200 rounded px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer">
+                    ${typeOptions}
+                </select>
+            </td>
+            <td class="py-3 px-6 sticky left-[730px] z-10 bg-white group-hover:bg-slate-50 border-r-2 border-b border-slate-200 min-w-[150px] align-top">
+                <input type="text" class="w-full border border-slate-200 rounded px-3 py-2 text-right text-sm font-bold text-rose-600 focus:ring-2 focus:ring-primary/20 outline-none" placeholder="0" value="${data.budget || ''}">
+            </td>
+            ${daysHtml}
+        `;
+        tbody.appendChild(tr);
+    };
+
+    window.initMockupPlanningRows = function() {
+        if(window.planningMockupInitialized) return;
+        const tbody = document.getElementById('planningTableBody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        
+        window.addPlanningRow({ dept: 'Phòng Marketing', campaign: 'Quảng cáo Thu Đông 2023', note: 'Tập trung nền tảng FB & Tiktok cho dòng sản phẩm mới.', type: 'PREMIUM', budget: '250.000.000', d2: '17', d3: '14', d4: '13', d5: '15', d6: '18' });
+        window.addPlanningRow({ dept: 'Phòng Kinh doanh', campaign: 'Kích cầu cuối năm', note: 'Khuyến mãi mua 2 tặng 1 cho khách hàng cũ.', type: 'STANDARD', budget: '120.000.000', d1: '38', d3: '1', d4: '42', d5: '45', d7: '50' });
+        window.addPlanningRow({ dept: 'Phòng Vận hành', campaign: 'Tối ưu kho bãi 2023', note: 'Sắp xếp lại layout kho khu vực miền Nam.', type: 'INTERNAL', budget: '85.000.000', d1: '2', d3: '2' });
+        
+        window.planningMockupInitialized = true;
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnAdd = document.getElementById('btnAddPlanningRow');
+        if(btnAdd) {
+            btnAdd.addEventListener('click', () => window.addPlanningRow());
+        }
+    });
 </script>
 
 <!-- Premium Tooltip HTML -->
