@@ -14,6 +14,7 @@
     </script>
     <meta name="description" content="Hệ thống quản lý đơn hàng nguyên liệu cao cấp - Task Manager"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Inter:wght@300..700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script>
@@ -853,7 +854,7 @@
                         <span class="material-symbols-outlined text-[16px]">filter_alt_off</span>
                         Xóa bộ lọc
                     </button>
-                    <button class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+                    <button class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm" onclick="exportToExcel()">
                         <span class="material-symbols-outlined text-[16px]">download</span>
                         Xuất dữ liệu
                     </button>
@@ -2517,6 +2518,7 @@
         });
 
         // 2. SORTING
+        window.currentFilteredOrders = filtered;
         filtered.sort((a, b) => {
             let valA = a[sortConfig.key] || '';
             let valB = b[sortConfig.key] || '';
@@ -3420,7 +3422,54 @@
         
         tooltip.style.left = finalX + 'px';
         tooltip.style.top = finalY + 'px';
-    }
+    window.exportToExcel = function() {
+        if (!window.currentFilteredOrders || window.currentFilteredOrders.length === 0) {
+            alert("Không có dữ liệu để xuất.");
+            return;
+        }
+        
+        // Map data to Vietnamese columns
+        const exportData = window.currentFilteredOrders.map(order => {
+            return {
+                "Mã đơn hàng": order.code || "-",
+                "Người yêu cầu": order.requester || "-",
+                "Phòng ban": order.department || "-",
+                "Thể loại": order.category || "-",
+                "Nội dung": order.title || "-",
+                "Chi tiết nội dung": (order.content || "").replace(/<[^>]*>/g, ' '),
+                "Ghi chú": order.note || "-",
+                "Ngày order": formatDateDisplay(order.orderDate || order.createdAt),
+                "Ngày triển khai": formatDateDisplay(order.deployDate),
+                "Deadline": formatDateDisplay(order.deadline),
+                "Trạng thái": order.status || "Chờ duyệt"
+            };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        
+        // Set column widths for better readability
+        const colWidths = [
+            { wch: 15 }, // Mã
+            { wch: 20 }, // Người yêu cầu
+            { wch: 20 }, // Phòng ban
+            { wch: 15 }, // Thể loại
+            { wch: 40 }, // Nội dung
+            { wch: 50 }, // Chi tiết nội dung
+            { wch: 30 }, // Ghi chú
+            { wch: 15 }, // Ngày order
+            { wch: 15 }, // Ngày triển khai
+            { wch: 15 }, // Deadline
+            { wch: 15 }  // Trạng thái
+        ];
+        worksheet['!cols'] = colWidths;
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "DonHang");
+        
+        // Generate filename with current date
+        const dateStr = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(workbook, `DanhSachDonHang_${dateStr}.xlsx`);
+    };
 </script>
 
 <style>
