@@ -1100,25 +1100,29 @@
         <!-- Tabs and Actions -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 animate-fade-in-up delay-100">
             <div class="flex items-center bg-surface-container-lowest p-1 rounded-xl shadow-sm border border-slate-100 overflow-x-auto w-full md:w-auto">
-                <button class="px-6 py-2.5 rounded-lg bg-white text-primary text-sm font-bold shadow-sm whitespace-nowrap">Bảng Kế hoạch</button>
-                <button class="px-6 py-2.5 rounded-lg text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-all whitespace-nowrap">Báo cáo Thực tế vs Kế hoạch</button>
+                <button id="tabBtnPlanning" onclick="window.switchPlanningTab('table')" class="px-6 py-2.5 rounded-lg bg-white text-primary text-sm font-bold shadow-sm whitespace-nowrap transition-all">Bảng Kế hoạch</button>
+                <button id="tabBtnReport" onclick="window.switchPlanningTab('report')" class="px-6 py-2.5 rounded-lg text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-all whitespace-nowrap">Báo cáo Thực tế vs Kế hoạch</button>
             </div>
-            <div class="flex items-center gap-4 mt-4 md:mt-0 w-full md:w-auto overflow-x-auto">
-                <button id="btnAddPlanningRow" onclick="if(typeof window.addPlanningRow === 'function') window.addPlanningRow()" class="flex items-center gap-2 bg-[#be123c] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-[#9f1239] transition-all whitespace-nowrap">
-                    <span class="material-symbols-outlined text-[18px]">add</span> Thêm dòng mới
+            <div class="flex items-center gap-3 mt-4 md:mt-0 w-full md:w-auto overflow-x-auto">
+                <button id="btnAddPlanningRow" onclick="if(typeof window.addPlanningRow === 'function') window.addPlanningRow()" class="flex items-center gap-2 bg-[#be123c] text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-md hover:bg-[#9f1239] transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[18px]">add</span> Thêm dòng
                 </button>
-                <button class="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 transition-all whitespace-nowrap">
-                    <span class="material-symbols-outlined text-[18px]">upload</span> Import Excel
+                <button onclick="document.getElementById('planningImportInput').click()" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-50 transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[18px]">upload</span> Import
                 </button>
-                <div class="flex items-center gap-2 ml-2 md:ml-4 whitespace-nowrap">
-                    <div class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">LIVE PLANNING MODE</span>
+                <button onclick="window.exportPlanningToExcel()" class="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm hover:bg-slate-50 transition-all whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[18px]">download</span> Export
+                </button>
+                <input type="file" id="planningImportInput" class="hidden" accept=".xlsx, .xls, .csv" onchange="window.handlePlanningImport(event)">
+                <div class="flex items-center gap-2 ml-2 whitespace-nowrap">
+                    <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">LIVE MODE</span>
                 </div>
             </div>
         </div>
 
-        <!-- Planning Matrix Table -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8 animate-fade-in-up delay-200 flex flex-col" style="height: 600px;">
+        <!-- Planning Table Tab -->
+        <div id="planningTableTab" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8 animate-fade-in-up delay-200 flex flex-col" style="height: 600px;">
             <div class="overflow-auto flex-1 planning-table-container custom-scrollbar">
                 <table class="w-full text-left border-separate border-spacing-0 whitespace-nowrap min-w-max">
                     <thead class="text-[#64748b] bg-[#f8fafc] sticky top-0 z-20 text-[10px] font-extrabold uppercase tracking-widest">
@@ -1127,7 +1131,7 @@
                             <th class="py-4 px-6 bg-[#f8fafc] sticky left-[160px] z-30 min-w-[200px] border-r border-slate-100 border-b">CHIẾN DỊCH</th>
                             <th class="py-4 px-6 bg-[#f8fafc] sticky left-[360px] z-30 min-w-[250px] border-r border-slate-100 border-b">GHI CHÚ</th>
                             <th class="py-4 px-6 bg-[#f8fafc] sticky left-[610px] z-30 min-w-[120px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
-                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[730px] z-30 min-w-[150px] text-right border-r-2 border-slate-200 border-b">NGÂN SÁCH (VNĐ)</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[730px] z-30 min-w-[75px] text-right border-r-2 border-slate-200 border-b">NGÂN SÁCH</th>
                             <!-- Dynamic Day Columns will be injected here -->
                             <th class="py-4 px-4 bg-[#f8fafc] sticky right-0 z-30 min-w-[80px] text-center border-l border-slate-100 border-b">XÓA</th>
                         </tr>
@@ -1143,6 +1147,41 @@
                             <td class="py-4 px-4 text-center sticky right-0 z-20 bg-[#f8fafc] border-l border-slate-100 text-slate-400">--</td>
                         </tr>
                     </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Planning Report Tab -->
+        <div id="planningReportTab" class="hidden bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8 animate-fade-in-up delay-200 flex flex-col" style="height: 600px;">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-700">Đối soát Thực tế vs Kế hoạch</h3>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Dữ liệu tổng hợp từ các phòng ban</p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded bg-blue-100 border border-blue-200"></div>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Kế hoạch</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded bg-rose-100 border border-rose-200"></div>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Thực tế</span>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-auto flex-1 custom-scrollbar">
+                <table class="w-full text-left border-separate border-spacing-0 whitespace-nowrap min-w-max">
+                    <thead class="text-[#64748b] bg-[#f8fafc] sticky top-0 z-20 text-[10px] font-extrabold uppercase tracking-widest">
+                        <tr id="planningReportHeaderRow">
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-0 z-30 min-w-[160px] border-r border-slate-100 border-b">PHÒNG BAN</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[160px] z-30 min-w-[200px] border-r border-slate-100 border-b">LOẠI ORDER</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[360px] z-30 min-w-[120px] text-center border-r-2 border-slate-200 border-b">CHỈ SỐ</th>
+                            <!-- Dynamic Day Columns -->
+                        </tr>
+                    </thead>
+                    <tbody id="planningReportBody" class="text-sm">
+                        <!-- Report rows -->
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -3777,40 +3816,159 @@
         if(!monthFilter) return;
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
+        
+        // Header Bảng Kế Hoạch
         const headerRow = document.getElementById('planningTableHeaderRow');
         const footerRow = document.getElementById('planningTableFooterRow');
-        if(!headerRow || !footerRow) return;
+        if(headerRow && footerRow) {
+            const cols = headerRow.querySelectorAll('th');
+            for(let i=5; i<cols.length - 1; i++) cols[i].remove();
+            const lastHeader = headerRow.querySelector('th:last-child');
+            const fCols = footerRow.querySelectorAll('td');
+            for(let i=2; i<fCols.length - 1; i++) fCols[i].remove();
+            const lastFooter = footerRow.querySelector('td:last-child');
 
-        // Xóa các cột ngày cũ (giữ lại 5 cột đầu và 1 cột cuối)
-        const cols = headerRow.querySelectorAll('th');
-        for(let i=5; i<cols.length - 1; i++) cols[i].remove();
-        
-        const lastHeader = headerRow.querySelector('th:last-child');
-        
-        const fCols = footerRow.querySelectorAll('td');
-        for(let i=2; i<fCols.length - 1; i++) fCols[i].remove();
-        const lastFooter = footerRow.querySelector('td:last-child');
+            const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+            for(let i=1; i<=daysInMonth; i++) {
+                const date = new Date(year, month - 1, i);
+                const dayName = dayNames[date.getDay()];
+                const isSun = date.getDay() === 0;
+                const isSat = date.getDay() === 6;
 
-        const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-        for(let i=1; i<=daysInMonth; i++) {
-            const date = new Date(year, month - 1, i);
-            const dayName = dayNames[date.getDay()];
-            const isSunday = date.getDay() === 0;
-            const isSaturday = date.getDay() === 6;
+                const th = document.createElement('th');
+                th.className = `py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc] min-w-[50px]`;
+                th.innerHTML = `<div class="text-[9px] ${isSun ? 'text-rose-500' : isSat ? 'text-blue-500' : ''} mb-1">${dayName}</div><div class="text-xs text-slate-700">${i}</div>`;
+                headerRow.insertBefore(th, lastHeader);
 
-            const th = document.createElement('th');
-            th.className = `py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc] min-w-[50px]`;
-            th.innerHTML = `
-                <div class="text-[9px] ${isSunday ? 'text-rose-500' : isSaturday ? 'text-blue-500' : ''} mb-1">${dayName}</div>
-                <div class="text-xs text-slate-700">${i}</div>
-            `;
-            headerRow.insertBefore(th, lastHeader);
-
-            const td = document.createElement('td');
-            td.className = `py-4 px-3 text-center border-r border-slate-100 text-slate-400 text-xs font-bold day-total-${i}`;
-            td.textContent = '0';
-            footerRow.insertBefore(td, lastFooter);
+                const td = document.createElement('td');
+                td.className = `py-4 px-3 text-center border-r border-slate-100 text-slate-400 text-xs font-bold day-total-${i}`;
+                td.textContent = '0';
+                footerRow.insertBefore(td, lastFooter);
+            }
         }
+
+        // Header Bảng Báo Cáo
+        const reportHeader = document.getElementById('planningReportHeaderRow');
+        if(reportHeader) {
+            const rCols = reportHeader.querySelectorAll('th');
+            for(let i=3; i<rCols.length; i++) rCols[i].remove();
+            const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+            for(let i=1; i<=daysInMonth; i++) {
+                const date = new Date(year, month - 1, i);
+                const dayName = dayNames[date.getDay()];
+                const isSun = date.getDay() === 0;
+                const isSat = date.getDay() === 6;
+                const th = document.createElement('th');
+                th.className = `py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc] min-w-[60px]`;
+                th.innerHTML = `<div class="text-[9px] ${isSun ? 'text-rose-500' : isSat ? 'text-blue-500' : ''} mb-1">${dayName}</div><div class="text-xs text-slate-700">${i}</div>`;
+                reportHeader.appendChild(th);
+            }
+        }
+    };
+
+    window.switchPlanningTab = function(tab) {
+        const tableTab = document.getElementById('planningTableTab');
+        const reportTab = document.getElementById('planningReportTab');
+        const btnT = document.getElementById('tabBtnPlanning');
+        const btnR = document.getElementById('tabBtnReport');
+        
+        if(tab === 'table') {
+            tableTab.classList.remove('hidden');
+            reportTab.classList.add('hidden');
+            btnT.className = "px-6 py-2.5 rounded-lg bg-white text-primary text-sm font-bold shadow-sm whitespace-nowrap transition-all";
+            btnR.className = "px-6 py-2.5 rounded-lg text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-all whitespace-nowrap";
+            window.renderPlanningTable();
+        } else {
+            tableTab.classList.add('hidden');
+            reportTab.classList.remove('hidden');
+            btnR.className = "px-6 py-2.5 rounded-lg bg-white text-primary text-sm font-bold shadow-sm whitespace-nowrap transition-all";
+            btnT.className = "px-6 py-2.5 rounded-lg text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-all whitespace-nowrap";
+            window.renderPlanningReport();
+        }
+    };
+
+    window.renderPlanningReport = function() {
+        const tbody = document.getElementById('planningReportBody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        
+        const monthFilter = document.getElementById('planningMonthFilter');
+        const [year, month] = monthFilter.value.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        // Giả lập dữ liệu thực tế từ window.ordersData nếu có
+        // Gom nhóm theo phòng ban và loại order
+        const depts = (window.departmentsData || []).map(d => d.name);
+        const types = ['Video', 'Hình Ảnh', 'Giả Live'];
+
+        depts.forEach(dept => {
+            types.forEach(type => {
+                // Kiểm tra xem có kế hoạch nào cho cặp này không
+                const plans = window.planningRowsData.filter(r => r.dept === dept && r.type === type && r.month === monthFilter.value);
+                if(plans.length === 0) return;
+
+                // Dòng Kế hoạch
+                const trPlan = document.createElement('tr');
+                trPlan.className = "bg-blue-50/20";
+                let planDays = '';
+                for(let i=1; i<=daysInMonth; i++) {
+                    let sum = 0;
+                    plans.forEach(p => sum += (parseInt(p.days[`d${i}`]) || 0));
+                    planDays += `<td class="py-3 px-3 text-center border-r border-b border-slate-100 text-blue-600 font-bold">${sum || '-'}</td>`;
+                }
+                trPlan.innerHTML = `
+                    <td rowspan="2" class="py-3 px-6 font-bold text-slate-700 sticky left-0 z-10 bg-white border-r border-b border-slate-200 min-w-[160px] align-middle">${dept}</td>
+                    <td rowspan="2" class="py-3 px-6 font-medium text-slate-600 sticky left-[160px] z-10 bg-white border-r border-b border-slate-200 min-w-[200px] align-middle">${type}</td>
+                    <td class="py-2 px-3 text-center bg-blue-50 sticky left-[360px] z-10 border-r-2 border-b border-slate-200 text-[10px] font-bold text-blue-500 uppercase">KẾ HOẠCH</td>
+                    ${planDays}
+                `;
+                tbody.appendChild(trPlan);
+
+                // Dòng Thực tế
+                const trActual = document.createElement('tr');
+                trActual.className = "bg-rose-50/10";
+                let actualDays = '';
+                for(let i=1; i<=daysInMonth; i++) {
+                    // Logic thực tế: Lọc từ window.ordersData
+                    const dateStr = `${year}-${month.toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
+                    const count = (window.ordersData || []).filter(o => o.department === dept && o.category === type && o.orderDate === dateStr).length;
+                    const diff = count - plans.reduce((acc, p) => acc + (parseInt(p.days[`d${i}`]) || 0), 0);
+                    actualDays += `<td class="py-3 px-3 text-center border-r border-b border-slate-100">
+                        <div class="font-bold text-rose-600">${count || '0'}</div>
+                        <div class="text-[9px] ${diff >= 0 ? 'text-emerald-500' : 'text-rose-400'} font-bold">${diff > 0 ? '+' : ''}${diff}</div>
+                    </td>`;
+                }
+                trActual.innerHTML = `
+                    <td class="py-2 px-3 text-center bg-rose-50 sticky left-[360px] z-10 border-r-2 border-b border-slate-200 text-[10px] font-bold text-rose-500 uppercase">THỰC TẾ</td>
+                    ${actualDays}
+                `;
+                tbody.appendChild(trActual);
+            });
+        });
+    };
+
+    window.exportPlanningToExcel = function() {
+        if(!window.planningRowsData.length) {
+            alert('Không có dữ liệu để xuất!');
+            return;
+        }
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + "Phòng Ban,Chiến Dịch,Loại,Ngân Sách,Ngày\n"
+            + window.planningRowsData.map(r => `${r.dept},${r.campaign},${r.type},${r.budget},${r.month}`).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Ke_hoach_${document.getElementById('planningMonthFilter').value}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    window.handlePlanningImport = function(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        alert(`Đã chọn file: ${file.name}. Chức năng xử lý Excel đang được tích hợp...`);
+        // Logic đọc file Excel/CSV sẽ được thêm tại đây
     };
 
     window.addPlanningRow = function(data = {}) {
@@ -3847,14 +4005,12 @@
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
-        // Filtering
         let filteredData = window.planningRowsData.filter(row => {
             const matchesMonth = row.month === monthFilter.value;
             const matchesDept = !deptFilter.value || row.dept === deptFilter.value;
             return matchesMonth && matchesDept;
         });
 
-        // Group by Department
         const grouped = {};
         filteredData.forEach(row => {
             const d = row.dept || 'CHƯA PHÂN LOẠI';
@@ -3863,7 +4019,6 @@
         });
 
         Object.keys(grouped).sort().forEach(deptName => {
-            // Header nhóm phòng ban - Text highlight màu đỏ
             const groupTr = document.createElement('tr');
             groupTr.className = "bg-slate-50/80";
             groupTr.innerHTML = `<td colspan="${6 + daysInMonth}" class="py-2.5 px-6 text-[10px] font-bold text-rose-600 uppercase tracking-widest border-b border-slate-200/60 shadow-sm">${deptName}</td>`;
@@ -3877,8 +4032,12 @@
 
                 let daysHtml = '';
                 for(let i=1; i<=daysInMonth; i++) {
+                    const date = new Date(year, month - 1, i);
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                     const val = row.days[`d${i}`] || '0';
-                    daysHtml += `<td class="py-5 px-3 text-center border-r border-b border-slate-100"><input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm font-bold text-slate-700" value="${val}" oninput="window.updateRowData('${row.id}', ${i}, this.value)"></td>`;
+                    daysHtml += `<td class="py-5 px-3 text-center border-r border-b border-slate-100 ${isWeekend ? 'bg-slate-50/50' : ''}">
+                        <input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isWeekend ? 'font-extrabold text-rose-500' : 'font-bold text-slate-700'}" value="${val}" oninput="window.updateRowData('${row.id}', ${i}, this.value)">
+                    </td>`;
                 }
 
                 const orderTypes = ['Video', 'Hình Ảnh', 'Giả Live'];
@@ -3905,7 +4064,7 @@
                             ${typeOptions}
                         </select>
                     </td>
-                    <td class="py-3 px-6 sticky left-[730px] z-10 bg-white group-hover:bg-blue-50/30 border-r-2 border-b border-slate-200 min-w-[150px] align-top">
+                    <td class="py-3 px-6 sticky left-[730px] z-10 bg-white group-hover:bg-blue-50/30 border-r-2 border-b border-slate-200 min-w-[75px] align-top">
                         <input type="text" oninput="window.updateRowBudget('${row.id}', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-right text-sm font-bold text-rose-600 outline-none" placeholder="0" value="${row.budget || ''}">
                     </td>
                     ${daysHtml}
@@ -3968,14 +4127,12 @@
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
-        // Use filtered data for totals as well, or original? Usually totals represent what's shown.
         let filteredData = window.planningRowsData.filter(row => {
             const matchesMonth = row.month === monthFilter.value;
             const matchesDept = !deptFilter.value || row.dept === deptFilter.value;
             return matchesMonth && matchesDept;
         });
 
-        // Total Budget
         let totalBudgetSum = 0;
         filteredData.forEach(row => {
             const cleanBudget = (row.budget || '0').replace(/[^0-9]/g, '');
@@ -4011,9 +4168,9 @@
         const btnAdd = document.getElementById('btnAddPlanningRow');
         if(btnAdd) btnAdd.onclick = () => window.addPlanningRow();
         const monthFilter = document.getElementById('planningMonthFilter');
-        if(monthFilter) monthFilter.onchange = () => { window.renderPlanningCalendarHeaders(); window.renderPlanningTable(); };
+        if(monthFilter) monthFilter.onchange = () => { window.renderPlanningCalendarHeaders(); window.renderPlanningTable(); window.renderPlanningReport(); };
         const deptFilter = document.getElementById('planningDepartmentFilter');
-        if(deptFilter) deptFilter.onchange = () => window.renderPlanningTable();
+        if(deptFilter) deptFilter.onchange = () => { window.renderPlanningTable(); window.renderPlanningReport(); };
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlanningEvents);
