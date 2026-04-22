@@ -332,6 +332,54 @@
         .pagination-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
         .pagination-btn.active { background: #b80035; color: #fff; border-color: #b80035; }
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Premium Global Tooltip */
+        #premium-tooltip {
+            position: fixed;
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 380px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(184, 0, 53, 0.15);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 30px 60px -12px rgba(19, 27, 46, 0.25), 0 18px 36px -18px rgba(19, 27, 46, 0.3);
+        }
+        #premium-tooltip.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        .tooltip-title {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 15px;
+            color: #b80035;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 8px;
+        }
+        .tooltip-body {
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        .tooltip-body::-webkit-scrollbar { width: 4px; }
+        .tooltip-body::-webkit-scrollbar-thumb { background: rgba(184, 0, 53, 0.2); border-radius: 10px; }
+        .tooltip-body table { width: 100% !important; border-collapse: collapse; margin: 8px 0; font-size: 11px; }
+        .tooltip-body td, .tooltip-body th { border: 1px solid #e2e8f0; padding: 6px; }
+        .tooltip-body img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
     </style>
 </head>
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
@@ -1598,96 +1646,212 @@
 
 <!-- ====== EDIT ORDER MODAL ====== -->
 <div id="editOrderModal" class="fixed inset-0 z-50 hidden items-center justify-center">
-    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeEditModal()"></div>
-    <div class="relative w-full max-w-xl mx-4 bg-surface rounded-2xl shadow-2xl animate-fade-in-up">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeEditModal()"></div>
+    <div class="relative w-full max-w-5xl mx-4 bg-white rounded-[24px] shadow-2xl animate-fade-in-up overflow-hidden">
+        
         <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b border-surface-variant">
-            <h2 class="text-xl font-headline font-bold text-on-surface">Chỉnh sửa đơn hàng</h2>
-            <button onclick="closeEditModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant transition-colors">
-                <span class="material-symbols-outlined text-[20px]">close</span>
+        <div class="bg-[#b80035] text-white p-6 md:px-10 md:pt-10 md:pb-8 relative">
+            <h2 class="text-[26px] font-extrabold font-headline mb-1 tracking-tight">Chỉnh sửa đơn hàng</h2>
+            <p class="text-white/80 text-base font-medium tracking-wide">ID: <span id="editModalHeaderId">#ORD-0000</span></p>
+            <button onclick="closeEditModal()" class="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors">
+                <span class="material-symbols-outlined text-[24px]">close</span>
             </button>
         </div>
+
         <!-- Body -->
-        <div class="p-6 space-y-4">
+        <div class="p-6 md:p-10 overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar">
             <input type="hidden" id="editOrderId">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Mã đơn hàng</label>
-                    <input id="editOrderCode" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm font-mono font-bold text-slate-400 cursor-not-allowed" readonly>
+            <input type="hidden" id="editOrderCode">
+
+            <div class="flex flex-col lg:flex-row gap-10">
+                
+                <!-- Left Section: Main Information & Editor -->
+                <div class="flex-1 space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Người yêu cầu -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Người yêu cầu</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[20px] pointer-events-none">person</span>
+                                <input id="editOrderRequester" type="text" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow">
+                            </div>
+                        </div>
+
+                        <!-- Hạn chót -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Hạn chót</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[20px] pointer-events-none">calendar_today</span>
+                                <input id="editOrderDeadline" type="date" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow">
+                            </div>
+                        </div>
+
+                        <!-- Trạng thái -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Trạng thái</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[20px] pointer-events-none">sync</span>
+                                <select id="editOrderStatus" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
+                                    <option value="Chờ duyệt">Chờ duyệt</option>
+                                    <option value="Đang xử lý">Đang xử lý</option>
+                                    <option value="Hoàn thành">Hoàn thành</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Phòng ban -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Phòng ban</label>
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[20px] pointer-events-none">domain</span>
+                                <select id="editOrderDepartment" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
+                                    <!-- Populated dynamically -->
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                            </div>
+                        </div>
+
+                        <!-- Người phụ trách chính -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Người phụ trách chính</label>
+                            <div class="w-full bg-[#f4f6fa] border-none rounded-[12px] px-4 py-2 flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-9 h-9 rounded-full bg-slate-200 overflow-hidden flex-shrink-0 ring-2 ring-white">
+                                        <img src="https://ui-avatars.com/api/?name=Admin&background=131b2e&color=fff" alt="Avatar" class="w-full h-full object-cover">
+                                    </div>
+                                    <div>
+                                        <div class="text-[13px] font-bold text-slate-800 leading-tight">Admin</div>
+                                        <div class="text-[10px] font-medium text-slate-500 uppercase tracking-tighter">Quản trị viên</div>
+                                    </div>
+                                </div>
+                                <button class="text-[10px] font-extrabold text-[#b80035] hover:text-rose-700 transition-colors bg-white px-2.5 py-1 rounded-full shadow-sm">THAY ĐỔI</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tiêu đề -->
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Tiêu đề đơn hàng</label>
+                        <input id="editOrderTitle" type="text" class="w-full bg-[#e8eefc] border-none rounded-[12px] px-5 py-3.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow">
+                    </div>
+
+                    <!-- Nội dung chi tiết -->
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Nội dung chi tiết</label>
+                        <div class="w-full bg-[#e8eefc] rounded-[16px] overflow-hidden focus-within:ring-2 focus-within:ring-[#b80035]/50 transition-shadow">
+                            <div class="bg-[#dce4f7] px-3 py-2 flex flex-wrap items-center gap-1.5 border-b border-white/40">
+                                <button onclick="editorCmd('bold')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In đậm"><span class="material-symbols-outlined text-[18px]">format_bold</span></button>
+                                <button onclick="editorCmd('italic')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In nghiêng"><span class="material-symbols-outlined text-[18px]">format_italic</span></button>
+                                <button onclick="editorCmd('underline')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Gạch chân"><span class="material-symbols-outlined text-[18px]">format_underlined</span></button>
+                                <div class="w-[1px] h-4 bg-slate-400/30 mx-1"></div>
+                                <button onclick="editorCmd('justifyLeft')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors"><span class="material-symbols-outlined text-[18px]">format_align_left</span></button>
+                                <button onclick="editorCmd('justifyCenter')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors"><span class="material-symbols-outlined text-[18px]">format_align_center</span></button>
+                                <button onclick="editorCmd('insertUnorderedList')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors"><span class="material-symbols-outlined text-[18px]">format_list_bulleted</span></button>
+                                <div class="w-[1px] h-4 bg-slate-400/30 mx-1"></div>
+                                <button onclick="var url=prompt('Nhập link:', 'https://'); if(url) editorCmd('createLink', url)" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn link"><span class="material-symbols-outlined text-[18px]">link</span></button>
+                                <button onclick="var url=prompt('Nhập link ảnh:', 'https://'); if(url) editorCmd('insertImage', url)" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn ảnh"><span class="material-symbols-outlined text-[18px]">image</span></button>
+                                <div class="w-[1px] h-4 bg-slate-400/30 mx-1"></div>
+                                <button onclick="editorInsertTable()" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn bảng"><span class="material-symbols-outlined text-[18px]">table_view</span></button>
+                                <button onclick="editorCmd('insertHTML', '<br><table class=\'w-full border-collapse border border-slate-300 my-2\'><tr><th class=\'border border-slate-300 p-2 bg-slate-100\'>Tiêu đề</th><th class=\'border border-slate-300 p-2 bg-slate-100\'>Nội dung</th></tr><tr><td class=\'border border-slate-300 p-2\'>...</td><td class=\'border border-slate-300 p-2\'>...</td></tr></table><br>')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Bảng mẫu"><span class="material-symbols-outlined text-[18px]">grid_on</span></button>
+                            </div>
+                            <div id="editOrderContent" contenteditable="true" class="w-full px-5 py-4 text-[15px] font-medium text-slate-700 h-[500px] overflow-y-auto outline-none leading-relaxed custom-scrollbar"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Trạng thái <span class="text-primary">*</span></label>
-                    <select id="editOrderStatus" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary font-bold">
-                        <option value="Chờ duyệt">Chờ duyệt</option>
-                        <option value="Đang xử lý">Đang xử lý</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                    </select>
+
+                <!-- Right Section: Additional Information (Side Panel) -->
+                <div class="w-full lg:w-96 space-y-5 lg:border-l lg:border-slate-100 lg:pl-10">
+                    <div class="flex items-center gap-2 mb-4 border-b border-slate-50 pb-4">
+                        <span class="material-symbols-outlined text-[#b80035] text-[20px] pointer-events-none">tune</span>
+                        <h3 class="text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#b80035]">Thông tin bổ sung</h3>
+                    </div>
+
+                    <!-- Ngày triển khai -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Ngày triển khai</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[18px] pointer-events-none">event</span>
+                            <input id="editOrderDeployDate" type="date" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow">
+                        </div>
+                    </div>
+
+                    <!-- Thể loại -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Thể loại</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[18px] pointer-events-none">category</span>
+                            <select id="editOrderCategory" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
+                                <option value="Video">Video</option>
+                                <option value="Hình Ảnh">Hình Ảnh</option>
+                                <option value="Livestream">Livestream</option>
+                                <option value="Giả Live">Giả Live</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                        </div>
+                    </div>
+
+                    <!-- Stylist -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Stylist</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[18px] pointer-events-none">styler</span>
+                            <select id="editOrderStylist" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
+                                <option value="">- Chưa chọn -</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                        </div>
+                    </div>
+
+                    <!-- Video (Phụ trách) -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Video (Phụ trách)</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[18px] pointer-events-none">movie</span>
+                            <select id="editOrderVideo" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
+                                <option value="">- Chưa chọn -</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                        </div>
+                    </div>
+
+                    <!-- Photo (Phụ trách) -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Photo (Phụ trách)</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[18px] pointer-events-none">photo_camera</span>
+                            <select id="editOrderPhoto" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
+                                <option value="">- Chưa chọn -</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Ghi chú</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-4 text-[#b80035] text-[18px]">description</span>
+                            <textarea id="editOrderNote" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow h-32 resize-none" placeholder="Ghi chú nội bộ..."></textarea>
+                        </div>
+                    </div>
                 </div>
+
             </div>
-            <div class="space-y-1.5">
-                <label class="text-xs font-bold uppercase text-on-surface-variant">Tiêu đề <span class="text-primary">*</span></label>
-                <input id="editOrderTitle" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-            </div>
-            <div class="grid grid-cols-3 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Người yêu cầu <span class="text-primary">*</span></label>
-                    <input id="editOrderRequester" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Ngày triển khai</label>
-                    <input id="editOrderDeployDate" type="date" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Deadline <span class="text-primary">*</span></label>
-                    <input id="editOrderDeadline" type="date" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Thể loại <span class="text-primary">*</span></label>
-                    <select id="editOrderCategory" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                        <option value="Video">Video</option>
-                        <option value="Hình Ảnh">Hình Ảnh</option>
-                        <option value="Livestream">Livestream</option>
-                        <option value="Giả Live">Giả Live</option>
-                    </select>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Stylist</label>
-                    <input id="editOrderStylist" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Video (Phụ trách)</label>
-                    <input id="editOrderVideo" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-xs font-bold uppercase text-on-surface-variant">Photo (Phụ trách)</label>
-                    <input id="editOrderPhoto" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary">
-                </div>
-            </div>
-            <div class="space-y-1.5">
-                <label class="text-xs font-bold uppercase text-on-surface-variant">Nội dung chi tiết</label>
-                <div class="w-full bg-surface-container-high border border-outline-variant/30 rounded-t-lg flex flex-wrap items-center gap-0.5 p-1">
-                    <button onclick="editorCmd('bold')" class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant"><span class="material-symbols-outlined text-base">format_bold</span></button>
-                    <button onclick="editorCmd('italic')" class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant"><span class="material-symbols-outlined text-base">format_italic</span></button>
-                    <button onclick="editorInsertTable()" class="p-1 hover:bg-surface-container-highest rounded text-on-surface-variant"><span class="material-symbols-outlined text-base">table_view</span></button>
-                </div>
-                <div id="editOrderContent" contenteditable="true" class="w-full bg-surface-container-highest border-none rounded-b-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary h-48 overflow-y-auto"></div>
-            </div>
-            <div class="space-y-1.5">
-                <label class="text-xs font-bold uppercase text-on-surface-variant">Ghi chú</label>
-                <input id="editOrderNote" type="text" class="w-full bg-surface-container-highest border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary" placeholder="Ghi chú nhanh...">
-            </div>
+
         </div>
+
         <!-- Footer -->
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-surface-variant bg-surface-container-lowest rounded-b-2xl">
-            <button onclick="closeEditModal()" class="px-6 py-2.5 text-sm font-bold text-on-surface hover:bg-surface-variant rounded-full transition-colors">Hủy</button>
-            <button id="btnSaveEditOrder" onclick="saveEditOrder()" class="px-6 py-2.5 text-sm font-bold bg-primary text-on-primary hover:bg-primary-hover shadow-md hover:shadow-lg rounded-full transition-all flex items-center gap-2">
-                <span class="material-symbols-outlined text-[18px]">save</span> Lưu thay đổi
+        <div class="flex items-center justify-end gap-6 px-10 py-6 border-t border-slate-100 bg-white">
+            <button onclick="closeEditModal()" class="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors px-4 py-2">HỦY BỎ</button>
+            <button id="btnSaveEditOrder" onclick="saveEditOrder()" class="px-10 py-4 text-sm font-extrabold bg-[#b80035] text-white hover:bg-rose-700 shadow-[0_12px_24px_rgba(184,0,53,0.3)] hover:shadow-[0_16px_32px_rgba(184,0,53,0.4)] rounded-[14px] transition-all flex items-center gap-3 active:scale-[0.98]">
+                LƯU THAY ĐỔI
             </button>
         </div>
+    </div>
+</div>
     </div>
 </div>
 
@@ -1787,6 +1951,7 @@
             });
 
             currentPage = pageId;
+            window.location.hash = pageId;
 
             // SPECIAL LOGIC FOR PAGES
             if (pageId === 'create-order') {
@@ -2460,7 +2625,10 @@
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
-                        <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" onclick="openEditModal('${dataStr}')">
+                        <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
+                            onclick="openEditModal('${dataStr}')"
+                            onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
+                            onmouseleave="window.hidePremiumTooltip()">
                             <div class="display-val">
                                 <div class="text-[13px] font-bold text-slate-700 truncate">${data.title || '-'}</div>
                                 <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${(data.content || '').replace(/<[^>]*>/g, ' ')}</div>
@@ -2581,6 +2749,11 @@
             populateMultiSelect('menu-video', staff, 'assignedVideo');
             populateMultiSelect('menu-photo', staff, 'assignedPhoto');
             
+            // Populate Edit Modal Personnel Dropdowns
+            populateDropdown('editOrderStylist', staff, '- Chưa chọn -');
+            populateDropdown('editOrderVideo', staff, '- Chưa chọn -');
+            populateDropdown('editOrderPhoto', staff, '- Chưa chọn -');
+
             if (window.allOrdersData && window.allOrdersData.length > 0) window.renderOrdersTable();
         });
 
@@ -2591,6 +2764,7 @@
             window.departmentsData = [];
             snapshot.forEach(doc => window.departmentsData.push({ id: doc.id, ...doc.data() }));
             populateDropdown('department', window.departmentsData);
+            populateDropdown('editOrderDepartment', window.departmentsData);
             populateMultiSelect('menu-department', window.departmentsData, 'department');
         });
 
@@ -2670,6 +2844,7 @@
         
         document.getElementById('editOrderId').value = data.id;
         document.getElementById('editOrderCode').value = data.code || '';
+        document.getElementById('editModalHeaderId').textContent = data.code || ('#' + data.id.substring(0,8));
         document.getElementById('editOrderStatus').value = data.status || 'Chờ duyệt';
         document.getElementById('editOrderTitle').value = data.title || '';
         document.getElementById('editOrderRequester').value = data.requester || '';
@@ -2681,11 +2856,14 @@
         document.getElementById('editOrderPhoto').value = data.assignedPhoto || '';
         document.getElementById('editOrderContent').innerHTML = data.content || '';
         document.getElementById('editOrderNote').value = data.note || '';
+        document.getElementById('editOrderDepartment').value = data.department || 'Công nghệ Thông tin';
         
         // RBAC: Disable fields if not permitted
         const fieldsToProtect = [
             { id: 'editOrderStatus', field: 'status' },
             { id: 'editOrderDeployDate', field: 'deployDate' },
+            { id: 'editOrderCategory', field: 'category' },
+            { id: 'editOrderDepartment', field: 'department' },
             { id: 'editOrderStylist', field: 'stylist' },
             { id: 'editOrderVideo', field: 'assignedVideo' },
             { id: 'editOrderPhoto', field: 'assignedPhoto' },
@@ -2710,6 +2888,18 @@
         modal.classList.add('flex');
     };
 
+    window.toggleExtraFields = function() {
+        const content = document.getElementById('extraFieldsContent');
+        const icon = document.getElementById('extraFieldsIcon');
+        if (content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            content.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    };
+
     window.closeEditModal = function() {
         const modal = document.getElementById('editOrderModal');
         modal.classList.add('hidden');
@@ -2728,6 +2918,8 @@
         const stylist = document.getElementById('editOrderStylist').value;
         const assignedVideo = document.getElementById('editOrderVideo').value;
         const assignedPhoto = document.getElementById('editOrderPhoto').value;
+        const department = document.getElementById('editOrderDepartment').value;
+        const note = document.getElementById('editOrderNote').value;
         const content = document.getElementById('editOrderContent').innerHTML;
         
         if (!title || !requester || !deadline) {
@@ -2752,8 +2944,10 @@
                 stylist: stylist,
                 assignedVideo: assignedVideo,
                 assignedPhoto: assignedPhoto,
+                department: department,
+                note: note,
                 content: content,
-                note: document.getElementById('editOrderNote').value || ''
+                updatedAt: window.fsServerTimestamp()
             });
             
             btn.innerHTML = originalText;
@@ -3070,10 +3264,13 @@
 
     // ===== Initialize =====
     document.addEventListener('DOMContentLoaded', () => {
-        // Set initial page visible
-        const initialPage = document.getElementById('page-dashboard');
-        if (initialPage) {
-            initialPage.classList.add('active', 'visible');
+        // Handle initial hash navigation
+        const hash = window.location.hash.substring(1);
+        const validPages = ['dashboard', 'orders', 'reports', 'create-order', 'profile'];
+        if (hash && validPages.includes(hash)) {
+            navigateTo(hash);
+        } else {
+            navigateTo('dashboard');
         }
     });
 </script>
@@ -3126,7 +3323,68 @@
         });
         window.location.href = 'login.html';
     }
+
+    // ===== PREMIUM TOOLTIP LOGIC =====
+    window.tooltipTimeout = null;
+
+    window.showPremiumTooltip = function(e, title, content) {
+        clearTimeout(window.tooltipTimeout);
+        const tooltip = document.getElementById('premium-tooltip');
+        if (!tooltip) return;
+        const header = tooltip.querySelector('.tooltip-title');
+        const body = tooltip.querySelector('.tooltip-body');
+        
+        try {
+            header.textContent = decodeURIComponent(title);
+            body.innerHTML = decodeURIComponent(content);
+        } catch (err) {
+            header.textContent = title;
+            body.innerHTML = content;
+        }
+        
+        tooltip.classList.add('show');
+        const targetElement = e.target ? e.target.closest('td') : null;
+        if (targetElement) {
+            window.updateTooltipPos(targetElement);
+        }
+    }
+    window.updateTooltipPos = function(element) {
+        const tooltip = document.getElementById('premium-tooltip');
+        if (!tooltip || !tooltip.classList.contains('show') || !element) return;
+        
+        const targetRect = element.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        // Default: Position to the right of the cell
+        let finalX = targetRect.right - 5; // Overlap by 5px for seamless mouse movement
+        let finalY = targetRect.top; // Align with top of the cell
+        
+        // If it goes off the right edge, flip to the left side
+        if (finalX + tooltipRect.width > window.innerWidth - 10) {
+            finalX = targetRect.left - tooltipRect.width + 5;
+        }
+        
+        // If it goes off the bottom edge, push it up
+        if (finalY + tooltipRect.height > window.innerHeight - 10) {
+            finalY = window.innerHeight - tooltipRect.height - 10;
+        }
+        
+        tooltip.style.left = finalX + 'px';
+        tooltip.style.top = finalY + 'px';
+    }
+    window.hidePremiumTooltip = function() {
+        window.tooltipTimeout = setTimeout(() => {
+            const tooltip = document.getElementById('premium-tooltip');
+            if (tooltip) tooltip.classList.remove('show');
+        }, 150);
+    }
 </script>
+
+<!-- Premium Tooltip HTML -->
+<div id="premium-tooltip" onmouseenter="clearTimeout(window.tooltipTimeout)" onmouseleave="window.hidePremiumTooltip()">
+    <div class="tooltip-title"></div>
+    <div class="tooltip-body"></div>
+</div>
 
 </body>
 </html>
