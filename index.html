@@ -4010,7 +4010,7 @@
         }
         const monthFilter = document.getElementById('planningMonthFilter');
         const newRow = {
-            dept: data.dept || '',
+            dept: data.dept || sessionStorage.getItem('nevo_dept') || '',
             campaign: data.campaign || '',
             note: data.note || '',
             type: data.type || '',
