@@ -3757,24 +3757,7 @@
 
     // ===== PLANNING PAGE LOGIC =====
     window.planningRowsData = [];
-    window.planningInitialized = false;
 
-    window.initPlanningSync = function() {
-        if(window.planningInitialized) return;
-        
-        const q = window.fsQuery(window.fsCollection(window.db, "planning"));
-        window.fsOnSnapshot(q, (snapshot) => {
-            window.planningRowsData = [];
-            snapshot.forEach((doc) => {
-                window.planningRowsData.push({ id: doc.id, ...doc.data() });
-            });
-            window.renderPlanningCalendarHeaders();
-            window.renderPlanningTable();
-            window.renderPlanningReport();
-        });
-        
-        window.planningInitialized = true;
-    };
 
     window.updateTooltipPos = function(element) {
         const tooltip = document.getElementById('premium-tooltip');
@@ -3815,14 +3798,17 @@
     window.initPlanningSync = function() {
         if(window.planningInitialized) return;
         
-        window.updatePlanningDepartmentFilter();
+        // Sync departments
+        window.fsOnSnapshot(window.fsCollection(window.db, "departments"), (snapshot) => {
+            window.departmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.updatePlanningDepartmentFilter();
+            window.renderPlanningTable();
+        });
 
+        // Sync planning rows
         const q = window.fsQuery(window.fsCollection(window.db, "planning"));
         window.fsOnSnapshot(q, (snapshot) => {
-            window.planningRowsData = [];
-            snapshot.forEach((doc) => {
-                window.planningRowsData.push({ id: doc.id, ...doc.data() });
-            });
+            window.planningRowsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             window.renderPlanningCalendarHeaders();
             window.renderPlanningTable();
             window.renderPlanningReport();
