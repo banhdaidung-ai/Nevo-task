@@ -796,133 +796,133 @@
 <div id="page-orders" class="page">
     <div class="p-4 md:p-8 max-w-full mx-auto">
         <!-- Header & Stats -->
-        <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
+        <!-- Top Stats Row -->
+        <div class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
             <div>
-                <nav class="flex items-center gap-2 text-xs text-slate-400 mb-2 font-medium tracking-wide">
-                    <span>HỆ THỐNG</span>
+                <nav class="flex items-center gap-2 text-[10px] text-slate-400 mb-2 font-bold tracking-widest uppercase">
+                    <span>Hệ thống</span>
                     <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-                    <span class="text-primary font-semibold">QUẢN LÝ ĐƠN HÀNG</span>
+                    <span class="text-primary">Quản lý Đơn hàng</span>
                 </nav>
-                <h1 class="font-headline font-extrabold text-3xl tracking-tight text-on-surface">Danh sách Đơn hàng <span class="text-primary">.</span></h1>
+                <h1 class="font-headline font-extrabold text-3xl tracking-tight text-[#1e293b]">Danh sách Đơn hàng <span class="text-primary">.</span></h1>
             </div>
-            <div class="flex gap-4">
-                <div class="bg-surface-container-lowest px-6 py-4 rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col gap-1 min-w-[140px] card-lift">
+            <div class="flex flex-wrap gap-4">
+                <!-- Đang xử lý -->
+                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[180px] shadow-sm">
                     <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0 animate-pulse"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đang xử lý</span>
                     </div>
-                    <span class="font-headline font-extrabold text-2xl">1,248</span>
+                    <span id="statProcessing" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
                 </div>
-                <div class="bg-surface-container-lowest px-6 py-4 rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col gap-1 min-w-[140px] card-lift">
+                <!-- Hoàn thành -->
+                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[180px] shadow-sm">
                     <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hoàn thành</span>
                     </div>
-                    <span class="font-headline font-extrabold text-2xl">8,920</span>
+                    <span id="statCompleted" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
                 </div>
             </div>
-        </header>
+        </div>
+
+        <!-- Search & Quick Filters Row -->
+        <div class="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4 animate-fade-in-up delay-100">
+            <div class="relative w-full xl:max-w-2xl">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                <input id="filterSearch" type="text" placeholder="Tìm kiếm mã đơn, tên người yêu cầu hoặc nội dung công việc..." class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all shadow-sm" onkeyup="if(window.renderOrdersTable) window.renderOrdersTable()">
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Lọc Nhanh:</span>
+                <button id="qf-all" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-primary text-white" onclick="setQuickFilter('')">Tất cả</button>
+                <button id="qf-processing" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang xử lý')">Đang xử lý</button>
+                <button id="qf-completed" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Hoàn thành')">Hoàn thành</button>
+                <button id="qf-pending" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Chờ duyệt')">Chờ duyệt</button>
+                <button id="qf-cancelled" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đã hủy')">Đã hủy</button>
+                <!-- Hidden input to store status for renderOrdersTable -->
+                <input type="hidden" id="filterStatus" value="">
+            </div>
+        </div>
 
         <!-- Main Data Table Container -->
-        <div class="bg-surface-container-lowest rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.08)] overflow-hidden border border-white/50 animate-fade-in-up delay-200">
-            <!-- Table Toolbar -->
-            <div class="p-4 bg-surface-container-low flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-3 w-full md:w-auto">
-                    <div class="relative w-full md:w-64">
-                        <input type="text" id="filterSearch" placeholder="Tìm kiếm mã, tiêu đề..." class="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs font-medium focus:ring-2 focus:ring-primary transition-all shadow-sm" onkeyup="if(window.renderOrdersTable) window.renderOrdersTable()">
-                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-slate-400">search</span>
-                    </div>
-                    <select id="filterStatus" class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-primary transition-all shadow-sm" onchange="if(window.renderOrdersTable) window.renderOrdersTable()">
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="Chờ duyệt">Chờ duyệt</option>
-                        <option value="Đang xử lý">Đang xử lý</option>
-                        <option value="Hoàn thành">Hoàn thành</option>
-                    </select>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 animate-fade-in-up delay-300 flex flex-col h-[75vh]">
+            <!-- Action Row -->
+            <div class="bg-[#f8fafc] p-4 border-b border-slate-200 flex justify-between items-center rounded-t-xl shrink-0">
+                <div class="flex gap-3">
+                    <button class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm" onclick="clearAllFilters()">
+                        <span class="material-symbols-outlined text-[16px]">filter_alt_off</span>
+                        Xóa bộ lọc
+                    </button>
+                    <button class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">download</span>
+                        Xuất dữ liệu
+                    </button>
                 </div>
-                <div class="text-xs text-slate-400 font-medium italic">Hiển thị 10 trên tổng số 12,450 bản ghi</div>
+                <div class="text-xs text-slate-400 font-medium italic" id="tableResultsSummaryTop">Hiển thị 0 bản ghi</div>
             </div>
+
             <!-- Table -->
-            <div class="overflow-x-auto">
-                <table id="mainOrdersTable" class="w-full text-left border-collapse table-auto min-w-full table-compact">
-                    <thead class="bg-surface-container-high border-b border-surface-variant/30 text-slate-500">
+            <div class="overflow-auto flex-1 relative">
+                <table id="mainOrdersTable" class="w-full text-left border-separate border-spacing-0 table-auto min-w-full table-compact">
+                    <thead class="text-[#64748b] bg-[#e0e7ff] sticky top-0 z-20 shadow-sm text-[10px] font-extrabold uppercase tracking-widest">
                         <tr>
-                            <th class="cursor-pointer group/h col-code" onclick="toggleSort('code')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Mã <span class="material-symbols-outlined sort-icon" id="sort-code">unfold_more</span>
+                            <th class="cursor-pointer group/h pl-4 py-4 bg-[#e0e7ff]" onclick="toggleSort('code')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Mã đơn hàng <span class="material-symbols-outlined sort-icon" id="sort-code">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('requester')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Thành viên <span class="material-symbols-outlined sort-icon" id="sort-requester">unfold_more</span>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('requester')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Người yêu cầu <span class="material-symbols-outlined sort-icon" id="sort-requester">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('department')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('department')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Phòng ban <span class="material-symbols-outlined sort-icon" id="sort-department">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('category')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('category')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Công việc <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('title')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
-                                </div>
-                            </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('note')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('note')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Ghi chú <span class="material-symbols-outlined sort-icon" id="sort-note">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('createdAt')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Ngày Order <span class="material-symbols-outlined sort-icon" id="sort-createdAt">unfold_more</span>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('title')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Yêu cầu <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('deployDate')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Ngày Triển khai <span class="material-symbols-outlined sort-icon" id="sort-deployDate">unfold_more</span>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('deployDate')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Triển khai <span class="material-symbols-outlined sort-icon" id="sort-deployDate">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('deadline')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('deadline')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Deadline <span class="material-symbols-outlined sort-icon" id="sort-deadline">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('stylist')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Stylist <span class="material-symbols-outlined sort-icon" id="sort-stylist">unfold_more</span>
-                                </div>
-                            </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('assignedVideo')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Video <span class="material-symbols-outlined sort-icon" id="sort-assignedVideo">unfold_more</span>
-                                </div>
-                            </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('assignedPhoto')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
-                                    Photo <span class="material-symbols-outlined sort-icon" id="sort-assignedPhoto">unfold_more</span>
-                                </div>
-                            </th>
-                            <th class="cursor-pointer group/h" onclick="toggleSort('status')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 uppercase text-[10px] font-extrabold tracking-widest">
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff]" onclick="toggleSort('status')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Trạng thái <span class="material-symbols-outlined sort-icon" id="sort-status">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="text-right uppercase text-[10px] font-extrabold tracking-widest whitespace-nowrap">Thao tác</th>
+                            <th class="text-right py-4 pr-4 bg-[#e0e7ff]">Thao tác</th>
                         </tr>
                         <!-- Filter Row -->
-                        <tr class="bg-surface-container-high/30">
-                            <th class="p-2"><input type="text" class="column-filter !min-w-[80px]" onkeyup="updateColumnFilter('code', this.value)" placeholder="ID..."></th>
-                            <th class="p-2">
+                        <tr class="bg-slate-50 border-b border-indigo-100">
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter !min-w-[80px]" onkeyup="updateColumnFilter('code', this.value)" placeholder="ID..."></th>
+                            <th class="p-2 bg-slate-50">
                                 <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-requester" data-label="Thành viên" onclick="toggleMultiSelect('menu-requester')">Thành viên</div>
+                                    <div class="multi-select-trigger" id="trigger-requester" data-label="Người yêu cầu" onclick="toggleMultiSelect('menu-requester')">Người yêu cầu</div>
                                     <div class="multi-select-menu" id="menu-requester"></div>
                                 </div>
                             </th>
-                            <th class="p-2">
+                            <th class="p-2 bg-slate-50">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-department" data-label="Phòng ban" onclick="toggleMultiSelect('menu-department')">Phòng ban</div>
                                     <div class="multi-select-menu" id="menu-department">
@@ -930,9 +930,9 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2">
+                            <th class="p-2 bg-slate-50">
                                 <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-category" data-label="Loại" onclick="toggleMultiSelect('menu-category')">Loại</div>
+                                    <div class="multi-select-trigger" id="trigger-category" data-label="Công việc" onclick="toggleMultiSelect('menu-category')">Công việc</div>
                                     <div class="multi-select-menu" id="menu-category">
                                         <div class="multi-select-item all-active" id="all-category" onclick="toggleColumnFilter('category', 'ALL', true)"><span>Tất cả</span></div>
                                         <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Video', cb.checked)">
@@ -954,22 +954,11 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2"><input type="text" class="column-filter !min-w-[150px]" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
-                            <th class="p-2"><input type="text" class="column-filter" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
-                            <th class="p-2">
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter !min-w-[150px]" onkeyup="updateColumnFilter('title', this.value)" placeholder="Yêu cầu..."></th>
+                            <th class="p-2 bg-slate-50">
                                 <div class="date-range-container">
-                                    <div class="date-range-trigger" id="trigger-createdAt" data-label="Ngày Đặt hàng" onclick="toggleDateRange('menu-createdAt')">Ngày Đặt hàng</div>
-                                    <div class="date-range-menu" id="menu-createdAt">
-                                        <span class="date-range-label">Từ ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('createdAt', this.value, 'start')">
-                                        <span class="date-range-label">Đến ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('createdAt', this.value, 'end')">
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2">
-                                <div class="date-range-container">
-                                    <div class="date-range-trigger" id="trigger-deployDate" data-label="Ngày Triển khai" onclick="toggleDateRange('menu-deployDate')">Ngày Triển khai</div>
+                                    <div class="date-range-trigger" id="trigger-deployDate" data-label="Triển khai" onclick="toggleDateRange('menu-deployDate')">Triển khai</div>
                                     <div class="date-range-menu" id="menu-deployDate">
                                         <span class="date-range-label">Từ ngày</span>
                                         <input type="date" onchange="updateDateRangeFilter('deployDate', this.value, 'start')">
@@ -978,7 +967,7 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2">
+                            <th class="p-2 bg-slate-50">
                                 <div class="date-range-container">
                                     <div class="date-range-trigger" id="trigger-deadline" data-label="Deadline" onclick="toggleDateRange('menu-deadline')">Deadline</div>
                                     <div class="date-range-menu" id="menu-deadline">
@@ -989,25 +978,7 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2">
-                                <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-stylist" data-label="Stylist" onclick="toggleMultiSelect('menu-stylist')">Stylist</div>
-                                    <div class="multi-select-menu" id="menu-stylist"></div>
-                                </div>
-                            </th>
-                            <th class="p-2">
-                                <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-assignedVideo" data-label="Video" onclick="toggleMultiSelect('menu-video')">Video</div>
-                                    <div class="multi-select-menu" id="menu-video"></div>
-                                </div>
-                            </th>
-                            <th class="p-2">
-                                <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-assignedPhoto" data-label="Photo" onclick="toggleMultiSelect('menu-photo')">Photo</div>
-                                    <div class="multi-select-menu" id="menu-photo"></div>
-                                </div>
-                            </th>
-                            <th class="p-2">
+                            <th class="p-2 bg-slate-50">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-status" data-label="Trạng thái" onclick="toggleMultiSelect('menu-status')">Trạng thái</div>
                                     <div class="multi-select-menu" id="menu-status">
@@ -1015,7 +986,7 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 text-center">
+                            <th class="p-2 text-center bg-slate-50">
                                 <button class="clear-filters-btn" onclick="clearAllFilters()" title="Xóa tất cả bộ lọc">
                                     <span class="material-symbols-outlined">close</span>
                                 </button>
@@ -1024,7 +995,7 @@
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="13" class="px-6 py-8 text-center text-slate-400">
+                            <td colspan="10" class="px-6 py-8 text-center text-slate-400">
                                 <span class="material-symbols-outlined text-[24px] animate-spin mb-2">progress_activity</span>
                                 <div>Đang tải dữ liệu...</div>
                             </td>
@@ -1033,7 +1004,7 @@
                 </table>
             </div>
             <!-- Pagination -->
-            <div class="p-4 md:p-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="p-4 md:p-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 bg-white rounded-b-xl">
                 <div class="flex gap-2">
                     <button class="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 transition-colors">
                         <span class="material-symbols-outlined">chevron_left</span>
@@ -1858,7 +1829,7 @@
 <!-- ====== FIREBASE JAVASCRIPT ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -1884,6 +1855,7 @@
     window.fsDoc = doc;
     window.fsDeleteDoc = deleteDoc;
     window.fsUpdateDoc = updateDoc;
+    window.fsGetDoc = getDoc;
     
     // Auto start tracking
     if (window.initOrdersTracker) {
@@ -1911,6 +1883,8 @@
             if (typeof event !== 'undefined' && event && event.preventDefault) {
                 event.preventDefault();
             }
+            // Close any open dropdowns when navigating
+            if (window.closeAllDropdowns) window.closeAllDropdowns();
         } catch (e) {}
 
         if (currentPage === pageId) {
@@ -1937,7 +1911,16 @@
                 newEl.classList.add('visible');
                 
                 // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: 'auto' });
+                
+                // Handle page-specific initialization
+                if (pageId === 'orders') {
+                    if (window.renderOrdersTable) window.renderOrdersTable();
+                } else if (pageId === 'profile') {
+                    if (window.updateProfilePage) window.updateProfilePage();
+                } else if (pageId === 'dashboard') {
+                    if (window.updateDashboardStats) window.updateDashboardStats();
+                }
             }
             
             // Update nav links
@@ -2420,12 +2403,48 @@
         return icons[key] || 'folder';
     }
 
+    window.setQuickFilter = function(status) {
+        document.getElementById('filterStatus').value = status;
+        document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-white', 'text-slate-600', 'hover:bg-slate-50');
+        });
+        
+        let btnId = 'qf-all';
+        if (status === 'Đang xử lý') btnId = 'qf-processing';
+        else if (status === 'Hoàn thành') btnId = 'qf-completed';
+        else if (status === 'Chờ duyệt') btnId = 'qf-pending';
+        else if (status === 'Đã hủy') btnId = 'qf-cancelled';
+        
+        const activeBtn = document.getElementById(btnId);
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'hover:bg-slate-50');
+            activeBtn.classList.add('bg-primary', 'text-white');
+        }
+        
+        if (window.renderOrdersTable) window.renderOrdersTable();
+    };
+
     window.renderOrdersTable = function() {
         const tbodyFull = document.getElementById('ordersTableBody');
         const filterSearchEle = document.getElementById('filterSearch');
         const filterStatusEle = document.getElementById('filterStatus');
         
         if (!tbodyFull) return;
+
+        // Update Stats based on allOrdersData (Global Totals)
+        const counts = {
+            'Đang xử lý': 0,
+            'Hoàn thành': 0
+        };
+        (window.allOrdersData || []).forEach(o => {
+            if (counts[o.status] !== undefined) counts[o.status]++;
+        });
+        
+        const spr = document.getElementById('statProcessing');
+        const sc = document.getElementById('statCompleted');
+        if (spr) spr.textContent = counts['Đang xử lý'].toLocaleString();
+        if (sc) sc.textContent = counts['Hoàn thành'].toLocaleString();
 
         const globalSearch = (filterSearchEle ? filterSearchEle.value : '').toLowerCase();
         const statusSearch = filterStatusEle ? filterStatusEle.value : '';
@@ -2494,23 +2513,25 @@
             return 0;
         });
 
-        // 3. PAGINATION SLICE
+        // Update record count display (Summary in Toolbar)
         const totalItems = filtered.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
         const start = currentTablePage * itemsPerPage;
         const pagedData = filtered.slice(start, start + itemsPerPage);
 
-        // Update count text
-        const countText = document.querySelector('.text-xs.text-slate-400.font-medium.italic');
-        if (countText) {
-            countText.textContent = `Hiển thị ${pagedData.length} trên tổng số ${totalItems} bản ghi (Trang ${currentTablePage + 1}/${totalPages || 1})`;
+        const counterEleTop = document.getElementById('tableResultsSummaryTop');
+        if (counterEleTop) {
+            counterEleTop.textContent = `Hiển thị ${pagedData.length} trên ${totalItems} kết quả (Tổng hệ thống: ${window.allOrdersData.length} | Trang ${currentTablePage + 1}/${totalPages || 1})`;
         }
 
         if (pagedData.length === 0) {
-            tbodyFull.innerHTML = `<tr><td colspan="13" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+            tbodyFull.innerHTML = `<tr><td colspan="10" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
             updatePaginationUI(0);
             return;
         }
+
+        // 3. RENDER
+        tbodyFull.innerHTML = '';
 
         // --- GROUPING LOGIC ---
         let currentGroupValue = null;
@@ -2538,7 +2559,7 @@
                     const icon = getGroupIcon(sortConfig.key);
                     fullHtml += `
                         <tr class="group-header-row">
-                            <td colspan="13">
+                            <td colspan="10">
                                 <div class="group-header-content">
                                     <span class="material-symbols-outlined text-[16px] text-slate-400">${icon}</span>
                                     <span>${headerText}</span>
@@ -2581,8 +2602,9 @@
                 if (!name || name === '-') return '<span class="text-slate-400">-</span>';
                 const u = (window.allUsersData || []).find(x => x.name === name);
                 const roleClass = u ? `badge-${u.role}` : 'badge-default';
-                const info = u ? `Mã NV: ${u.empId || '?'}\nSĐT: ${u.phone || '?'}` : '';
-                return `<span class="name-badge ${roleClass} cursor-help" title="${info}">${name}</span>`;
+                return `<span class="name-badge ${roleClass} cursor-help" 
+                    onmouseenter="window.showUserTooltip(event, '${name}')" 
+                    onmouseleave="window.hidePremiumTooltip()">${name}</span>`;
             };
 
             // Function to get category badge
@@ -2625,6 +2647,9 @@
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
+                        <td class="text-[12px] text-slate-500 italic cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'note')">
+                            <span class="display-val truncate max-w-[120px] inline-block">${data.note || '-'}</span>
+                        </td>
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
                             onclick="openEditModal('${dataStr}')"
                             onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
@@ -2634,24 +2659,11 @@
                                 <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${(data.content || '').replace(/<[^>]*>/g, ' ')}</div>
                             </div>
                         </td>
-                        <td class="text-[12px] text-slate-500 italic cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'note')">
-                            <span class="display-val truncate max-w-[120px] inline-block">${data.note || '-'}</span>
-                        </td>
-                        <td class="text-[11px] text-slate-400 font-medium">${createdText}</td>
                         <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deployDate')">
                             <div class="display-val">${deployText}</div>
                         </td>
                         <td class="text-[12px] font-bold text-primary cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
                             <div class="display-val">${deadlineText}</div>
-                        </td>
-                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
-                            <div class="display-val">${getUserBadge(data.stylist)}</div>
-                        </td>
-                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
-                            <div class="display-val">${getUserBadge(data.assignedVideo)}</div>
-                        </td>
-                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
-                            <div class="display-val">${getUserBadge(data.assignedPhoto)}</div>
                         </td>
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'status')">
                             <div class="display-val">${statusBadgeFull}</div>
@@ -3109,6 +3121,10 @@
         document.getElementById('editProfilePhone').value = userPhone;
 
         // Fetch stats
+        if (!window.db) {
+            console.warn("Firestore not ready, skipping stats fetch");
+            return;
+        }
         try {
             const q = window.fsQuery(window.fsCollection(window.db, "orders"));
             const querySnapshot = await window.fsGetDocs(q);
@@ -3185,7 +3201,10 @@
         try {
             const userRef = window.fsDoc(window.db, "users", empId);
             const userDoc = await window.fsGetDoc(userRef);
-            if (!userDoc.exists()) return;
+            if (!userDoc.exists()) {
+                showToast('Lỗi!', 'Không tìm thấy dữ liệu người dùng trên hệ thống.', 'error', 'text-error');
+                return;
+            }
             const userData = userDoc.data();
 
             let updateData = { name, email, phone };
@@ -3273,7 +3292,130 @@
             navigateTo('dashboard');
         }
     });
+
+    // ===== PREMIUM TOOLTIP LOGIC =====
+    window.tooltipTimeout = null;
+
+    window.showPremiumTooltip = function(e, title, content) {
+        clearTimeout(window.tooltipTimeout);
+        const tooltip = document.getElementById('premium-tooltip');
+        if (!tooltip) return;
+        const header = tooltip.querySelector('.tooltip-title');
+        const body = tooltip.querySelector('.tooltip-body');
+        
+        try {
+            header.textContent = decodeURIComponent(title);
+            body.innerHTML = decodeURIComponent(content);
+        } catch (err) {
+            header.textContent = title;
+            body.innerHTML = content;
+        }
+        
+        tooltip.classList.add('show');
+        const targetElement = e.target ? e.target.closest('td') : null;
+        if (targetElement) {
+            window.updateTooltipPos(targetElement);
+        }
+    }
+
+    window.showUserTooltip = function(e, name) {
+        clearTimeout(window.tooltipTimeout);
+        const tooltip = document.getElementById('premium-tooltip');
+        if (!tooltip) return;
+        const header = tooltip.querySelector('.tooltip-title');
+        const body = tooltip.querySelector('.tooltip-body');
+        
+        const u = (window.allUsersData || []).find(x => x.name === name);
+        header.innerHTML = `<span class="material-symbols-outlined text-[18px]">account_circle</span> ${name}`;
+        
+        if (u) {
+            body.innerHTML = `
+                <div class="flex flex-col gap-3 py-1">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-[24px]">badge</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-extrabold text-slate-400 tracking-widest">Mã nhân viên</p>
+                            <p class="text-sm font-bold text-slate-700">${u.empId || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <span class="material-symbols-outlined text-[24px]">call</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-extrabold text-slate-400 tracking-widest">Số điện thoại</p>
+                            <p class="text-sm font-bold text-slate-700">${u.phone || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Chức vụ</span>
+                        <span class="px-2 py-0.5 rounded bg-slate-100 text-[10px] font-bold text-slate-600 uppercase">${u.role || 'user'}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            body.innerHTML = `<p class="text-slate-400 italic py-2">Không tìm thấy thông tin thành viên này trong hệ thống.</p>`;
+        }
+        
+        tooltip.classList.add('show');
+        const targetElement = e.target ? e.target.closest('td') : null;
+        if (targetElement) {
+            window.updateTooltipPos(targetElement);
+        }
+    }
+
+    window.hidePremiumTooltip = function() {
+        window.tooltipTimeout = setTimeout(() => {
+            const tooltip = document.getElementById('premium-tooltip');
+            if (tooltip) tooltip.classList.remove('show');
+        }, 100);
+    }
+
+    window.updateTooltipPos = function(element) {
+        const tooltip = document.getElementById('premium-tooltip');
+        if (!tooltip || !tooltip.classList.contains('show') || !element) return;
+        
+        const targetRect = element.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        // Default: Position to the right of the cell, shifted slightly right
+        let finalX = targetRect.right + 15; 
+        let finalY = targetRect.top;
+        
+        // If it goes off the right edge, flip to the left side
+        if (finalX + tooltipRect.width > window.innerWidth - 20) {
+            finalX = targetRect.left - tooltipRect.width - 15;
+        }
+        
+        // If it goes off the bottom edge, push it up
+        if (finalY + tooltipRect.height > window.innerHeight - 20) {
+            finalY = window.innerHeight - tooltipRect.height - 20;
+        }
+
+        // Clamp to top
+        if (finalY < 80) finalY = 80;
+        
+        tooltip.style.left = finalX + 'px';
+        tooltip.style.top = finalY + 'px';
+    }
 </script>
+
+<style>
+    /* Table Sticky Header & Toolbar */
+    .sticky-toolbar {
+        position: sticky;
+        top: 64px;
+        z-index: 40;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .sticky-header {
+        background: #e2e7ff !important;
+    }
+</style>
 
 <!-- ====== AUTH & USER MENU SCRIPTS ====== -->
 <script>
@@ -3323,14 +3465,6 @@
         });
         window.location.href = 'login.html';
     }
-
-    // ===== PREMIUM TOOLTIP LOGIC =====
-    window.tooltipTimeout = null;
-
-    window.showPremiumTooltip = function(e, title, content) {
-        clearTimeout(window.tooltipTimeout);
-        const tooltip = document.getElementById('premium-tooltip');
-        if (!tooltip) return;
         const header = tooltip.querySelector('.tooltip-title');
         const body = tooltip.querySelector('.tooltip-body');
         
