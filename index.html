@@ -3837,9 +3837,11 @@
 
     window.getPlanningDeptOptions = function(selectedValue) {
         let html = `<option value="">Chọn phòng ban</option>`;
+        const trimmedSelected = (selectedValue || "").toString().trim();
         (window.departmentsData || []).forEach(d => {
-            const selected = selectedValue === d.name ? 'selected' : '';
-            html += `<option value="${d.name}" ${selected}>${d.name}</option>`;
+            const deptName = (d.name || "").toString().trim();
+            const isSelected = trimmedSelected === deptName;
+            html += `<option value="${d.name}" ${isSelected ? 'selected' : ''}>${d.name}</option>`;
         });
         return html;
     };
@@ -4000,9 +4002,16 @@
             alert("Hệ thống đang khởi tạo kết nối database, vui lòng đợi trong giây lát...");
             return;
         }
+        
+        const sessionDept = sessionStorage.getItem('nevo_dept');
+        const filterDept = document.getElementById('planningDepartmentFilter')?.value;
         const monthFilter = document.getElementById('planningMonthFilter');
+        
+        const finalDept = data.dept || sessionDept || filterDept || '';
+        console.log("Adding new planning row with dept:", finalDept);
+
         const newRow = {
-            dept: data.dept || sessionStorage.getItem('nevo_dept') || '',
+            dept: finalDept,
             campaign: data.campaign || '',
             note: data.note || '',
             type: data.type || '',
@@ -4013,8 +4022,11 @@
         for(let i=1; i<=31; i++) newRow.days[`d${i}`] = data[`d${i}`] || '0';
         
         window.fsAddDoc(window.fsCollection(window.db, "planning"), newRow)
-            .then(() => console.log("Planning row added"))
-            .catch(err => alert("Lỗi khi thêm: " + err.message));
+            .then(() => console.log("Planning row added successfully"))
+            .catch(err => {
+                console.error("Error adding planning row:", err);
+                alert("Lỗi khi thêm: " + err.message);
+            });
     };
 
     window.toggleAllPlanningRows = function(checked) {
