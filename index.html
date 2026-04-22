@@ -3808,6 +3808,29 @@
         }, 150);
     }
 
+    // ===== PLANNING PAGE LOGIC =====
+    window.planningRowsData = [];
+    window.planningInitialized = false;
+
+    window.initPlanningSync = function() {
+        if(window.planningInitialized) return;
+        
+        window.updatePlanningDepartmentFilter();
+
+        const q = window.fsQuery(window.fsCollection(window.db, "planning"));
+        window.fsOnSnapshot(q, (snapshot) => {
+            window.planningRowsData = [];
+            snapshot.forEach((doc) => {
+                window.planningRowsData.push({ id: doc.id, ...doc.data() });
+            });
+            window.renderPlanningCalendarHeaders();
+            window.renderPlanningTable();
+            window.renderPlanningReport();
+        });
+        
+        window.planningInitialized = true;
+    };
+
     window.updatePlanningDepartmentFilter = function() {
         const select = document.getElementById('planningDepartmentFilter');
         if(!select) return;
@@ -3835,7 +3858,6 @@
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
         
-        // Header Bảng Kế Hoạch
         const headerRow = document.getElementById('planningTableHeaderRow');
         const footerRow = document.getElementById('planningTableFooterRow');
         if(headerRow && footerRow) {
@@ -3865,7 +3887,6 @@
             }
         }
 
-        // Header Bảng Báo Cáo
         const reportHeader = document.getElementById('planningReportHeaderRow');
         if(reportHeader) {
             const rCols = reportHeader.querySelectorAll('th');
@@ -3914,18 +3935,14 @@
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
-        // Giả lập dữ liệu thực tế từ window.ordersData nếu có
-        // Gom nhóm theo phòng ban và loại order
         const depts = (window.departmentsData || []).map(d => d.name);
         const types = ['Video', 'Hình Ảnh', 'Giả Live'];
 
         depts.forEach(dept => {
             types.forEach(type => {
-                // Kiểm tra xem có kế hoạch nào cho cặp này không
                 const plans = window.planningRowsData.filter(r => r.dept === dept && r.type === type && r.month === monthFilter.value);
                 if(plans.length === 0) return;
 
-                // Dòng Kế hoạch
                 const trPlan = document.createElement('tr');
                 trPlan.className = "bg-blue-50/20";
                 let planDays = '';
@@ -3942,12 +3959,10 @@
                 `;
                 tbody.appendChild(trPlan);
 
-                // Dòng Thực tế
                 const trActual = document.createElement('tr');
                 trActual.className = "bg-rose-50/10";
                 let actualDays = '';
                 for(let i=1; i<=daysInMonth; i++) {
-                    // Logic thực tế: Lọc từ window.ordersData
                     const dateStr = `${year}-${month.toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
                     const count = (window.ordersData || []).filter(o => o.department === dept && o.category === type && o.orderDate === dateStr).length;
                     const diff = count - plans.reduce((acc, p) => acc + (parseInt(p.days[`d${i}`]) || 0), 0);
@@ -3986,10 +4001,13 @@
         const file = event.target.files[0];
         if(!file) return;
         alert(`Đã chọn file: ${file.name}. Chức năng xử lý Excel đang được tích hợp...`);
-        // Logic đọc file Excel/CSV sẽ được thêm tại đây
     };
 
     window.addPlanningRow = function(data = {}) {
+        if(!window.db) {
+            alert("Hệ thống đang khởi tạo kết nối database, vui lòng đợi trong giây lát...");
+            return;
+        }
         const monthFilter = document.getElementById('planningMonthFilter');
         const newRow = {
             dept: data.dept || '',
@@ -4051,10 +4069,11 @@
                 let daysHtml = '';
                 for(let i=1; i<=daysInMonth; i++) {
                     const date = new Date(year, month - 1, i);
-                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    const isSun = date.getDay() === 0;
+                    const isSat = date.getDay() === 6;
                     const val = row.days[`d${i}`] || '0';
-                    daysHtml += `<td class="py-5 px-3 text-center border-r border-b border-slate-100 ${isWeekend ? 'bg-slate-50/50' : ''}">
-                        <input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isWeekend ? 'font-extrabold text-rose-500' : 'font-bold text-slate-700'}" value="${val}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
+                    daysHtml += `<td class="py-5 px-3 text-center border-r border-b border-slate-100 ${isSat || isSun ? 'bg-slate-50/50' : ''}">
+                        <input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isSun ? 'font-extrabold text-rose-500' : isSat ? 'font-bold text-blue-500' : 'font-bold text-slate-700'}" value="${val}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
                     </td>`;
                 }
 
@@ -4100,29 +4119,23 @@
     };
 
     window.updateRowData = function(rowId, day, value) {
-        const row = window.planningRowsData.find(r => r.id === rowId);
-        if(row) {
-            row.days[`d${day}`] = value;
-            window.calculateDailyTotals();
-        }
+        const updates = {};
+        updates[`days.d${day}`] = value;
+        window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), updates);
     };
 
     window.updateRowBudget = function(rowId, value) {
-        const row = window.planningRowsData.find(r => r.id === rowId);
-        if(row) {
-            row.budget = value;
-            window.calculateDailyTotals();
-        }
+        window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { budget: value });
     };
 
     window.updateRowField = function(rowId, field, value) {
-        const row = window.planningRowsData.find(r => r.id === rowId);
-        if(row) row[field] = value;
+        window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { [field]: value });
     };
 
     window.calculateDailyTotals = function() {
         const monthFilter = document.getElementById('planningMonthFilter');
         const deptFilter = document.getElementById('planningDepartmentFilter');
+        if(!monthFilter) return;
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
@@ -4148,28 +4161,19 @@
         }
     };
 
-    window.initMockupPlanningRows = function() {
-        if(window.planningMockupInitialized) return;
-        window.planningRowsData = [
-            { id: '1', dept: 'Phòng Marketing', campaign: 'Quảng cáo Thu Đông 2026', note: 'Tập trung FB & Tiktok.', type: 'Video', budget: '250.000.000', month: '2026-04', days: { d2: '17', d3: '14', d4: '13', d5: '15' } },
-            { id: '2', dept: 'Phòng Kinh doanh', campaign: 'Kích cầu 2026', note: 'Khách hàng cũ.', type: 'Hình Ảnh', budget: '120.000.000', month: '2026-04', days: { d1: '38', d3: '1', d4: '42' } },
-            { id: '3', dept: 'Phòng Vận hành', campaign: 'Tối ưu kho 2026', note: 'Layout kho mới.', type: 'Giả Live', budget: '85.000.000', month: '2026-04', days: { d1: '2', d3: '2' } }
-        ];
-        window.planningRowsData.forEach(row => {
-            for(let i=1; i<=31; i++) if(!row.days[`d${i}`]) row.days[`d${i}`] = '0';
-        });
-        window.renderPlanningCalendarHeaders();
-        window.renderPlanningTable();
-        window.planningMockupInitialized = true;
-    };
-
     function initPlanningEvents() {
-        const btnAdd = document.getElementById('btnAddPlanningRow');
-        if(btnAdd) btnAdd.onclick = () => window.addPlanningRow();
         const monthFilter = document.getElementById('planningMonthFilter');
         if(monthFilter) monthFilter.onchange = () => { window.renderPlanningCalendarHeaders(); window.renderPlanningTable(); window.renderPlanningReport(); };
         const deptFilter = document.getElementById('planningDepartmentFilter');
         if(deptFilter) deptFilter.onchange = () => { window.renderPlanningTable(); window.renderPlanningReport(); };
+        
+        // Wait for Firebase to be ready
+        const checkFB = setInterval(() => {
+            if(window.db && window.fsCollection) {
+                clearInterval(checkFB);
+                window.initPlanningSync();
+            }
+        }, 500);
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlanningEvents);
