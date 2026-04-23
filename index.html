@@ -4488,7 +4488,12 @@
         };
         for(let i=1; i<=31; i++) newRow.days[`d${i}`] = data[`d${i}`] || '0';
         
-        window.fsAddDoc(window.fsCollection(window.db, "planning"), newRow)
+        await window.fsAddDoc(window.fsCollection(window.db, "planning"), newRow);
+        
+        // LOG ACTIVITY
+        if (window.logActivity) {
+            window.logActivity('create', 'Tạo kế hoạch mới', `Dòng kế hoạch "${newRow.title}" đã được thêm.`);
+        }
             .then(() => console.log("Planning row added successfully"))
             .catch(err => {
                 console.error("Error adding planning row:", err);
@@ -4529,6 +4534,11 @@
                     document.getElementById('selectAllPlanning').checked = false;
                     window.updateSelectedPlanningCount();
                     console.log("Selected planning rows deleted");
+                    
+                    // LOG ACTIVITY
+                    if (window.logActivity) {
+                        window.logActivity('delete', 'Xóa hàng loạt kế hoạch', `Đã xóa thành công ${ids.length} dòng kế hoạch.`);
+                    }
                 })
                 .catch(err => alert("Lỗi khi xoá hàng loạt: " + err.message));
         }
@@ -4536,7 +4546,12 @@
 
     window.deletePlanningRow = function(id) {
         if(confirm('Bạn có chắc chắn muốn xoá dòng kế hoạch này?')) {
-            window.fsDeleteDoc(window.fsDoc(window.db, "planning", id))
+            await window.fsDeleteDoc(window.fsDoc(window.db, "planning", id));
+            
+            // LOG ACTIVITY
+            if (window.logActivity) {
+                window.logActivity('delete', 'Xóa kế hoạch', `Đã xóa một dòng kế hoạch.`);
+            }
                 .then(() => console.log("Planning row deleted"))
                 .catch(err => alert("Lỗi khi xoá: " + err.message));
         }
@@ -4633,14 +4648,31 @@
         const updates = {};
         updates[`days.d${day}`] = value;
         window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), updates);
+        
+        // LOG ACTIVITY
+        if (window.logActivity) {
+            window.logActivity('update', 'Cập nhật số liệu kế hoạch', `Cập nhật ngày ${day} của kế hoạch thành "${value}"`);
+        }
     };
 
     window.updateRowBudget = function(rowId, value) {
         window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { budget: value });
+        
+        // LOG ACTIVITY
+        if (window.logActivity) {
+            window.logActivity('update', 'Cập nhật ngân sách', `Thay đổi ngân sách kế hoạch thành "${value}"`);
+        }
     };
 
     window.updateRowField = function(rowId, field, value) {
         window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { [field]: value });
+        
+        // LOG ACTIVITY
+        if (window.logActivity) {
+            const labels = { 'campaign': 'chiến dịch', 'dept': 'phòng ban', 'type': 'phân loại', 'note': 'ghi chú' };
+            const label = labels[field] || field;
+            window.logActivity('update', `Cập nhật ${label}`, `Trường ${label} kế hoạch đã được thay đổi.`);
+        }
     };
 
     window.calculateDailyTotals = function() {

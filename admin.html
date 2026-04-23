@@ -811,6 +811,23 @@
     let deleteTargetId = null;
     let deleteTargetType = 'user'; // 'user', 'dept', 'status'
     
+    // Activity Logger Utility
+    window.logActivity = async function(type, title, description) {
+        try {
+            const userName = sessionStorage.getItem('nevo_user_name') || 'Admin';
+            await window.fs.addDoc(window.fs.collection(window.db, "activities"), {
+                type: type, // 'create', 'update', 'delete', 'login'
+                title: title,
+                details: description,
+                user: userName,
+                timestamp: window.fs.serverTimestamp ? window.fs.serverTimestamp() : new Date()
+            });
+            console.log("Activity logged:", title);
+        } catch (error) {
+            console.error("Error logging activity:", error);
+        }
+    };
+    
     const USERS_COLLECTION = "users";
     const DEPTS_COLLECTION = "departments";
     const STATUS_COLLECTION = "order_statuses";
@@ -1120,6 +1137,11 @@
             await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, empId), userData, { merge: true });
 
             showToast(id ? 'Cập nhật thành công!' : 'Thêm người dùng thành công!');
+            
+            // LOG ACTIVITY
+            window.logActivity(id ? 'update' : 'create', id ? 'Cập nhật người dùng' : 'Thêm người dùng', 
+                id ? `Đã cập nhật thông tin cho ${name} (${empId})` : `Đã tạo tài khoản mới cho ${name} (${empId})`);
+            
             closeModal();
         } catch (e) {
             console.error(e);
@@ -1153,6 +1175,11 @@
 
             await window.fs.deleteDoc(window.fs.doc(window.db, collectionName, deleteTargetId));
             showToast('Đã xóa thành công!');
+            
+            // LOG ACTIVITY
+            const typeLabels = { 'user': 'người dùng', 'dept': 'phòng ban', 'status': 'trạng thái' };
+            window.logActivity('delete', `Xóa ${typeLabels[deleteTargetType]}`, `Đã xóa một ${typeLabels[deleteTargetType]} khỏi hệ thống.`);
+            
             closeDeleteModal();
         } catch (e) {
             showToast('Lỗi khi xóa dữ liệu', 'error');
@@ -1234,6 +1261,9 @@
                 }
             } else {
                 await window.fs.addDoc(window.fs.collection(window.db, DEPTS_COLLECTION), { name, createdAt: new Date().toISOString() });
+                
+                // LOG ACTIVITY
+                window.logActivity('create', 'Thêm phòng ban', `Đã tạo phòng ban mới: ${name}`);
             }
             showToast('Lưu phòng ban thành công');
             closeDeptModal();
@@ -1290,6 +1320,9 @@
             } else {
                 data.createdAt = new Date().toISOString();
                 await window.fs.addDoc(window.fs.collection(window.db, STATUS_COLLECTION), data);
+                
+                // LOG ACTIVITY
+                window.logActivity('create', 'Thêm trạng thái đơn', `Đã tạo trạng thái mới: ${name}`);
             }
             showToast('Lưu trạng thái thành công');
             closeStatusModal();
