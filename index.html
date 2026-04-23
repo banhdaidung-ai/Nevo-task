@@ -904,21 +904,6 @@
                                     Thể loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('stylist')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
-                                    Stylist <span class="material-symbols-outlined sort-icon" id="sort-stylist">unfold_more</span>
-                                </div>
-                            </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('assignedVideo')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
-                                    Video <span class="material-symbols-outlined sort-icon" id="sort-assignedVideo">unfold_more</span>
-                                </div>
-                            </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('assignedPhoto')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
-                                    Photo <span class="material-symbols-outlined sort-icon" id="sort-assignedPhoto">unfold_more</span>
-                                </div>
-                            </th>
                             <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[200px] w-[25%]" onclick="toggleSort('title')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
@@ -947,6 +932,21 @@
                             <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('status')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Trạng thái <span class="material-symbols-outlined sort-icon" id="sort-status">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('stylist')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Stylist <span class="material-symbols-outlined sort-icon" id="sort-stylist">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('assignedVideo')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Video <span class="material-symbols-outlined sort-icon" id="sort-assignedVideo">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('assignedPhoto')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Photo <span class="material-symbols-outlined sort-icon" id="sort-assignedPhoto">unfold_more</span>
                                 </div>
                             </th>
                             <th class="text-right py-4 pr-4 bg-[#e0e7ff] min-w-[80px]">Thao tác</th>
@@ -992,9 +992,6 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('stylist', this.value)" placeholder="Stylist..."></th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('assignedVideo', this.value)" placeholder="Video..."></th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('assignedPhoto', this.value)" placeholder="Photo..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
                             <th class="p-2 bg-slate-50">
@@ -1038,6 +1035,9 @@
                                     </div>
                                 </div>
                             </th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('stylist', this.value)" placeholder="Stylist..."></th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('assignedVideo', this.value)" placeholder="Video..."></th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('assignedPhoto', this.value)" placeholder="Photo..."></th>
                             <th class="p-2 text-center bg-slate-50">
                                 <button class="clear-filters-btn" onclick="clearAllFilters()" title="Xóa tất cả bộ lọc">
                                     <span class="material-symbols-outlined">close</span>
@@ -2907,15 +2907,6 @@
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
-                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
-                            <div class="display-val">${getUserBadge(data.stylist)}</div>
-                        </td>
-                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
-                            <div class="display-val">${getUserBadge(data.assignedVideo)}</div>
-                        </td>
-                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
-                            <div class="display-val">${getUserBadge(data.assignedPhoto)}</div>
-                        </td>
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
                             onclick="openEditModal('${dataStr}')"
                             onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
@@ -2939,6 +2930,15 @@
                         </td>
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'status')">
                             <div class="display-val">${statusBadgeFull}</div>
+                        </td>
+                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
+                            <div class="display-val">${getUserBadge(data.stylist)}</div>
+                        </td>
+                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
+                            <div class="display-val">${getUserBadge(data.assignedVideo)}</div>
+                        </td>
+                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
+                            <div class="display-val">${getUserBadge(data.assignedPhoto)}</div>
                         </td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-1">
@@ -3690,16 +3690,16 @@
                 "Người yêu cầu": order.requester || "-",
                 "Phòng ban": order.department || "-",
                 "Thể loại": order.category || "-",
-                "Stylist": order.stylist || "-",
-                "Video": order.assignedVideo || "-",
-                "Photo": order.assignedPhoto || "-",
                 "Nội dung": order.title || "-",
                 "Chi tiết nội dung": (order.content || "").replace(/<[^>]*>/g, ' '),
                 "Ghi chú": order.note || "-",
                 "Ngày order": formatDateDisplay(order.orderDate || order.createdAt),
                 "Ngày triển khai": formatDateDisplay(order.deployDate),
                 "Deadline": formatDateDisplay(order.deadline),
-                "Trạng thái": order.status || "Chờ duyệt"
+                "Trạng thái": order.status || "Chờ duyệt",
+                "Stylist": order.stylist || "-",
+                "Video": order.assignedVideo || "-",
+                "Photo": order.assignedPhoto || "-"
             };
         });
 
@@ -3711,16 +3711,16 @@
             { wch: 20 }, // Người yêu cầu
             { wch: 20 }, // Phòng ban
             { wch: 15 }, // Thể loại
-            { wch: 20 }, // Stylist
-            { wch: 20 }, // Video
-            { wch: 20 }, // Photo
             { wch: 40 }, // Nội dung
             { wch: 50 }, // Chi tiết nội dung
             { wch: 30 }, // Ghi chú
             { wch: 15 }, // Ngày order
             { wch: 15 }, // Ngày triển khai
             { wch: 15 }, // Deadline
-            { wch: 15 }  // Trạng thái
+            { wch: 15 }, // Trạng thái
+            { wch: 20 }, // Stylist
+            { wch: 20 }, // Video
+            { wch: 20 }  // Photo
         ];
         worksheet['!cols'] = colWidths;
 
