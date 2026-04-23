@@ -910,6 +910,14 @@
             snap.forEach(doc => orderStatuses.push({ id: doc.id, ...doc.data() }));
             renderStatuses();
         });
+
+        // --- 4. ACTIVITIES SYNC ---
+        const qActivities = window.fs.query(window.fs.collection(window.db, "activities"), window.fs.orderBy("timestamp", "desc"));
+        window.fs.onSnapshot(qActivities, (snap) => {
+            window.activities = [];
+            snap.forEach(doc => window.activities.push({ id: doc.id, ...doc.data() }));
+            window.renderActivitiesTable();
+        });
     }
 
     // =============================================
