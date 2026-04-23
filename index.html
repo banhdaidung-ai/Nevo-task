@@ -904,6 +904,11 @@
                                     Thể loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
                                 </div>
                             </th>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[150px]" onclick="toggleSort('assignee')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                                    Phụ trách <span class="material-symbols-outlined sort-icon" id="sort-assignee">unfold_more</span>
+                                </div>
+                            </th>
                             <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[200px] w-[25%]" onclick="toggleSort('title')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
@@ -977,6 +982,7 @@
                                     </div>
                                 </div>
                             </th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('assignee', this.value)" placeholder="Phụ trách..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
                             <th class="p-2 bg-slate-50">
@@ -1029,7 +1035,7 @@
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="10" class="px-6 py-8 text-center text-slate-400">
+                            <td colspan="12" class="px-6 py-8 text-center text-slate-400">
                                 <span class="material-symbols-outlined text-[24px] animate-spin mb-2">progress_activity</span>
                                 <div>Đang tải dữ liệu...</div>
                             </td>
@@ -2691,7 +2697,10 @@
             const matchGlobal = !globalSearch || 
                 (data.code || '').toLowerCase().includes(globalSearch) || 
                 (data.title || '').toLowerCase().includes(globalSearch) ||
-                (data.requester || '').toLowerCase().includes(globalSearch);
+                (data.requester || '').toLowerCase().includes(globalSearch) ||
+                (data.stylist || '').toLowerCase().includes(globalSearch) ||
+                (data.assignedVideo || '').toLowerCase().includes(globalSearch) ||
+                (data.assignedPhoto || '').toLowerCase().includes(globalSearch);
             
             // Status match
             const matchStatus = statusSearch === '' || data.status === statusSearch;
@@ -2727,6 +2736,9 @@
                 let val = '';
                 if (key === 'createdAt' || key === 'deployDate' || key === 'deadline') {
                     val = formatDateDisplay(data[key]);
+                } else if (key === 'assignee') {
+                    const combined = `${data.stylist || ''} ${data.assignedVideo || ''} ${data.assignedPhoto || ''}`;
+                    return combined.toLowerCase().includes(filterVal);
                 } else {
                     val = String(rawVal);
                 }
@@ -2762,7 +2774,7 @@
         }
 
         if (pagedData.length === 0) {
-            tbodyFull.innerHTML = `<tr><td colspan="11" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+            tbodyFull.innerHTML = `<tr><td colspan="12" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
             updatePaginationUI(0);
             return;
         }
@@ -2796,7 +2808,7 @@
                     const icon = getGroupIcon(sortConfig.key);
                     fullHtml += `
                         <tr class="group-header-row">
-                            <td colspan="11">
+                            <td colspan="12">
                                 <div class="group-header-content">
                                     <span class="material-symbols-outlined text-[16px] text-slate-400">${icon}</span>
                                     <span>${headerText}</span>
@@ -2885,6 +2897,14 @@
                         </td>
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
+                        </td>
+                        <td class="text-[11px] font-medium text-slate-600">
+                            <div class="flex flex-col gap-1">
+                                ${data.stylist ? `<div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[12px] text-slate-400">styler</span>${getUserBadge(data.stylist)}</div>` : ''}
+                                ${data.assignedVideo ? `<div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[12px] text-slate-400">movie</span>${getUserBadge(data.assignedVideo)}</div>` : ''}
+                                ${data.assignedPhoto ? `<div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[12px] text-slate-400">photo_camera</span>${getUserBadge(data.assignedPhoto)}</div>` : ''}
+                                ${(!data.stylist && !data.assignedVideo && !data.assignedPhoto) ? '<span class="text-slate-400">-</span>' : ''}
+                            </div>
                         </td>
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
                             onclick="openEditModal('${dataStr}')"
@@ -3660,6 +3680,7 @@
                 "Người yêu cầu": order.requester || "-",
                 "Phòng ban": order.department || "-",
                 "Thể loại": order.category || "-",
+                "Người phụ trách": `${order.stylist || ''} ${order.assignedVideo || ''} ${order.assignedPhoto || ''}`.trim() || "-",
                 "Nội dung": order.title || "-",
                 "Chi tiết nội dung": (order.content || "").replace(/<[^>]*>/g, ' '),
                 "Ghi chú": order.note || "-",
@@ -3678,6 +3699,7 @@
             { wch: 20 }, // Người yêu cầu
             { wch: 20 }, // Phòng ban
             { wch: 15 }, // Thể loại
+            { wch: 25 }, // Phụ trách
             { wch: 40 }, // Nội dung
             { wch: 50 }, // Chi tiết nội dung
             { wch: 30 }, // Ghi chú
