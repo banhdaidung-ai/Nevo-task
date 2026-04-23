@@ -1035,9 +1035,24 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('stylist', this.value)" placeholder="Stylist..."></th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('assignedVideo', this.value)" placeholder="Video..."></th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('assignedPhoto', this.value)" placeholder="Photo..."></th>
+                            <th class="p-2 bg-slate-50">
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-stylist" data-label="Stylist" onclick="toggleMultiSelect('menu-stylist')">Stylist</div>
+                                    <div class="multi-select-menu" id="menu-stylist"></div>
+                                </div>
+                            </th>
+                            <th class="p-2 bg-slate-50">
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-assignedVideo" data-label="Video" onclick="toggleMultiSelect('menu-video')">Video</div>
+                                    <div class="multi-select-menu" id="menu-video"></div>
+                                </div>
+                            </th>
+                            <th class="p-2 bg-slate-50">
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-assignedPhoto" data-label="Photo" onclick="toggleMultiSelect('menu-photo')">Photo</div>
+                                    <div class="multi-select-menu" id="menu-photo"></div>
+                                </div>
+                            </th>
                             <th class="p-2 text-center bg-slate-50">
                                 <button class="clear-filters-btn" onclick="clearAllFilters()" title="Xóa tất cả bộ lọc">
                                     <span class="material-symbols-outlined">close</span>
