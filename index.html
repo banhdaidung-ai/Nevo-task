@@ -4464,7 +4464,7 @@
         alert(`Đã chọn file: ${file.name}. Chức năng xử lý Excel đang được tích hợp...`);
     };
 
-    window.addPlanningRow = function(data = {}) {
+    window.addPlanningRow = async function(data = {}) {
         if(!window.db) {
             alert("Hệ thống đang khởi tạo kết nối database, vui lòng đợi trong giây lát...");
             return;
@@ -4515,7 +4515,7 @@
         }
     };
 
-    window.deleteSelectedPlanningRows = function() {
+    window.deleteSelectedPlanningRows = async function() {
         const checkboxes = document.querySelectorAll('.planning-row-checkbox:checked');
         if(checkboxes.length === 0) return;
         
@@ -4538,7 +4538,7 @@
         }
     };
 
-    window.deletePlanningRow = function(id) {
+    window.deletePlanningRow = async function(id) {
         if(confirm('Bạn có chắc chắn muốn xoá dòng kế hoạch này?')) {
             await window.fsDeleteDoc(window.fsDoc(window.db, "planning", id));
             

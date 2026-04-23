@@ -1207,7 +1207,61 @@
                 if (icon) icon.style.fontVariationSettings = "";
             }
         });
+
+        if (tabId === 'activities') {
+            window.renderActivitiesTable();
+        }
     }
+
+    // --- Activity Log Rendering ---
+    window.renderActivitiesTable = function() {
+        const tbody = document.getElementById('activitiesTableBody');
+        if (!tbody) return;
+
+        const searchTerm = document.getElementById('activitySearchInput')?.value.toLowerCase() || '';
+        const filtered = (window.activities || []).filter(a => {
+            return (a.title || '').toLowerCase().includes(searchTerm) ||
+                   (a.user || '').toLowerCase().includes(searchTerm) ||
+                   (a.details || '').toLowerCase().includes(searchTerm);
+        });
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400">Không tìm thấy hoạt động nào phù hợp.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(a => {
+            const date = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp instanceof Date ? a.timestamp : new Date());
+            const dateStr = date.toLocaleString('vi-VN');
+            
+            let typeBadge = '';
+            if (a.type === 'create') typeBadge = '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold uppercase tracking-wider">Tạo mới</span>';
+            else if (a.type === 'update') typeBadge = '<span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-bold uppercase tracking-wider">Cập nhật</span>';
+            else if (a.type === 'delete') typeBadge = '<span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[10px] font-bold uppercase tracking-wider">Xóa</span>';
+            else typeBadge = `<span class="px-2 py-0.5 bg-slate-50 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">${a.type}</span>`;
+
+            return `
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="py-4 px-6 text-xs text-slate-400 font-medium">${dateStr}</td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                ${(a.user || 'U').substring(0,2).toUpperCase()}
+                            </div>
+                            <span class="text-sm font-semibold text-slate-700">${a.user || 'Hệ thống'}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">${typeBadge}</td>
+                    <td class="py-4 px-6">
+                        <span class="text-sm font-bold text-slate-800">${a.title || 'N/A'}</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <p class="text-xs text-slate-500 max-w-[400px] leading-relaxed">${a.details || ''}</p>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    };
 
     // =============================================
     // DEPT & STATUS ACTIONS
