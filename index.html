@@ -4490,15 +4490,9 @@
         
         await window.fsAddDoc(window.fsCollection(window.db, "planning"), newRow);
         
-        // LOG ACTIVITY
         if (window.logActivity) {
-            window.logActivity('create', 'Tạo kế hoạch mới', `Dòng kế hoạch "${newRow.title}" đã được thêm.`);
+            window.logActivity('create', 'Tạo kế hoạch mới', `Dòng kế hoạch "${newRow.campaign || 'Chưa đặt tên'}" đã được thêm.`);
         }
-            .then(() => console.log("Planning row added successfully"))
-            .catch(err => {
-                console.error("Error adding planning row:", err);
-                alert("Lỗi khi thêm: " + err.message);
-            });
     };
 
     window.toggleAllPlanningRows = function(checked) {
@@ -4552,8 +4546,6 @@
             if (window.logActivity) {
                 window.logActivity('delete', 'Xóa kế hoạch', `Đã xóa một dòng kế hoạch.`);
             }
-                .then(() => console.log("Planning row deleted"))
-                .catch(err => alert("Lỗi khi xoá: " + err.message));
         }
     };
 

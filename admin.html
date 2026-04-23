@@ -814,7 +814,7 @@
     // Activity Logger Utility
     window.logActivity = async function(type, title, description) {
         try {
-            const userName = sessionStorage.getItem('nevo_user_name') || 'Admin';
+            const userName = sessionStorage.getItem('nevo_user') || 'Admin';
             await window.fs.addDoc(window.fs.collection(window.db, "activities"), {
                 type: type, // 'create', 'update', 'delete', 'login'
                 title: title,
