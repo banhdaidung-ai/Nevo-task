@@ -612,7 +612,7 @@
                 </div>
                 <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider mb-1">Tổng số đơn hàng</p>
                 <h3 class="text-3xl font-extrabold text-on-surface font-headline flex items-center gap-2">
-                    1,248
+                    <span id="dash-total-orders">0</span>
                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                 </h3>
             </div>
@@ -625,7 +625,7 @@
                     <span class="text-xs font-bold text-primary px-2 py-1 bg-primary-fixed rounded-full">Cao</span>
                 </div>
                 <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider mb-1">Đơn đang xử lý</p>
-                <h3 class="text-3xl font-extrabold text-on-surface font-headline">156</h3>
+                <h3 id="dash-pending-orders" class="text-3xl font-extrabold text-on-surface font-headline">0</h3>
             </div>
             <!-- Stat Card 3 -->
             <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] card-lift border-l-4 border-tertiary animate-fade-in-up delay-200">
@@ -636,7 +636,7 @@
                     <span class="text-xs font-bold text-tertiary px-2 py-1 bg-tertiary/10 rounded-full">Ổn định</span>
                 </div>
                 <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider mb-1">Đã hoàn thành</p>
-                <h3 class="text-3xl font-extrabold text-on-surface font-headline">1,092</h3>
+                <h3 id="dash-completed-orders" class="text-3xl font-extrabold text-on-surface font-headline">0</h3>
             </div>
             <!-- Stat Card 4 -->
             <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] card-lift border-l-4 border-primary-container animate-fade-in-up delay-300">
@@ -647,7 +647,7 @@
                     <span class="text-xs font-bold text-on-secondary-container px-2 py-1 bg-secondary-container rounded-full">98.5%</span>
                 </div>
                 <p class="text-on-surface-variant text-xs font-semibold uppercase tracking-wider mb-1">Tỷ lệ đúng deadline</p>
-                <h3 class="text-3xl font-extrabold text-on-surface font-headline">Tuyệt vời</h3>
+                <h3 id="dash-deadline-rate" class="text-3xl font-extrabold text-on-surface font-headline">--</h3>
             </div>
         </div>
 
@@ -719,7 +719,7 @@
                 <h2 class="text-lg md:text-xl font-bold font-headline mb-8">Phân bổ nguyên liệu</h2>
                 <div class="relative flex justify-center items-center mb-8">
                     <div class="w-40 h-40 md:w-48 md:h-48 rounded-full border-[12px] border-white/20 flex flex-col items-center justify-center">
-                        <span class="text-3xl font-extrabold font-headline">1.2K</span>
+                        <span id="dash-material-total" class="text-3xl font-extrabold font-headline">0</span>
                         <span class="text-xs uppercase font-semibold opacity-70">Tổng cộng</span>
                     </div>
                     <div class="absolute w-40 h-40 md:w-48 md:h-48 rounded-full border-[12px] border-transparent border-t-white border-r-white/60 rotate-45"></div>
@@ -730,14 +730,14 @@
                             <span class="material-symbols-outlined">movie</span>
                             <span class="font-semibold text-sm">Video</span>
                         </div>
-                        <span class="font-headline font-bold">65%</span>
+                        <span id="dash-material-video-percent" class="font-headline font-bold">0%</span>
                     </div>
                     <div class="flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm">
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined">image</span>
                             <span class="font-semibold text-sm">Hình ảnh</span>
                         </div>
-                        <span class="font-headline font-bold">35%</span>
+                        <span id="dash-material-image-percent" class="font-headline font-bold">0%</span>
                     </div>
                 </div>
             </div>
@@ -3168,29 +3168,75 @@
     window.renderDashboardTable = function() {
         const tbodyDash = document.getElementById('dashboardOrdersTableBody');
         if (!tbodyDash) return;
-        if (window.allOrdersData.length === 0) {
+        
+        const allOrders = window.allOrdersData || [];
+        
+        // --- Calculate Stats ---
+        const total = allOrders.length;
+        const completed = allOrders.filter(o => o.status === 'Hoàn thành').length;
+        const cancelled = allOrders.filter(o => o.status === 'Hủy').length;
+        const pending = total - completed - cancelled;
+        
+        // Update Stats UI
+        if (document.getElementById('dash-total-orders')) document.getElementById('dash-total-orders').textContent = total.toLocaleString();
+        if (document.getElementById('dash-pending-orders')) document.getElementById('dash-pending-orders').textContent = pending.toLocaleString();
+        if (document.getElementById('dash-completed-orders')) document.getElementById('dash-completed-orders').textContent = completed.toLocaleString();
+        
+        // Deadline Rate (Mock calculation based on completed vs total, or just set to a high percentage if many are completed)
+        if (document.getElementById('dash-deadline-rate')) {
+            const rate = total > 0 ? Math.round((completed / (total - pending)) * 100) || 0 : 0;
+            document.getElementById('dash-deadline-rate').textContent = total > 0 ? (rate > 90 ? 'Tuyệt vời' : rate + '%') : '--';
+        }
+
+        // --- Material Distribution ---
+        const videoCount = allOrders.filter(o => o.category === 'Video').length;
+        const imageCount = allOrders.filter(o => o.category === 'Hình Ảnh').length;
+        const otherCount = total - videoCount - imageCount;
+        
+        if (document.getElementById('dash-material-total')) {
+            document.getElementById('dash-material-total').textContent = total >= 1000 ? (total/1000).toFixed(1) + 'K' : total;
+        }
+        
+        if (document.getElementById('dash-material-video-percent')) {
+            const videoPercent = total > 0 ? Math.round((videoCount / total) * 100) : 0;
+            document.getElementById('dash-material-video-percent').textContent = videoPercent + '%';
+        }
+        
+        if (document.getElementById('dash-material-image-percent')) {
+            const imagePercent = total > 0 ? Math.round((imageCount / total) * 100) : 0;
+            document.getElementById('dash-material-image-percent').textContent = imagePercent + '%';
+        }
+
+        // --- Render Latest Orders Table ---
+        if (allOrders.length === 0) {
             tbodyDash.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">Chưa có đơn hàng nào trực tuyến.</td></tr>';
             return;
         }
+        
         let dashHtml = '';
-        let count = 0;
-        window.allOrdersData.forEach((data) => {
-            if (count >= 5) return;
+        // Sort by createdAt desc and take top 5
+        const latestOrders = [...allOrders].sort((a, b) => {
+            const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt).getTime();
+            const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt).getTime();
+            return dateB - dateA;
+        }).slice(0, 5);
+
+        latestOrders.forEach((data) => {
             const currentStatus = (window.orderStatusesData || []).find(s => s.name === data.status);
             const badgeClasses = currentStatus ? currentStatus.color : 'bg-surface-container-highest text-on-secondary-container';
             const statusBadgeDash = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${data.status || 'Chờ duyệt'}</span>`;
             
             dashHtml += `
-                <tr class="hover:bg-surface-container-low transition-colors cursor-pointer">
+                <tr class="hover:bg-surface-container-low transition-colors cursor-pointer" onclick="navigateTo('orders')">
                     <td class="py-4 font-mono font-semibold text-primary text-sm">${data.code || '-'}</td>
                     <td class="py-4 font-medium text-sm text-slate-700">${data.requester || '-'}</td>
                     <td class="py-4 text-on-surface-variant text-[13px] font-bold truncate max-w-[200px]">${data.title || '-'}</td>
                     <td class="py-4 text-right">${statusBadgeDash}</td>
                 </tr>`;
-            count++;
         });
         tbodyDash.innerHTML = dashHtml;
     };
+    window.updateDashboardStats = window.renderDashboardTable;
 
     window.departmentsData = [];
     window.orderStatusesData = [];
