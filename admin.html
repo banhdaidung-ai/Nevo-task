@@ -183,6 +183,7 @@
             <div id="navLinks" class="hidden md:flex items-center gap-6 font-headline tracking-tight font-semibold text-sm">
                 <a href="index.html#dashboard" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Bảng điều khiển</a>
                 <a href="index.html#orders" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
+                <a href="index.html#planning" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
                 <a href="index.html#reports" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Báo cáo</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-red-600 border-b-2 border-red-600 pb-1 transition-all duration-200">Quản trị</a>
                 <a href="#" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
@@ -295,6 +296,10 @@
                 <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed">
                     <span class="material-symbols-outlined text-[20px]">settings</span>
                     Cấu hình chung
+                </button>
+                <button onclick="window.location.href='index.html#reports'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">bar_chart</span>
+                    Báo cáo hệ thống
                 </button>
                 <button onclick="switchTab('activities')" id="tab-activities" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
                     <span class="material-symbols-outlined text-[20px]">history</span>
@@ -1226,49 +1231,62 @@
         const tbody = document.getElementById('activitiesTableBody');
         if (!tbody) return;
 
-        const searchTerm = document.getElementById('activitySearchInput')?.value.toLowerCase() || '';
-        const filtered = (window.activities || []).filter(a => {
-            return (a.title || '').toLowerCase().includes(searchTerm) ||
-                   (a.user || '').toLowerCase().includes(searchTerm) ||
-                   (a.details || '').toLowerCase().includes(searchTerm);
-        });
-
-        if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400">Không tìm thấy hoạt động nào phù hợp.</td></tr>`;
-            return;
-        }
-
-        tbody.innerHTML = filtered.map(a => {
-            const date = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp instanceof Date ? a.timestamp : new Date());
-            const dateStr = date.toLocaleString('vi-VN');
+        try {
+            const searchTerm = document.getElementById('activitySearchInput')?.value.toLowerCase() || '';
+            const data = window.activities || [];
             
-            let typeBadge = '';
-            if (a.type === 'create') typeBadge = '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold uppercase tracking-wider">Tạo mới</span>';
-            else if (a.type === 'update') typeBadge = '<span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-bold uppercase tracking-wider">Cập nhật</span>';
-            else if (a.type === 'delete') typeBadge = '<span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[10px] font-bold uppercase tracking-wider">Xóa</span>';
-            else typeBadge = `<span class="px-2 py-0.5 bg-slate-50 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">${a.type}</span>`;
+            console.log("Rendering activities table, count:", data.length);
 
-            return `
-                <tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="py-4 px-6 text-xs text-slate-400 font-medium">${dateStr}</td>
-                    <td class="py-4 px-6">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                ${(a.user || 'U').substring(0,2).toUpperCase()}
+            const filtered = data.filter(a => {
+                return (a.title || '').toLowerCase().includes(searchTerm) ||
+                       (a.user || '').toLowerCase().includes(searchTerm) ||
+                       (a.details || '').toLowerCase().includes(searchTerm);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400">Không tìm thấy hoạt động nào phù hợp hoặc đang tải dữ liệu...</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(a => {
+                let dateStr = 'N/A';
+                try {
+                    const date = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp instanceof Date ? a.timestamp : (a.timestamp ? new Date(a.timestamp) : new Date()));
+                    dateStr = date.toLocaleString('vi-VN');
+                } catch(e) { console.warn("Date parse error:", e); }
+                
+                let typeBadge = '';
+                const type = (a.type || 'info').toLowerCase();
+                if (type === 'create') typeBadge = '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold uppercase tracking-wider">Tạo mới</span>';
+                else if (type === 'update') typeBadge = '<span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-bold uppercase tracking-wider">Cập nhật</span>';
+                else if (type === 'delete') typeBadge = '<span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[10px] font-bold uppercase tracking-wider">Xóa</span>';
+                else typeBadge = `<span class="px-2 py-0.5 bg-slate-50 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">${type}</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="py-4 px-6 text-xs text-slate-400 font-medium">${dateStr}</td>
+                        <td class="py-4 px-6">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                    ${(a.user || 'U').substring(0,2).toUpperCase()}
+                                </div>
+                                <span class="text-sm font-semibold text-slate-700">${a.user || 'Hệ thống'}</span>
                             </div>
-                            <span class="text-sm font-semibold text-slate-700">${a.user || 'Hệ thống'}</span>
-                        </div>
-                    </td>
-                    <td class="py-4 px-6">${typeBadge}</td>
-                    <td class="py-4 px-6">
-                        <span class="text-sm font-bold text-slate-800">${a.title || 'N/A'}</span>
-                    </td>
-                    <td class="py-4 px-6">
-                        <p class="text-xs text-slate-500 max-w-[400px] leading-relaxed">${a.details || ''}</p>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+                        </td>
+                        <td class="py-4 px-6">${typeBadge}</td>
+                        <td class="py-4 px-6">
+                            <span class="text-sm font-bold text-slate-800">${a.title || 'N/A'}</span>
+                        </td>
+                        <td class="py-4 px-6">
+                            <p class="text-xs text-slate-500 max-w-[400px] leading-relaxed">${a.details || ''}</p>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error("Critical error in renderActivitiesTable:", err);
+            tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-rose-500">Lỗi hiển thị nhật ký: ${err.message}</td></tr>`;
+        }
     };
 
     // =============================================
