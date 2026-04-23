@@ -287,6 +287,10 @@
                     <span class="material-symbols-outlined text-[20px]">rule_settings</span>
                     Trạng thái Đơn
                 </button>
+                <button onclick="window.location.href='index.html#reports'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">bar_chart</span>
+                    Báo cáo & Thống kê
+                </button>
             </nav>
         </div>
 
@@ -296,10 +300,6 @@
                 <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed">
                     <span class="material-symbols-outlined text-[20px]">settings</span>
                     Cấu hình chung
-                </button>
-                <button onclick="window.location.href='index.html#reports'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
-                    <span class="material-symbols-outlined text-[20px]">bar_chart</span>
-                    Báo cáo hệ thống
                 </button>
                 <button onclick="switchTab('activities')" id="tab-activities" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
                     <span class="material-symbols-outlined text-[20px]">history</span>
@@ -1228,7 +1228,8 @@
 
     // --- Activity Log Rendering ---
     window.renderActivitiesTable = function() {
-        const tbody = document.getElementById('activitiesTableBody');
+        const tbody = document.getElementById('activityTableBody');
+        const countEl = document.getElementById('activityCount');
         if (!tbody) return;
 
         try {
@@ -1242,6 +1243,8 @@
                        (a.user || '').toLowerCase().includes(searchTerm) ||
                        (a.details || '').toLowerCase().includes(searchTerm);
             });
+
+            if (countEl) countEl.textContent = `Hiển thị ${filtered.length} hoạt động`;
 
             if (filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400">Không tìm thấy hoạt động nào phù hợp hoặc đang tải dữ liệu...</td></tr>`;
