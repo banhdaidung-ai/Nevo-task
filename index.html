@@ -950,11 +950,6 @@
                                     Thể loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('totalCost')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 justify-end pr-4">
-                                    Chi phí <span class="material-symbols-outlined sort-icon" id="sort-totalCost">unfold_more</span>
-                                </div>
-                            </th>
                             <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[200px] w-[25%]" onclick="toggleSort('title')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
@@ -983,6 +978,11 @@
                             <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('status')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Trạng thái <span class="material-symbols-outlined sort-icon" id="sort-status">unfold_more</span>
+                                </div>
+                            </th>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('totalCost')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 justify-end pr-4">
+                                    Chi phí <span class="material-symbols-outlined sort-icon" id="sort-totalCost">unfold_more</span>
                                 </div>
                             </th>
                             <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('stylist')">
@@ -1043,7 +1043,6 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full text-right" onkeyup="updateColumnFilter('totalCost', this.value)" placeholder="Số tiền..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
                             <th class="p-2 bg-slate-50">
@@ -1087,6 +1086,7 @@
                                     </div>
                                 </div>
                             </th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full text-right" onkeyup="updateColumnFilter('totalCost', this.value)" placeholder="Số tiền..."></th>
                             <th class="p-2 bg-slate-50">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-stylist" data-label="Stylist" onclick="toggleMultiSelect('menu-stylist')">Stylist</div>
@@ -3083,9 +3083,6 @@
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
-                        <td class="text-[12px] font-bold text-emerald-600 cursor-pointer hover:bg-slate-100/50 transition-all text-right pr-4" onclick="openCostModal('${dataStr}')">
-                            <span class="display-val">${formatCurrency(data.totalCost || 0)}</span>
-                        </td>
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
                             onclick="openEditModal('${dataStr}')"
                             onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
@@ -3109,6 +3106,9 @@
                         </td>
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'status')">
                             <div class="display-val">${statusBadgeFull}</div>
+                        </td>
+                        <td class="text-[12px] font-bold text-emerald-600 cursor-pointer hover:bg-slate-100/50 transition-all text-right pr-4" onclick="openCostModal('${dataStr}')">
+                            <span class="display-val">${formatCurrency(data.totalCost || 0)}</span>
                         </td>
                         <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
                             <div class="display-val">${getUserBadge(data.stylist)}</div>
