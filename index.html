@@ -381,6 +381,52 @@
         .tooltip-body table { width: 100% !important; border-collapse: collapse; margin: 8px 0; font-size: 11px; }
         .tooltip-body td, .tooltip-body th { border: 1px solid #e2e8f0; padding: 6px; }
         .tooltip-body img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+        /* Premium Cost Modal */
+        #costModal { display: none; }
+        #costModal.open { display: flex; }
+        .cost-input-group {
+            background: white;
+            padding: 16px;
+            border-radius: 20px;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+        .cost-input-group:focus-within {
+            border-color: #10b981;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1);
+            transform: translateY(-2px);
+        }
+        .cost-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        .cost-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            font-weight: 800;
+            color: #1e293b;
+            text-align: right;
+            outline: none;
+        }
+        .cost-input::-webkit-inner-spin-button, .cost-input::-webkit-outer-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
     </style>
 </head>
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
@@ -904,6 +950,11 @@
                                     Thể loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
                                 </div>
                             </th>
+                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('totalCost')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 justify-end pr-4">
+                                    Chi phí <span class="material-symbols-outlined sort-icon" id="sort-totalCost">unfold_more</span>
+                                </div>
+                            </th>
                             <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[200px] w-[25%]" onclick="toggleSort('title')">
                                 <div class="flex items-center whitespace-nowrap gap-1.5">
                                     Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
@@ -992,6 +1043,7 @@
                                     </div>
                                 </div>
                             </th>
+                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full text-right" onkeyup="updateColumnFilter('totalCost', this.value)" placeholder="Số tiền..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
                             <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
                             <th class="p-2 bg-slate-50">
@@ -1062,7 +1114,7 @@
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="14" class="px-6 py-8 text-center text-slate-400">
+                            <td colspan="15" class="px-6 py-8 text-center text-slate-400">
                                 <span class="material-symbols-outlined text-[24px] animate-spin mb-2">progress_activity</span>
                                 <div>Đang tải dữ liệu...</div>
                             </td>
@@ -1865,6 +1917,113 @@
         <button onclick="hideToast()" class="ml-4 text-slate-400 hover:text-white transition-colors">
             <span class="material-symbols-outlined text-sm">close</span>
         </button>
+    </div>
+</div>
+
+
+<!-- ====== COST MODAL ====== -->
+<div id="costModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCostModal()"></div>
+    <div class="relative w-full max-w-3xl mx-4 bg-[#f8fafc] rounded-[32px] shadow-2xl animate-scale-in overflow-hidden">
+        <!-- Header -->
+        <div class="p-8 pb-6 flex items-center justify-between bg-white border-b border-slate-100">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-inner">
+                    <span class="material-symbols-outlined text-[28px]">calculate</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold font-headline text-on-surface">Chi tiết chi phí</h2>
+                    <div id="costOrderCode" class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1">ORDER: -</div>
+                </div>
+            </div>
+            <button onclick="closeCostModal()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-slate-400">close</span>
+            </button>
+        </div>
+
+        <div class="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <input type="hidden" id="costOrderId">
+            <!-- Basic Costs -->
+            <section>
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[14px]">payments</span> CHI PHÍ CƠ BẢN
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="cost-input-group">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">person</span> MODEL / MẪU</div>
+                        <input type="number" id="cost-model" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                    <div class="cost-input-group">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">palette</span> MAKE UP</div>
+                        <input type="number" id="cost-makeup" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                    <div class="cost-input-group">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">location_on</span> ĐỊA ĐIỂM / STUDIO</div>
+                        <input type="number" id="cost-studio" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                    <div class="cost-input-group">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">local_shipping</span> DI CHUYỂN / ĐI LẠI</div>
+                        <input type="number" id="cost-travel" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Outsource Costs -->
+            <section class="bg-indigo-50/50 p-6 rounded-[24px] border border-indigo-100/50">
+                <h3 class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[14px]">groups</span> THUÊ CỘNG TÁC VIÊN (OUTSOURCE)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="cost-input-group !bg-white">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">payments</span> THUÊ VIDEO</div>
+                        <input type="number" id="cost-video" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                    <div class="cost-input-group !bg-white">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">photo_camera</span> THUÊ PHOTO</div>
+                        <input type="number" id="cost-photo" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                    <div class="cost-input-group !bg-white">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">content_cut</span> THUÊ STYLIST</div>
+                        <input type="number" id="cost-stylist" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                    <div class="cost-input-group !bg-white">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">person_add</span> THUÊ TRỢ LÝ</div>
+                        <input type="number" id="cost-assistant" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Other & Note -->
+            <section>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <div class="md:col-span-2 cost-input-group h-fit">
+                        <div class="cost-label"><span class="material-symbols-outlined text-[16px]">more_horiz</span> CHI PHÍ KHÁC</div>
+                        <input type="number" id="cost-other" class="cost-input" value="0" oninput="calculateTotalCost()">
+                    </div>
+                    <div class="md:col-span-3 cost-input-group">
+                        <div class="cost-label">GHI CHÚ CHI PHÍ</div>
+                        <textarea id="cost-note" class="w-full bg-transparent focus:outline-none text-[13px] text-slate-600 min-h-[64px]" placeholder="VD: Tiền ăn trưa, vé vào cổng..."></textarea>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-8 bg-white border-t border-slate-100 flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tổng chi phí dự kiến</p>
+                <div class="flex items-baseline gap-2">
+                    <span id="costTotalDisplay" class="text-3xl font-extrabold text-emerald-600 font-headline">0</span>
+                    <span class="text-sm font-bold text-emerald-600/60 uppercase">VNĐ</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="closeCostModal()" class="px-6 py-3 rounded-2xl text-slate-500 font-bold text-sm hover:bg-slate-50 transition-all uppercase tracking-widest">Hủy</button>
+                <button id="saveCostBtn" onclick="saveCostDetails()" class="px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-sm shadow-lg shadow-emerald-200 flex items-center gap-2 hover:brightness-110 transition-all uppercase tracking-widest">
+                    <span class="material-symbols-outlined text-[20px]">save</span> Xác nhận
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2869,6 +3028,8 @@
                 stylist: data.stylist,
                 assignedVideo: data.assignedVideo,
                 assignedPhoto: data.assignedPhoto,
+                costs: data.costs || {},
+                totalCost: data.totalCost || 0,
                 note: data.note || ''
             }));
 
@@ -2921,6 +3082,9 @@
                         </td>
                         <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
+                        </td>
+                        <td class="text-[12px] font-bold text-emerald-600 cursor-pointer hover:bg-slate-100/50 transition-all text-right pr-4" onclick="openCostModal('${dataStr}')">
+                            <span class="display-val">${formatCurrency(data.totalCost || 0)}</span>
                         </td>
                         <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
                             onclick="openEditModal('${dataStr}')"
@@ -3207,6 +3371,90 @@
         const modal = document.getElementById('editOrderModal');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+    };
+
+    window.formatCurrency = (val) => {
+        return Number(val || 0).toLocaleString('vi-VN') + ' đ';
+    };
+
+    window.openCostModal = function(dataStr) {
+        const data = JSON.parse(decodeURIComponent(dataStr));
+        const currentData = window.allOrdersData.find(o => o.id === data.id) || data;
+        
+        document.getElementById('costOrderId').value = currentData.id;
+        document.getElementById('costOrderCode').textContent = `ORDER: ${currentData.code || currentData.id.substring(0,8)}`;
+        
+        const costs = currentData.costs || {};
+        const fields = ['model', 'makeup', 'studio', 'travel', 'video', 'photo', 'stylist', 'assistant', 'other'];
+        
+        fields.forEach(f => {
+            const input = document.getElementById(`cost-${f}`);
+            if (input) input.value = costs[f] || 0;
+        });
+        
+        const noteInput = document.getElementById('cost-note');
+        if (noteInput) noteInput.value = costs.note || '';
+        
+        window.calculateTotalCost();
+        
+        const modal = document.getElementById('costModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.classList.add('open');
+    };
+
+    window.calculateTotalCost = function() {
+        const fields = ['model', 'makeup', 'studio', 'travel', 'video', 'photo', 'stylist', 'assistant', 'other'];
+        let total = 0;
+        fields.forEach(f => {
+            const val = document.getElementById(`cost-${f}`).value;
+            total += Number(val || 0);
+        });
+        const display = document.getElementById('costTotalDisplay');
+        if (display) display.textContent = total.toLocaleString('vi-VN');
+        return total;
+    };
+
+    window.closeCostModal = function() {
+        const modal = document.getElementById('costModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.classList.remove('open');
+    };
+
+    window.saveCostDetails = async function() {
+        const id = document.getElementById('costOrderId').value;
+        const fields = ['model', 'makeup', 'studio', 'travel', 'video', 'photo', 'stylist', 'assistant', 'other'];
+        const costs = {};
+        let total = 0;
+        
+        fields.forEach(f => {
+            const val = Number(document.getElementById(`cost-${f}`).value || 0);
+            costs[f] = val;
+            total += val;
+        });
+        costs.note = document.getElementById('cost-note').value;
+        
+        const btn = document.getElementById('saveCostBtn');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span> Đang lưu...';
+        btn.disabled = true;
+        
+        try {
+            const orderRef = window.fsDoc(window.db, "orders", id);
+            await window.fsUpdateDoc(orderRef, {
+                costs: costs,
+                totalCost: total
+            });
+            showToast('Thành công!', 'Đã cập nhật chi phí đơn hàng.', 'payments', 'text-tertiary');
+            window.closeCostModal();
+        } catch (error) {
+            console.error("Lỗi lưu chi phí:", error);
+            showToast('Lỗi!', 'Không thể lưu thông tin chi phí.', 'error', 'text-error');
+        } finally {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
     };
 
     window.saveEditOrder = async function() {
@@ -3714,7 +3962,9 @@
                 "Trạng thái": order.status || "Chờ duyệt",
                 "Stylist": order.stylist || "-",
                 "Video": order.assignedVideo || "-",
-                "Photo": order.assignedPhoto || "-"
+                "Photo": order.assignedPhoto || "-",
+                "Chi phí": order.totalCost || 0,
+                "Ghi chú chi phí": (order.costs?.note || "-")
             };
         });
 
@@ -3735,7 +3985,9 @@
             { wch: 15 }, // Trạng thái
             { wch: 20 }, // Stylist
             { wch: 20 }, // Video
-            { wch: 20 }  // Photo
+            { wch: 20 }, // Photo
+            { wch: 15 }, // Chi phí
+            { wch: 30 }  // Ghi chú chi phí
         ];
         worksheet['!cols'] = colWidths;
 
