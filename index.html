@@ -3643,6 +3643,11 @@
             btn.disabled = false;
             window.closeEditModal();
             showToast('Thành công!', 'Đã cập nhật dữ liệu đơn ' + code + '.', 'check_circle', 'text-primary');
+            
+            // LOG ACTIVITY
+            if (window.logActivity) {
+                window.logActivity('update', `Cập nhật đơn hàng ${code}`, `Thông tin đơn hàng ${code} đã được cập nhật qua bảng chỉnh sửa.`);
+            }
         } catch (error) {
             console.error("Lỗi cập nhật:", error);
             btn.innerHTML = originalText;
@@ -3767,9 +3772,23 @@
             });
             showToast('Lưu tự động', 'Đã cập nhật', 'check_circle', 'text-tertiary');
             
-            // LOG ACTIVITY (Optional: only log status changes or major fields)
-            if (window.logActivity && (field === 'status' || field === 'title' || field === 'requester')) {
-                const fieldLabels = { 'status': 'trạng thái', 'title': 'tiêu đề', 'requester': 'người yêu cầu' };
+            // LOG ACTIVITY (All fields)
+            if (window.logActivity) {
+                const fieldLabels = { 
+                    'status': 'trạng thái', 
+                    'title': 'tiêu đề', 
+                    'requester': 'người yêu cầu',
+                    'department': 'phòng ban',
+                    'category': 'phân loại',
+                    'stylist': 'stylist',
+                    'assignedVideo': 'video',
+                    'assignedPhoto': 'photo',
+                    'deadline': 'hạn chót',
+                    'deployDate': 'ngày triển khai',
+                    'orderDate': 'ngày đơn hàng',
+                    'note': 'ghi chú',
+                    'content': 'nội dung'
+                };
                 const label = fieldLabels[field] || field;
                 window.logActivity('update', `Cập nhật ${label}`, `Trường ${label} đã được thay đổi từ "${oldVal}" sang "${newVal}"`);
             }
