@@ -3331,16 +3331,18 @@
             snapshot.forEach(doc => window.allUsersData.push({ id: doc.id, ...doc.data() }));
             
             const staff = window.allUsersData.sort((a,b) => a.name.localeCompare(b.name));
+            const creativeStaff = staff.filter(u => u.dept === 'Creative');
+
             // Multi-select staff
             populateMultiSelect('menu-requester', staff, 'requester');
-            populateMultiSelect('menu-stylist', staff, 'stylist');
-            populateMultiSelect('menu-video', staff, 'assignedVideo');
-            populateMultiSelect('menu-photo', staff, 'assignedPhoto');
+            populateMultiSelect('menu-stylist', creativeStaff, 'stylist');
+            populateMultiSelect('menu-video', creativeStaff, 'assignedVideo');
+            populateMultiSelect('menu-photo', creativeStaff, 'assignedPhoto');
             
             // Populate Edit Modal Personnel Dropdowns
-            populateDropdown('editOrderStylist', staff, '- Chưa chọn -');
-            populateDropdown('editOrderVideo', staff, '- Chưa chọn -');
-            populateDropdown('editOrderPhoto', staff, '- Chưa chọn -');
+            populateDropdown('editOrderStylist', creativeStaff, '- Chưa chọn -');
+            populateDropdown('editOrderVideo', creativeStaff, '- Chưa chọn -');
+            populateDropdown('editOrderPhoto', creativeStaff, '- Chưa chọn -');
 
             if (window.allOrdersData && window.allOrdersData.length > 0) window.renderOrdersTable();
         });
@@ -3715,7 +3717,13 @@
             let optionsHtml = '<option value="-">-</option>';
             // Sort users by name
             const sortedUsers = (window.allUsersData || []).sort((a,b) => a.name.localeCompare(b.name));
-            sortedUsers.forEach(u => {
+            
+            // Filter by Creative department for PIC fields, but not for requester
+            const displayUsers = (field === 'requester') 
+                ? sortedUsers 
+                : sortedUsers.filter(u => u.dept === 'Creative');
+
+            displayUsers.forEach(u => {
                 optionsHtml += `<option value="${u.name}" ${originalVal === u.name ? 'selected' : ''}>${u.name}</option>`;
             });
             inputHtml = `<select class="${commonSelectClass} font-bold" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
