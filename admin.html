@@ -149,9 +149,9 @@
 
         /* Search input */
         .search-input {
-            padding: 0.6rem 1rem 0.6rem 2.5rem; background:#F1F5F9;
-            border: 2px solid transparent; border-radius:10px;
-            font-size:0.82rem; font-family:'Inter',sans-serif; font-weight:500;
+            padding: 0.65rem 1rem 0.65rem 3rem; background:#F1F5F9;
+            border: 2px solid transparent; border-radius:12px;
+            font-size:0.85rem; font-family:'Inter',sans-serif; font-weight:500;
             color:#131b2e; outline:none; transition:all 0.2s ease; width:240px;
         }
         .search-input:focus { border-color:rgba(198,40,40,0.3); background:#E8EDF5; box-shadow:0 0 0 3px rgba(198,40,40,0.07); }
@@ -377,7 +377,7 @@
                 <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[17px]">search</span>
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
                             <input id="searchInput" type="text" class="search-input !w-[220px]" placeholder="Tìm nhân viên..." oninput="renderTable()"/>
                         </div>
                         <!-- Role Filter -->
@@ -401,6 +401,7 @@
                     <table class="w-full text-left min-w-[900px]">
                         <thead class="bg-slate-50/80 border-b border-slate-100">
                             <tr>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[60px]">STT</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nhân sự</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã NV</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</th>
@@ -964,8 +965,9 @@
         }
         empty.classList.add('hidden');
 
-        tbody.innerHTML = filtered.map(u => `
+        tbody.innerHTML = filtered.map((u, i) => `
             <tr class="table-row">
+                <td class="px-5 py-3.5 text-xs font-bold text-slate-400">${i + 1}</td>
                 <td class="px-5 py-3.5">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${avatarBg(u.role)}">${(u.name||'??').split(' ').map(x=>x[0]).slice(-2).join('').toUpperCase()}</div>
