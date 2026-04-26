@@ -1302,14 +1302,15 @@
             <!-- QUY MÔ TRIỂN KHAI -->
             <div class="lg:col-span-4 bg-white p-8 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center h-full">
                 <h3 class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-4">Quy mô triển khai</h3>
-                <div class="mb-2">
+                <div class="flex items-center justify-between mb-2">
                     <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[10px] font-bold" id="planningSummaryOrdersLabel">0 ĐƠN HÀNG</span>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest" id="planningSummaryCoverage">Độ phủ: 0%</span>
                 </div>
                 <div class="w-full bg-slate-100 rounded-full h-2.5 mb-4 mt-2">
                     <div id="planningSummaryOrdersBar" class="bg-[#312e81] h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed" id="planningSummaryOrdersText">
-                    Dựa trên dữ liệu kế hoạch tháng hiện tại.
+                    Đang tính toán mật độ lịch trình...
                 </p>
             </div>
 
@@ -1322,8 +1323,10 @@
                 </div>
                 <div class="mt-8 relative z-10">
                     <h2 class="text-xl font-bold font-headline mb-1" id="planningSummaryTopType">...</h2>
-                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-4" id="planningSummaryTypeDetail">Đang phân tích cơ cấu...</p>
-                    <p class="text-[11px] opacity-60 leading-tight">Click để xuất bản kế hoạch chi tiết.</p>
+                    <div class="flex flex-wrap gap-x-3 gap-y-1 mb-4" id="planningSummaryTypeDetail">
+                        <!-- Type details like: Video: 10 | Photo: 5 -->
+                    </div>
+                    <p class="text-[10px] opacity-60 leading-tight uppercase font-bold tracking-widest">Click để xuất kế hoạch</p>
                 </div>
             </div>
         </div>
@@ -5606,16 +5609,22 @@
         if(summaryOrdersLabel) summaryOrdersLabel.textContent = `${totalOrdersCount} ĐƠN HÀNG`;
         
         const summaryOrdersBar = document.getElementById('planningSummaryOrdersBar');
-        if(summaryOrdersBar) {
-            // Intensity benchmark: 3 orders/day is "full" for display purpose
-            const intensity = Math.min(100, (totalOrdersCount / (daysInMonth * 3)) * 100);
-            summaryOrdersBar.style.width = `${intensity}%`;
-        }
-        
+        const summaryCoverage = document.getElementById('planningSummaryCoverage');
         const summaryOrdersText = document.getElementById('planningSummaryOrdersText');
+
+        // Calculate Coverage (Days with at least one order)
+        let activeDays = 0;
+        for(let i=1; i<=daysInMonth; i++) {
+            let dayTotal = 0;
+            filteredData.forEach(row => dayTotal += (parseInt(row.days[`d${i}`]) || 0));
+            if(dayTotal > 0) activeDays++;
+        }
+        const coverageRate = Math.round((activeDays / daysInMonth) * 100);
+
+        if(summaryCoverage) summaryCoverage.textContent = `Độ phủ: ${coverageRate}%`;
+        if(summaryOrdersBar) summaryOrdersBar.style.width = `${coverageRate}%`;
         if(summaryOrdersText) {
-            const avg = (totalOrdersCount / daysInMonth).toFixed(1);
-            summaryOrdersText.innerHTML = `Trung bình <span class="font-bold text-slate-700">${avg}</span> đơn/ngày trong tháng ${month}.`;
+            summaryOrdersText.innerHTML = `Có <span class="font-bold text-slate-700">${activeDays}</span> ngày đã lên lịch trong tổng số ${daysInMonth} ngày.`;
         }
 
         // Update Type Card
@@ -5625,10 +5634,15 @@
             const sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
             if(sortedTypes.length > 0) {
                 summaryTopType.textContent = sortedTypes[0][0];
-                summaryTypeDetail.textContent = `Chiếm ${Math.round((sortedTypes[0][1]/totalOrdersCount)*100)}% tổng số đơn`;
+                let detailHtml = '';
+                sortedTypes.forEach(([type, count], idx) => {
+                    const color = idx === 0 ? 'text-blue-400' : 'text-slate-400';
+                    detailHtml += `<span class="text-[10px] ${color} font-bold uppercase tracking-widest">${type}: ${count}</span>`;
+                });
+                summaryTypeDetail.innerHTML = detailHtml;
             } else {
                 summaryTopType.textContent = 'Chưa có đơn';
-                summaryTypeDetail.textContent = 'Hãy nhập số liệu vào bảng';
+                summaryTypeDetail.innerHTML = '<span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Hãy nhập số liệu</span>';
             }
         }
 
