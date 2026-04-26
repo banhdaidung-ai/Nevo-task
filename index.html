@@ -1567,6 +1567,126 @@
     </div>
 </div>
 
+        <!-- Page: Budget Report -->
+        <div id="page-budgetReport" class="page">
+            <div class="max-w-full mx-auto px-4 md:px-8 py-8 md:py-12">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                    <div>
+                        <h1 class="text-4xl font-black text-[#131b2e] font-headline mb-2 tracking-tight">Báo cáo Chi phí Sản xuất</h1>
+                        <p class="text-slate-500 text-sm font-medium">Theo dõi và tối ưu hóa ngân sách sản xuất nội dung Kinetic.</p>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+                        <button onclick="window.setBudgetPeriod('month')" id="btnBudgetMonth" class="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold shadow-lg shadow-primary/20 transition-all">Tháng này</button>
+                        <button onclick="window.setBudgetPeriod('quarter')" id="btnBudgetQuarter" class="px-6 py-2.5 rounded-xl text-slate-500 text-xs font-bold hover:bg-slate-50 transition-all">Quý này</button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-8 rounded-3xl border-l-4 border-primary shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-rose-50 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                        <div class="relative z-10">
+                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-6">Tổng chi phí</h3>
+                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardTotal">0</div>
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-500 text-sm">trending_up</span>
+                                <span class="text-[11px] font-bold text-emerald-500" id="budgetCardTrend">+12.4% so với tháng trước</span>
+                            </div>
+                        </div>
+                        <span class="material-symbols-outlined absolute right-6 bottom-6 text-primary/10 text-5xl">payments</span>
+                    </div>
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Hình ảnh</h3>
+                                <span class="material-symbols-outlined text-slate-300">image</span>
+                            </div>
+                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardPhoto">0</div>
+                            <p class="text-[11px] text-slate-400 font-bold" id="budgetCardPhotoPerc">0% tổng ngân sách</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Video</h3>
+                                <span class="material-symbols-outlined text-slate-300">movie</span>
+                            </div>
+                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardVideo">0</div>
+                            <p class="text-[11px] text-slate-400 font-bold" id="budgetCardVideoPerc">0% tổng ngân sách</p>
+                        </div>
+                    </div>
+                    <div class="bg-primary p-8 rounded-3xl shadow-2xl shadow-primary/30 relative overflow-hidden group text-white">
+                        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <h3 class="text-[10px] opacity-60 uppercase tracking-[0.2em] font-black">Ngân sách còn lại</h3>
+                                <span class="material-symbols-outlined opacity-60">account_balance_wallet</span>
+                            </div>
+                            <div class="text-3xl font-black mb-2 font-headline" id="budgetCardRemaining">0</div>
+                            <div class="w-full bg-white/20 rounded-full h-1.5 mt-4 mb-2">
+                                <div id="budgetRemainingBar" class="bg-white h-full rounded-full transition-all duration-700" style="width: 75%"></div>
+                            </div>
+                            <p class="text-[9px] font-bold opacity-60 uppercase tracking-widest">Mục tiêu: 3 Tỷ VNĐ/Quý</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+                    <div class="lg:col-span-4 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+                        <div class="w-full flex items-center gap-3 mb-8 border-l-4 border-primary pl-4">
+                            <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider">Chi phí theo Thể loại</h3>
+                        </div>
+                        <div class="relative w-full aspect-square max-w-[240px] mb-8">
+                            <canvas id="budgetTypeChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-2xl font-black text-slate-800 font-headline" id="budgetTypeTotalValue">0</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">VND</span>
+                            </div>
+                        </div>
+                        <div class="w-full space-y-4" id="budgetTypeLegend"></div>
+                    </div>
+                    <div class="lg:col-span-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <div class="flex justify-between items-center mb-8 border-l-4 border-primary pl-4">
+                            <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider">Chi phí theo Phòng ban</h3>
+                        </div>
+                        <div class="space-y-8" id="budgetDeptContainer"></div>
+                    </div>
+                </div>
+
+                <!-- Detailed Table -->
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h3 class="text-lg font-black text-[#131b2e] font-headline">Chi tiết Chi phí theo Đơn hàng</h3>
+                        <div class="flex items-center gap-3">
+                            <button onclick="window.exportBudgetReport()" class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#131b2e] text-white text-xs font-bold shadow-xl shadow-slate-200 transition-all hover:scale-105 active:scale-95">
+                                <span class="material-symbols-outlined text-sm">download</span>
+                                Xuất báo cáo
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] bg-slate-50/50">
+                                    <th class="py-5 px-8">Mã đơn</th>
+                                    <th class="py-5 px-6">Tên đơn hàng</th>
+                                    <th class="py-5 px-6">Phòng ban</th>
+                                    <th class="py-5 px-6">Thể loại</th>
+                                    <th class="py-5 px-6">Ngày hoàn thành</th>
+                                    <th class="py-5 px-8 text-right">Tổng chi phí (VNĐ)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="budgetReportTableBody" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                    <div class="p-6 bg-slate-50/30">
+                        <p class="text-xs text-slate-400 font-medium" id="budgetPaginationInfo">Hiển thị 0 đơn hàng</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Page: Detailed Report -->
         <div id="page-detailed-report" class="page">
             <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
