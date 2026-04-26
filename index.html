@@ -1615,18 +1615,15 @@
                             <p class="text-[11px] text-slate-400 font-bold" id="budgetCardVideoPerc">0% tổng ngân sách</p>
                         </div>
                     </div>
-                    <div class="bg-primary p-8 rounded-3xl shadow-2xl shadow-primary/30 relative overflow-hidden group text-white">
-                        <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                    <!-- CHI PHÍ GIẢ LIVE -->
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
                         <div class="relative z-10">
                             <div class="flex justify-between items-start mb-6">
-                                <h3 class="text-[10px] opacity-60 uppercase tracking-[0.2em] font-black">Ngân sách còn lại</h3>
-                                <span class="material-symbols-outlined opacity-60">account_balance_wallet</span>
+                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Giả live</h3>
+                                <span class="material-symbols-outlined text-slate-300">live_tv</span>
                             </div>
-                            <div class="text-3xl font-black mb-2 font-headline" id="budgetCardRemaining">0</div>
-                            <div class="w-full bg-white/20 rounded-full h-1.5 mt-4 mb-2">
-                                <div id="budgetRemainingBar" class="bg-white h-full rounded-full transition-all duration-700" style="width: 75%"></div>
-                            </div>
-                            <p class="text-[9px] font-bold opacity-60 uppercase tracking-widest">Mục tiêu: 3 Tỷ VNĐ/Quý</p>
+                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardLive">0</div>
+                            <p class="text-[11px] text-slate-400 font-bold" id="budgetCardLivePerc">0% tổng ngân sách</p>
                         </div>
                     </div>
                 </div>
@@ -2095,8 +2092,83 @@
 </div>
 
 
-<!-- ====== COST MODAL ====== -->
-<div id="costModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+    <!-- View Order Modal (for Budget Report) -->
+    <div id="viewOrderModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="window.closeViewOrderModal()"></div>
+        <div class="bg-white w-[95%] max-w-2xl rounded-[32px] shadow-2xl relative z-10 overflow-hidden animate-modal-in border border-slate-100">
+            <div class="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-primary/10 text-primary rounded-2xl">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-[#131b2e] font-headline" id="viewOrderCodeDisplay">ORDER DETAILS</h3>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thông tin chi tiết đơn hàng</p>
+                    </div>
+                </div>
+                <button onclick="window.closeViewOrderModal()" class="p-2 hover:bg-slate-200 rounded-full transition-all"><span class="material-symbols-outlined text-slate-400">close</span></button>
+            </div>
+            <div class="p-8 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tiêu đề đơn hàng</label>
+                            <p class="text-sm font-bold text-slate-800" id="viewOrderTitle"></p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Phòng ban</label>
+                                <p class="text-xs font-bold text-slate-600" id="viewOrderDept"></p>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Thể loại</label>
+                                <div id="viewOrderCatBadge"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Người yêu cầu</label>
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400" id="viewOrderReqInit"></div>
+                                <p class="text-xs font-bold text-slate-600" id="viewOrderRequester"></p>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Hạn chót</label>
+                            <p class="text-xs font-bold text-primary" id="viewOrderDeadline"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-2 mb-8">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nội dung công việc</label>
+                    <div class="bg-slate-50 p-6 rounded-2xl text-xs text-slate-600 leading-relaxed border border-slate-100" id="viewOrderContent"></div>
+                </div>
+
+                <div class="p-6 bg-[#131b2e] rounded-3xl text-white relative overflow-hidden group cursor-pointer" onclick="window.viewDetailedCost()">
+                    <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                    <div class="relative z-10 flex justify-between items-center">
+                        <div>
+                            <h4 class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Tổng chi phí phát sinh</h4>
+                            <div class="text-2xl font-black font-headline" id="viewOrderTotalCost">0 VNĐ</div>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md group-hover:bg-white/20 transition-all">
+                            <span class="text-[10px] font-bold">Xem chi tiết</span>
+                            <span class="material-symbols-outlined text-[18px]">payments</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-slate-50/50 flex justify-end gap-3 border-t border-slate-50">
+                <button onclick="window.closeViewOrderModal()" class="px-8 py-3 rounded-2xl font-bold text-xs bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all shadow-sm">Đóng</button>
+                <button id="viewOrderJumpBtn" class="px-8 py-3 rounded-2xl font-bold text-xs bg-[#131b2e] text-white shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all">Đi tới đơn hàng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== COST MODAL ====== -->
+    <div id="costModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeCostModal()"></div>
     <div class="relative w-full max-w-3xl mx-4 bg-[#f8fafc] rounded-[32px] shadow-2xl animate-scale-in overflow-hidden">
         <!-- Header -->
@@ -5862,7 +5934,7 @@
             }
         });
 
-        let total = 0, photo = 0, video = 0;
+        let total = 0, photo = 0, video = 0, live = 0;
         const typeMap = {};
         const deptMap = {};
 
@@ -5873,6 +5945,7 @@
             const dept = o.department || 'Không xác định';
             if (cat === 'Hình Ảnh') photo += cost;
             else if (cat === 'Video') video += cost;
+            else if (cat === 'Giả Live') live += cost;
             typeMap[cat] = (typeMap[cat] || 0) + cost;
             deptMap[dept] = (deptMap[dept] || 0) + cost;
         });
@@ -5880,14 +5953,18 @@
         const elTotal = document.getElementById('budgetCardTotal');
         const elPhoto = document.getElementById('budgetCardPhoto');
         const elVideo = document.getElementById('budgetCardVideo');
+        const elLive = document.getElementById('budgetCardLive');
         if(elTotal) elTotal.textContent = total.toLocaleString() + ' VNĐ';
         if(elPhoto) elPhoto.textContent = photo.toLocaleString() + ' VNĐ';
         if(elVideo) elVideo.textContent = video.toLocaleString() + ' VNĐ';
+        if(elLive) elLive.textContent = live.toLocaleString() + ' VNĐ';
         
         const photoPerc = total > 0 ? Math.round((photo/total)*100) : 0;
         const videoPerc = total > 0 ? Math.round((video/total)*100) : 0;
+        const livePerc = total > 0 ? Math.round((live/total)*100) : 0;
         if(document.getElementById('budgetCardPhotoPerc')) document.getElementById('budgetCardPhotoPerc').textContent = `${photoPerc}% tổng ngân sách`;
         if(document.getElementById('budgetCardVideoPerc')) document.getElementById('budgetCardVideoPerc').textContent = `${videoPerc}% tổng ngân sách`;
+        if(document.getElementById('budgetCardLivePerc')) document.getElementById('budgetCardLivePerc').textContent = `${livePerc}% tổng ngân sách`;
 
         const targetQuarter = 3000000000;
         const remaining = Math.max(0, targetQuarter - total);
@@ -5970,7 +6047,7 @@
                 const cVal = Number(o.totalCost || 0);
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/80 transition-all cursor-pointer group border-b border-slate-50 last:border-none";
-                tr.onclick = () => window.jumpToOrder(o.id);
+                tr.onclick = () => window.viewOrderDetails(o.id);
                 tr.innerHTML = `
                     <td class="py-5 px-8">
                         <span class="text-[10px] font-black text-primary bg-rose-50 px-2.5 py-1.5 rounded-lg uppercase tracking-tighter border border-rose-100">${o.code || '#-'}</span>
@@ -5997,6 +6074,56 @@
 
     window.exportBudgetReport = function() {
         alert('Đang chuẩn bị file báo cáo chi phí (Excel)... Dữ liệu đang được kết xuất.');
+    };
+
+    window.viewOrderDetails = function(id) {
+        const order = window.allOrdersData.find(o => o.id === id);
+        if(!order) return;
+        
+        window.currentViewingOrderId = id;
+        
+        document.getElementById('viewOrderCodeDisplay').textContent = order.code || 'CHƯA CÓ MÃ';
+        document.getElementById('viewOrderTitle').textContent = order.title || 'Không có tiêu đề';
+        document.getElementById('viewOrderDept').textContent = order.department || 'Không xác định';
+        document.getElementById('viewOrderRequester').textContent = order.requester || '-';
+        document.getElementById('viewOrderReqInit').textContent = (order.requester || '?').charAt(0).toUpperCase();
+        document.getElementById('viewOrderDeadline').textContent = order.deadline || '-';
+        document.getElementById('viewOrderContent').innerHTML = order.content || '<span class="italic text-slate-400">Không có nội dung mô tả</span>';
+        document.getElementById('viewOrderTotalCost').textContent = (order.totalCost || 0).toLocaleString() + ' VNĐ';
+        
+        const catBadge = document.getElementById('viewOrderCatBadge');
+        if(catBadge) {
+            catBadge.innerHTML = window.getCategoryBadge ? window.getCategoryBadge(order.category) : `<span class="bg-slate-100 px-2 py-1 rounded text-[10px] font-bold">${order.category || 'Khác'}</span>`;
+        }
+
+        const jumpBtn = document.getElementById('viewOrderJumpBtn');
+        if(jumpBtn) {
+            jumpBtn.onclick = () => {
+                window.closeViewOrderModal();
+                window.jumpToOrder(id);
+            };
+        }
+
+        const modal = document.getElementById('viewOrderModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    };
+
+    window.closeViewOrderModal = function() {
+        const modal = document.getElementById('viewOrderModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    };
+
+    window.viewDetailedCost = function() {
+        if(!window.currentViewingOrderId) return;
+        const order = window.allOrdersData.find(o => o.id === window.currentViewingOrderId);
+        if(!order) return;
+        
+        window.closeViewOrderModal();
+        setTimeout(() => {
+            window.openCostModal(encodeURIComponent(JSON.stringify(order)));
+        }, 100);
     };
 
     function initPlanningEvents() {
