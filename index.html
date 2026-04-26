@@ -1351,9 +1351,6 @@
                 <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm active:scale-95">
                     <span class="material-symbols-outlined text-[18px]">download</span> Xuất báo cáo
                 </button>
-                <button onclick="navigateTo('create-order')" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
-                    <span class="material-symbols-outlined text-[18px]">add</span> Thêm lịch trực
-                </button>
             </div>
         </div>
 
@@ -4278,8 +4275,8 @@
         const monday = new Date(new Date(baseDate).setDate(diff));
         
         const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
-        let headHtml = `<tr class="bg-slate-50/30">
-            <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 min-w-[200px]">Nhân viên</th>`;
+        let headHtml = `<tr class="bg-white">
+            <th class="py-6 px-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 min-w-[220px]">Nhân viên</th>`;
         
         const weekDates = [];
         for (let i = 0; i < 7; i++) {
@@ -4287,10 +4284,11 @@
             d.setDate(monday.getDate() + i);
             weekDates.push(d);
             const isToday = d.toDateString() === new Date().toDateString();
-            const colorClass = isToday ? 'text-primary' : 'text-slate-400';
-            const borderClass = isToday ? 'border-primary/20 bg-primary/5' : 'border-slate-100';
-            headHtml += `<th class="py-4 px-4 text-[10px] font-black ${colorClass} uppercase tracking-widest border-b ${borderClass} text-center w-[12%]">
-                ${days[i]}<br><span class="text-[9px] opacity-60">${d.getDate()}/${d.getMonth() + 1}</span>
+            const colorClass = isToday ? 'text-rose-600' : 'text-slate-700';
+            const bgHeaderClass = isToday ? 'bg-rose-50/50' : 'bg-white';
+            
+            headHtml += `<th class="py-6 px-4 text-[13px] font-black ${colorClass} tracking-tight border-b border-slate-100 text-center w-[12%] ${bgHeaderClass}">
+                ${days[i]}${isToday ? ' (Nay)' : ''}<br><span class="text-[10px] font-bold opacity-40">${d.getDate()}/${d.getMonth() + 1}</span>
             </th>`;
         }
         headHtml += `</tr>`;
@@ -4321,26 +4319,26 @@
 
         let scheduleHtml = '';
         if (staffList.length === 0) {
-            scheduleHtml = '<tr><td colspan="8" class="py-20 text-center"><div class="flex flex-col items-center gap-3 text-slate-300"><span class="material-symbols-outlined text-4xl">person_off</span><p class="text-sm font-bold uppercase tracking-widest">Không có nhân sự được phân công tuần này</p></div></td></tr>';
+            scheduleHtml = '<tr><td colspan="8" class="py-32 text-center"><div class="flex flex-col items-center gap-4 text-slate-300 opacity-50"><span class="material-symbols-outlined text-6xl">event_busy</span><p class="text-xs font-black uppercase tracking-[0.2em]">Chưa có lịch trình tuần này</p></div></td></tr>';
         } else {
             staffList.forEach(staff => {
                 scheduleHtml += `
-                    <tr class="hover:bg-slate-50/50 transition-all group">
-                        <td class="py-5 px-6 border-r border-slate-50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 border border-white shadow-sm ring-2 ring-slate-50">
+                    <tr class="hover:bg-slate-50/30 transition-all border-b border-slate-50">
+                        <td class="py-6 px-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center text-[11px] font-black text-indigo-400 border border-indigo-200/50 shadow-sm">
                                     ${staff.initials}
                                 </div>
                                 <div>
-                                    <p class="text-sm font-bold text-[#1e293b] truncate max-w-[120px]">${staff.name}</p>
-                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || 'Nhân sự'}</p>
+                                    <p class="text-sm font-black text-slate-800 tracking-tight">${staff.name}</p>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">${staff.role || 'Nhân sự'}</p>
                                 </div>
                             </div>
                         </td>`;
                 
                 weekDates.forEach(date => {
                     const isToday = date.toDateString() === new Date().toDateString();
-                    const cellClass = isToday ? 'bg-primary/5' : '';
+                    const cellBgClass = isToday ? 'bg-rose-50/20' : '';
                     const dateStr = toLocalDateStr(date);
                     
                     const tasks = (window.allOrdersData || []).filter(o => 
@@ -4350,23 +4348,45 @@
 
                     let tasksHtml = '';
                     tasks.forEach(o => {
-                        const statusColor = (o.status === 'Hoàn thành') ? 'border-emerald-500' : (o.status === 'Đang xử lý') ? 'border-amber-500' : 'border-primary';
-                        const badgeColor = (o.status === 'Hoàn thành') ? 'bg-emerald-500' : (o.status === 'Đang xử lý') ? 'bg-amber-500' : 'bg-primary';
+                        const isDone = o.status === 'Hoàn thành';
+                        const isCurrent = isToday && !isDone;
+                        
+                        let cardClass = '';
+                        let textClass = '';
+                        let subTextClass = '';
+                        let badgeClass = '';
+                        
+                        if (isCurrent) {
+                            cardClass = 'bg-rose-600 border-rose-800 shadow-rose-200';
+                            textClass = 'text-white';
+                            subTextClass = 'text-rose-200';
+                            badgeClass = 'bg-white';
+                        } else if (isDone) {
+                            cardClass = 'bg-emerald-50 border-emerald-500 shadow-emerald-100';
+                            textClass = 'text-emerald-900';
+                            subTextClass = 'text-emerald-600';
+                            badgeClass = 'bg-emerald-500';
+                        } else {
+                            cardClass = 'bg-rose-50 border-rose-400 shadow-rose-100';
+                            textClass = 'text-rose-900';
+                            subTextClass = 'text-rose-600';
+                            badgeClass = 'bg-rose-500';
+                        }
                         
                         tasksHtml += `
-                            <div class="mb-2 p-2 rounded-xl bg-white border-l-4 ${statusColor} shadow-sm hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer group/task" 
+                            <div class="mb-3 p-3 rounded-2xl border-l-4 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group/task ${cardClass}" 
                                  onclick="window.jumpToOrder('${o.id}')"
                                  onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(o.title || '-')}', '${encodeURIComponent(o.content || o.title || '-')}')"
                                  onmouseleave="window.hidePremiumTooltip()">
-                                <div class="flex justify-between items-start mb-1">
-                                    <p class="text-[9px] font-black text-slate-400 group-hover/task:text-primary">#${o.code}</p>
-                                    <span class="w-1.5 h-1.5 rounded-full ${badgeColor}"></span>
+                                <div class="flex justify-between items-start mb-1.5">
+                                    <p class="text-[9px] font-black uppercase tracking-wider ${subTextClass}">#${o.code}</p>
+                                    <span class="w-1.5 h-1.5 rounded-full ${badgeClass}"></span>
                                 </div>
-                                <p class="text-[10px] font-bold text-slate-700 leading-tight line-clamp-2">${o.title}</p>
+                                <p class="text-[11px] font-black leading-snug line-clamp-2 ${textClass}">${o.title}</p>
                             </div>
                         `;
                     });
-                    scheduleHtml += `<td class="py-4 px-3 border-r border-slate-50 ${cellClass}">${tasksHtml}</td>`;
+                    scheduleHtml += `<td class="py-4 px-3 ${cellBgClass}">${tasksHtml}</td>`;
                 });
                 scheduleHtml += `</tr>`;
             });
