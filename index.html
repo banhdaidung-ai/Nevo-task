@@ -1418,7 +1418,13 @@
                         <div class="p-2 bg-rose-100 text-rose-600 rounded-xl">
                             <span class="material-symbols-outlined text-[20px]">calendar_month</span>
                         </div>
-                        <h2 class="text-lg font-bold text-[#1e293b] font-headline">Lịch trình làm việc tuần này</h2>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-lg font-bold text-[#1e293b] font-headline">Lịch trình làm việc</h2>
+                            <div class="flex gap-1 bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
+                                <button onclick="window.changeWeek(-1)" class="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-primary transition-all"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+                                <button onclick="window.changeWeek(1)" class="p-1 hover:bg-slate-50 rounded text-slate-400 hover:text-primary transition-all"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
                         <button id="btnScheduleWeek" onclick="switchScheduleView('week')" class="px-4 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all">Tuần này</button>
@@ -4227,6 +4233,7 @@
 
     // ===== REPORTS & PERFORMANCE LOGIC =====
     let currentCalendarDate = new Date();
+    let currentScheduleDate = new Date();
     let currentScheduleView = 'week';
 
     window.switchScheduleView = function(view) {
@@ -4262,11 +4269,13 @@
         const scheduleHead = document.getElementById('weeklyScheduleHead');
         if (!scheduleBody || !scheduleHead) return;
 
+        const toLocalDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        
         // Dynamic Header with real dates
-        const now = new Date();
-        const currentDay = now.getDay(); 
-        const diff = now.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
-        const monday = new Date(new Date().setDate(diff));
+        const baseDate = new Date(currentScheduleDate);
+        const currentDay = baseDate.getDay(); 
+        const diff = baseDate.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+        const monday = new Date(new Date(baseDate).setDate(diff));
         
         const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
         let headHtml = `<tr class="bg-slate-50/30">
@@ -4288,36 +4297,39 @@
         scheduleHead.innerHTML = headHtml;
 
         // 1. Filter staff based on assignments this week
-        const weekDatesStr = weekDates.map(d => d.toISOString().split('T')[0]);
+        const weekDatesStr = weekDates.map(d => toLocalDateStr(d));
         const assignedStaffNames = new Set();
         (window.allOrdersData || []).forEach(o => {
             const dateStr = o.deployDate || o.deadline;
             if (weekDatesStr.includes(dateStr)) {
-                if (o.assignedVideo) assignedStaffNames.add(o.assignedVideo);
-                if (o.assignedPhoto) assignedStaffNames.add(o.assignedPhoto);
-                if (o.stylist) assignedStaffNames.add(o.stylist);
+                if (o.assignedVideo && o.assignedVideo !== '-') assignedStaffNames.add(o.assignedVideo);
+                if (o.assignedPhoto && o.assignedPhoto !== '-') assignedStaffNames.add(o.assignedPhoto);
+                if (o.stylist && o.stylist !== '-') assignedStaffNames.add(o.stylist);
             }
         });
 
-        let staffList = (window.allUsersData || []).filter(u => assignedStaffNames.has(u.name));
-        
-        // Ensure we always have the 3 core positions if they have tasks
-        staffList = staffList.filter(u => 
-            ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Editor'].some(r => (u.role || '').includes(r))
-        );
+        // Create staff list from assigned names, merged with user data if available
+        let staffList = Array.from(assignedStaffNames).filter(name => name && name !== '-').map(name => {
+            const userData = (window.allUsersData || []).find(u => u.name === name);
+            const initials = name ? name.split(' ').filter(n => n).map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??';
+            return {
+                name: name,
+                role: userData ? (userData.role || userData.department) : 'Nhân sự',
+                initials: initials
+            };
+        }).sort((a, b) => a.name.localeCompare(b.name));
 
         let scheduleHtml = '';
         if (staffList.length === 0) {
             scheduleHtml = '<tr><td colspan="8" class="py-20 text-center"><div class="flex flex-col items-center gap-3 text-slate-300"><span class="material-symbols-outlined text-4xl">person_off</span><p class="text-sm font-bold uppercase tracking-widest">Không có nhân sự được phân công tuần này</p></div></td></tr>';
         } else {
             staffList.forEach(staff => {
-                const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
                 scheduleHtml += `
                     <tr class="hover:bg-slate-50/50 transition-all group">
                         <td class="py-5 px-6 border-r border-slate-50">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 border border-white shadow-sm ring-2 ring-slate-50">
-                                    ${initials}
+                                    ${staff.initials}
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-[#1e293b] truncate max-w-[120px]">${staff.name}</p>
@@ -4329,7 +4341,7 @@
                 weekDates.forEach(date => {
                     const isToday = date.toDateString() === new Date().toDateString();
                     const cellClass = isToday ? 'bg-primary/5' : '';
-                    const dateStr = date.toISOString().split('T')[0];
+                    const dateStr = toLocalDateStr(date);
                     
                     const tasks = (window.allOrdersData || []).filter(o => 
                         (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name) &&
@@ -4384,7 +4396,8 @@
         for (let d = 1; d <= daysInMonth; d++) {
             const date = new Date(year, month, d);
             const isToday = date.toDateString() === new Date().toDateString();
-            const dateStr = date.toISOString().split('T')[0];
+            const toLocalDateStr = (dateObj) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+            const dateStr = toLocalDateStr(date);
             
             const tasks = (window.allOrdersData || []).filter(o => o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr));
             
@@ -4437,6 +4450,11 @@
     window.changeMonth = function(delta) {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
         window.renderMonthlyCalendar();
+    };
+
+    window.changeWeek = function(delta) {
+        currentScheduleDate.setDate(currentScheduleDate.getDate() + (delta * 7));
+        window.renderWeeklySchedule();
     };
 
     let charts = {};
