@@ -1455,12 +1455,16 @@
                             </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-2xl overflow-hidden">
-                        ${['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'].map(day => `
-                            <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">${day}</div>
-                        `).join('')}
+                    <div class="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                        <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Thứ 2</div>
+                        <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Thứ 3</div>
+                        <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Thứ 4</div>
+                        <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Thứ 5</div>
+                        <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Thứ 6</div>
+                        <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest text-blue-500">Thứ 7</div>
+                        <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest text-rose-500">Chủ Nhật</div>
                         <div id="calendarGrid" class="contents">
-                            <!-- Calendar Days -->
+                            <!-- Days injected here -->
                         </div>
                     </div>
                 </div>
@@ -1786,40 +1790,7 @@
                             <option value="Giả Live">Giả Live</option>
                         </select>
                     </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                            Ngày triển khai <span class="text-primary">*</span>
-                        </label>
-                        <div class="relative">
-                            <input id="deployDate" class="w-full bg-surface-container-highest border-none rounded-lg px-10 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" type="date"/>
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-blue-500 material-symbols-outlined">event</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 2: Personnel Assignment -->
-                <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Stylist</label>
-                        <select id="assignedStylist" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all">
-                            <option value="">- Chưa chọn -</option>
-                        </select>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Video Editor</label>
-                        <select id="assignedVideo" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all">
-                            <option value="">- Chưa chọn -</option>
-                        </select>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Photographer</label>
-                        <select id="assignedPhoto" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all">
-                            <option value="">- Chưa chọn -</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mt-8 grid grid-cols-1 gap-6">
+                    <div class="md:col-span-2 space-y-2">
                         <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                             Tiêu đề đơn hàng <span class="text-primary">*</span>
                         </label>
@@ -2762,10 +2733,11 @@
         const content = document.getElementById('orderEditor').innerHTML;
         const category = document.getElementById('orderCategory').value;
         
-        const deployDate = document.getElementById('deployDate').value;
-        const stylist = document.getElementById('assignedStylist').value;
-        const assignedVideo = document.getElementById('assignedVideo').value;
-        const assignedPhoto = document.getElementById('assignedPhoto').value;
+        // Removed fields default to empty
+        const deployDate = '';
+        const stylist = '';
+        const assignedVideo = '';
+        const assignedPhoto = '';
         const note = '';
         
         if (!title || !deadline) {
