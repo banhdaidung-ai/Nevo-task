@@ -1225,8 +1225,8 @@
                             <th class="py-4 px-6 bg-[#f8fafc] sticky left-[410px] z-30 min-w-[250px] border-r border-slate-100 border-b">GHI CHÚ</th>
                             <th class="py-4 px-6 bg-[#f8fafc] sticky left-[660px] z-30 min-w-[120px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
                             <th class="py-4 px-1 bg-[#f8fafc] sticky left-[780px] z-30 min-w-[36px] text-right border-r-2 border-slate-200 border-b"><div class="text-[8px] leading-tight">NGÂN<br>SÁCH</div></th>
+                            <th class="py-4 px-6 bg-[#f8fafc] font-black text-rose-600 text-center border-r border-slate-100 border-b min-w-[80px]">TỔNG</th>
                             <!-- Dynamic Day Columns will be injected here -->
-                            <th class="py-4 px-6 bg-[#f8fafc] font-black text-rose-600 text-center border-l border-slate-200 border-b min-w-[80px]">TỔNG</th>
                             <th class="py-4 px-4 bg-[#f8fafc] sticky right-0 z-30 min-w-[80px] text-center border-l border-slate-100 border-b">XÓA</th>
                         </tr>
                     </thead>
@@ -5518,10 +5518,10 @@
                     <td class="py-3 px-1 sticky left-[780px] z-10 bg-white group-hover:bg-blue-50/30 border-r-2 border-b border-slate-200 min-w-[36px] align-top">
                         <input type="text" onblur="window.updateRowBudget('${row.id}', this.value)" class="w-full border border-slate-200 rounded px-1 py-2 text-right text-[10px] font-bold text-rose-600 outline-none" placeholder="0" value="${row.budget || ''}">
                     </td>
-                    ${daysHtml}
-                    <td class="py-3 px-6 border-b border-l border-slate-200 bg-slate-50/50 text-center align-middle font-black text-rose-600 text-sm">
+                    <td class="py-3 px-6 border-r border-b border-slate-100 bg-rose-50/20 text-center align-middle font-black text-rose-600 text-sm">
                         ${rowTotal}
                     </td>
+                    ${daysHtml}
                     <td class="py-3 px-6 sticky right-0 z-10 bg-white group-hover:bg-blue-50/30 border-l border-b border-slate-100 text-center min-w-[80px] align-top">
                         <button onclick="window.deletePlanningRow('${row.id}')" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
                             <span class="material-symbols-outlined text-[20px]">delete</span>
@@ -5541,8 +5541,8 @@
             subtotalTr.innerHTML = `
                 <td colspan="5" class="py-4 px-6 text-right text-[10px] uppercase tracking-widest text-slate-400 border-b border-rose-100/50">TỔNG NHÓM (${deptName})</td>
                 <td class="py-4 px-1 text-right text-[11px] text-rose-600 border-r-2 border-b border-rose-100/50">${deptBudgetTotal.toLocaleString()}</td>
+                <td class="py-4 px-6 text-center text-sm border-r border-b border-rose-100/50 bg-rose-100/40">${deptGrandTotal}</td>
                 ${subtotalDaysHtml}
-                <td class="py-4 px-6 text-center text-sm border-b border-l border-rose-100/50 bg-rose-100/20">${deptGrandTotal}</td>
                 <td class="bg-white border-b border-slate-100"></td>
             `;
             tbody.appendChild(subtotalTr);
