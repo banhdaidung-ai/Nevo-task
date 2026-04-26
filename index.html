@@ -3612,8 +3612,14 @@
             snapshot.forEach((doc) => {
                 window.allOrdersData.push({ id: doc.id, ...doc.data() });
             });
-            window.renderOrdersTable();
-            window.renderDashboardTable();
+            
+            // Render visible components
+            if (currentPage === 'orders') window.renderOrdersTable();
+            if (currentPage === 'dashboard') window.renderDashboardTable();
+            if (currentPage === 'reports') window.renderReports();
+            if (currentPage === 'planning') {
+                if (typeof window.renderPlanningReport === 'function') window.renderPlanningReport();
+            }
         });
 
         // --- 4. ACTIVITIES SYNC ---
@@ -4927,7 +4933,7 @@
                 let actualDays = '';
                 for(let i=1; i<=daysInMonth; i++) {
                     const dateStr = `${year}-${month.toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
-                    const count = (window.ordersData || []).filter(o => o.department === dept && o.category === type && o.orderDate === dateStr).length;
+                    const count = (window.allOrdersData || []).filter(o => o.department === dept && o.category === type && o.orderDate === dateStr).length;
                     const diff = count - plans.reduce((acc, p) => acc + (parseInt(p.days[`d${i}`]) || 0), 0);
                     actualDays += `<td class="py-3 px-3 text-center border-r border-b border-slate-100">
                         <div class="font-bold text-rose-600">${count || '0'}</div>
