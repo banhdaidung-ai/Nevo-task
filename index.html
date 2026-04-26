@@ -1336,266 +1336,209 @@
 <div id="page-reports" class="page">
     <div class="p-4 md:p-8 max-w-[1600px] mx-auto w-full">
         <!-- Header -->
-        <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
+        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
             <div>
-                <p class="text-primary font-bold tracking-widest text-xs uppercase mb-2">Thống kê hệ thống</p>
-                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface font-headline">Báo cáo Hiệu suất</h1>
+                <nav class="flex items-center gap-2 text-[10px] text-slate-400 mb-2 font-bold tracking-widest uppercase">
+                    <span>Hệ thống</span>
+                    <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+                    <span class="text-primary">Báo cáo & Hiệu suất</span>
+                </nav>
+                <h1 class="text-3xl md:text-4xl font-black tracking-tight text-[#1e293b] font-headline">Hiệu suất & Lịch trình <span class="text-primary">.</span></h1>
+                <p class="text-sm text-slate-400 mt-1 font-medium">Giám sát năng lực thực thi và điều phối nhân sự Kinetic Authority.</p>
             </div>
-            <div class="flex items-center bg-surface-container-lowest p-1 rounded-xl shadow-sm">
-                <button class="px-4 md:px-6 py-2 rounded-lg bg-gradient-primary text-white text-sm font-semibold shadow-md">Hôm nay</button>
-                <button class="px-4 md:px-6 py-2 rounded-lg text-slate-500 text-sm font-semibold hover:bg-surface-container-low transition-all">Tuần này</button>
-                <button class="px-4 md:px-6 py-2 rounded-lg text-slate-500 text-sm font-semibold hover:bg-surface-container-low transition-all">Tháng này</button>
-            </div>
-        </div>
-
-        <!-- Top Metrics -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
-            <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.04)] card-lift border-l-4 border-primary animate-fade-in-up">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-primary-fixed rounded-lg text-primary">
-                        <span class="material-symbols-outlined">payments</span>
-                    </div>
-                    <span class="text-tertiary bg-tertiary/10 px-2 py-1 rounded-full text-xs font-bold">+12.5%</span>
-                </div>
-                <p class="text-slate-500 text-sm font-medium mb-1">Tổng doanh thu</p>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-2xl md:text-3xl font-extrabold tracking-tighter text-on-surface font-headline">1,284.5M</span>
-                    <span class="text-xs text-slate-400">VND</span>
-                </div>
-                <div class="mt-4 flex items-center gap-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                    <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Live Pulse</span>
-                </div>
-            </div>
-            <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.04)] card-lift animate-fade-in-up delay-100">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-surface-container-low rounded-lg text-on-surface-variant">
-                        <span class="material-symbols-outlined">shopping_cart</span>
-                    </div>
-                    <span class="text-primary bg-primary-fixed/30 px-2 py-1 rounded-full text-xs font-bold">+5.2%</span>
-                </div>
-                <p class="text-slate-500 text-sm font-medium mb-1">Đơn hàng mới</p>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-extrabold tracking-tighter text-on-surface font-headline">8,432</span>
-                </div>
-                <div class="mt-4 h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
-                    <div class="h-full bg-primary w-3/4 rounded-full transition-all duration-1000"></div>
-                </div>
-            </div>
-            <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.04)] card-lift animate-fade-in-up delay-200">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-surface-container-low rounded-lg text-on-surface-variant">
-                        <span class="material-symbols-outlined">group</span>
-                    </div>
-                    <span class="text-tertiary bg-tertiary/10 px-2 py-1 rounded-full text-xs font-bold">+8.1%</span>
-                </div>
-                <p class="text-slate-500 text-sm font-medium mb-1">Khách hàng</p>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-extrabold tracking-tighter text-on-surface font-headline">24,501</span>
-                </div>
-                <p class="mt-4 text-xs text-slate-400">Mục tiêu quý: 30,000</p>
-            </div>
-            <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.04)] card-lift animate-fade-in-up delay-300">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-surface-container-low rounded-lg text-on-surface-variant">
-                        <span class="material-symbols-outlined">conversion_path</span>
-                    </div>
-                    <span class="text-error bg-error-container/30 px-2 py-1 rounded-full text-xs font-bold">-1.4%</span>
-                </div>
-                <p class="text-slate-500 text-sm font-medium mb-1">Tỷ lệ chuyển đổi</p>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-extrabold tracking-tighter text-on-surface font-headline">3.82%</span>
-                </div>
-                <div class="mt-4 flex -space-x-2">
-                    <div class="h-6 w-6 rounded-full border-2 border-white bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">A</div>
-                    <div class="h-6 w-6 rounded-full border-2 border-white bg-tertiary/20 flex items-center justify-center text-[8px] font-bold text-tertiary">B</div>
-                    <div class="h-6 w-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-500">+12</div>
-                </div>
+            <div class="flex items-center gap-3">
+                <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                    <span class="material-symbols-outlined text-[18px]">download</span> Xuất báo cáo
+                </button>
+                <button onclick="navigateTo('create-order')" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20 active:scale-95">
+                    <span class="material-symbols-outlined text-[18px]">add</span> Thêm lịch trực
+                </button>
             </div>
         </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-10">
-            <!-- Revenue Chart -->
-            <div class="lg:col-span-2 bg-surface-container-lowest p-6 md:p-8 rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.04)] animate-fade-in-up delay-200">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-lg font-bold text-on-surface font-headline">Biểu đồ doanh thu tuần</h2>
-                    <div class="flex items-center gap-4 text-xs font-semibold text-slate-400">
-                        <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-primary"></div> Tháng này</div>
-                        <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-surface-variant"></div> Tháng trước</div>
-                    </div>
+        <!-- Top Metrics Cards -->
+        <div id="reportsMetrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Dynamic Content -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in-up">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng nhân sự</span>
                 </div>
-                <div class="h-[250px] md:h-[300px] w-full flex items-end justify-between gap-2">
-                    <div class="flex flex-col items-center gap-2 w-full">
-                        <div class="w-full bg-surface-container-low rounded-t-lg relative h-32">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-24"></div>
-                            <div class="absolute bottom-0 w-full bg-primary rounded-t-lg h-16 transition-all hover:brightness-110 hover:h-20"></div>
-                        </div>
-                        <span class="text-xs font-medium text-slate-400">T2</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 w-full">
-                        <div class="w-full bg-surface-container-low rounded-t-lg relative h-32">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-28"></div>
-                            <div class="absolute bottom-0 w-full bg-primary rounded-t-lg h-20 transition-all hover:brightness-110 hover:h-24"></div>
-                        </div>
-                        <span class="text-xs font-medium text-slate-400">T3</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 w-full">
-                        <div class="w-full bg-surface-container-low rounded-t-lg relative h-32">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-32"></div>
-                            <div class="absolute bottom-0 w-full bg-primary rounded-t-lg h-28 transition-all hover:brightness-110 hover:h-32"></div>
-                        </div>
-                        <span class="text-xs font-medium text-slate-400">T4</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 w-full">
-                        <div class="w-full bg-surface-container-low rounded-t-lg relative h-32">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-20"></div>
-                            <div class="absolute bottom-0 w-full bg-primary rounded-t-lg h-12 transition-all hover:brightness-110 hover:h-16"></div>
-                        </div>
-                        <span class="text-xs font-medium text-slate-400">T5</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 w-full">
-                        <div class="w-full bg-surface-container-low rounded-t-lg relative h-32">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-24"></div>
-                            <div class="absolute bottom-0 w-full bg-primary rounded-t-lg h-20 transition-all hover:brightness-110 hover:h-24"></div>
-                        </div>
-                        <span class="text-xs font-medium text-slate-400">T6</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 w-full">
-                        <div class="w-full bg-surface-container-low rounded-t-lg relative h-32">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-16"></div>
-                            <div class="absolute bottom-0 w-full bg-primary rounded-t-lg h-10 transition-all hover:brightness-110 hover:h-14"></div>
-                        </div>
-                        <span class="text-xs font-medium text-slate-400">T7</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 w-full">
-                        <div class="w-full bg-surface-container-low rounded-t-lg relative h-32">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-12"></div>
-                            <div class="absolute bottom-0 w-full bg-primary rounded-t-lg h-8 transition-all hover:brightness-110 hover:h-12"></div>
-                        </div>
-                        <span class="text-xs font-medium text-slate-400">CN</span>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <span id="repStatStaff" class="text-4xl font-black text-[#1e293b] font-headline">0</span>
+                        <span class="text-xs text-emerald-500 font-bold ml-1">+2 tháng này</span>
                     </div>
                 </div>
             </div>
-            <!-- Distribution Chart -->
-            <div class="bg-surface-container-lowest p-6 md:p-8 rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.04)] animate-fade-in-up delay-300">
-                <h2 class="text-lg font-bold text-on-surface font-headline mb-8">Phân bổ công việc</h2>
-                <div class="relative flex items-center justify-center mb-8">
-                    <svg class="w-40 h-40 md:w-48 md:h-48 transform -rotate-90">
-                        <circle class="text-surface-container-low" cx="50%" cy="50%" fill="transparent" r="40%" stroke="currentColor" stroke-width="12"></circle>
-                        <circle class="text-primary" cx="50%" cy="50%" fill="transparent" r="40%" stroke="currentColor" stroke-dasharray="502" stroke-dashoffset="125" stroke-width="12"></circle>
-                        <circle class="text-tertiary" cx="50%" cy="50%" fill="transparent" r="40%" stroke="currentColor" stroke-dasharray="502" stroke-dashoffset="400" stroke-width="12"></circle>
-                    </svg>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <span class="text-2xl font-bold font-headline">75%</span>
-                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Hoàn thành</span>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in-up delay-75">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hiệu suất TB</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <span id="repStatEfficiency" class="text-4xl font-black text-[#1e293b] font-headline">0%</span>
+                        <span class="text-xs text-primary font-bold ml-1">↑ 3.2%</span>
                     </div>
                 </div>
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center text-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
-                            <span class="font-medium text-on-surface">Đang xử lý</span>
-                        </div>
-                        <span class="font-bold text-on-surface">45%</span>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in-up delay-150">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tỷ lệ đúng hạn</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <span id="repStatOnTime" class="text-4xl font-black text-[#1e293b] font-headline">0%</span>
+                        <span class="text-xs text-slate-400 font-bold ml-1">Ổn định</span>
                     </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="w-2.5 h-2.5 rounded-full bg-tertiary"></div>
-                            <span class="font-medium text-on-surface">Đã giao hàng</span>
-                        </div>
-                        <span class="font-bold text-on-surface">30%</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="w-2.5 h-2.5 rounded-full bg-surface-container-low"></div>
-                            <span class="font-medium text-on-surface">Hủy bỏ</span>
-                        </div>
-                        <span class="font-bold text-on-surface">25%</span>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm animate-fade-in-up delay-225">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn hoàn thành</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <span id="repStatCompleted" class="text-4xl font-black text-[#1e293b] font-headline">0</span>
+                        <span class="text-[10px] text-slate-400 font-bold ml-2 italic">Mục tiêu 1.5k</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Transactions & CTA -->
-        <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 md:gap-8">
-            <div class="xl:col-span-3 bg-surface-container-lowest p-6 md:p-8 rounded-xl shadow-[0_12px_40px_-12px_rgba(19,27,46,0.04)] animate-fade-in-up delay-300">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-lg font-bold text-on-surface font-headline">Giao dịch gần đây</h2>
-                    <button class="text-xs font-bold text-primary hover:underline">Xem tất cả</button>
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
+            <!-- Weekly Schedule (Large) -->
+            <div class="xl:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col animate-fade-in-up">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-rose-100 text-rose-600 rounded-xl">
+                            <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-[#1e293b] font-headline">Lịch trình làm việc tuần này</h2>
+                    </div>
+                    <div class="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                        <button class="px-4 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold uppercase tracking-widest shadow-sm">Tuần này</button>
+                        <button class="px-4 py-1.5 rounded-lg text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">Tháng này</button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left min-w-[450px]">
+                    <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-surface-container-low">
-                                <th class="pb-4">Mã đơn</th>
-                                <th class="pb-4">Thành viên</th>
-                                <th class="pb-4">Công việc</th>
-                                <th class="pb-4 text-right">Trạng thái</th>
+                            <tr class="bg-slate-50/30">
+                                <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 min-w-[200px]">Nhân viên</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 2</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/20 text-center bg-primary/5 w-[15%]">Thứ 3 (Nay)</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 4</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 5</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 6</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-surface-container-low/50">
-                            <tr class="group hover:bg-surface-container-low transition-colors">
-                                <td class="py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-primary font-bold text-xs">AT</div>
-                                        <div>
-                                            <p class="text-sm font-bold text-on-surface leading-none">Anh Tuấn</p>
-                                            <p class="text-[10px] text-slate-400">anhtuan@gmail.com</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 font-mono text-xs text-slate-500">#ORD-9921</td>
-                                <td class="py-4"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed text-tertiary">Hoàn tất</span></td>
-                                <td class="py-4 text-right font-bold text-on-surface text-sm">2,450,000đ</td>
-                            </tr>
-                            <tr class="group hover:bg-surface-container-low transition-colors">
-                                <td class="py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs">ML</div>
-                                        <div>
-                                            <p class="text-sm font-bold text-on-surface leading-none">Minh Lan</p>
-                                            <p class="text-[10px] text-slate-400">lanm@company.vn</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 font-mono text-xs text-slate-500">#ORD-9844</td>
-                                <td class="py-4"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-fixed text-primary">Đang chờ</span></td>
-                                <td class="py-4 text-right font-bold text-on-surface text-sm">1,120,000đ</td>
-                            </tr>
-                            <tr class="group hover:bg-surface-container-low transition-colors">
-                                <td class="py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 font-bold text-xs">HK</div>
-                                        <div>
-                                            <p class="text-sm font-bold text-on-surface leading-none">Hoàng Kiên</p>
-                                            <p class="text-[10px] text-slate-400">kienh@outlook.com</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-4 font-mono text-xs text-slate-500">#ORD-9831</td>
-                                <td class="py-4"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-tertiary-fixed text-tertiary">Hoàn tất</span></td>
-                                <td class="py-4 text-right font-bold text-on-surface text-sm">5,600,000đ</td>
-                            </tr>
+                        <tbody id="weeklyScheduleBody" class="divide-y divide-slate-50">
+                            <!-- Dynamic Content -->
                         </tbody>
                     </table>
                 </div>
             </div>
-            <!-- Promotion Card -->
-            <div class="xl:col-span-2 relative rounded-xl overflow-hidden shadow-xl group min-h-[300px] animate-fade-in-up delay-400">
-                <div class="absolute inset-0 bg-gradient-to-br from-[#131b2e] via-[#1e293b] to-[#0f172a]"></div>
-                <div class="absolute inset-0 bg-gradient-to-t from-primary/20 via-transparent to-transparent"></div>
-                <!-- Decorative circles -->
-                <div class="absolute -top-20 -right-20 w-60 h-60 bg-primary/10 rounded-full blur-3xl"></div>
-                <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-tertiary/10 rounded-full blur-3xl"></div>
-                <div class="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
-                    <span class="inline-block bg-primary px-3 py-1 rounded-full text-[10px] font-extrabold text-white uppercase tracking-widest mb-4 w-fit">Mới</span>
-                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2 leading-tight font-headline">Mở rộng thị trường phía Nam</h3>
-                    <p class="text-slate-300 text-sm mb-6 max-w-xs">Báo cáo phân tích tiềm năng tăng trưởng 45% tại khu vực TP.HCM trong Q3/2024.</p>
-                    <button class="bg-white text-on-surface px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-100 transition-all flex items-center gap-2 w-fit active:scale-95">
-                        Xem báo cáo đầy đủ
-                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                    </button>
+
+            <!-- Optimization Sidebar -->
+            <div class="bg-[#1e293b] rounded-3xl p-8 text-white flex flex-col justify-between relative overflow-hidden shadow-xl animate-fade-in-up delay-200">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">AI Intelligence</span>
+                    </div>
+                    <h3 class="text-2xl font-bold font-headline mb-4 tracking-tight leading-tight">Gợi ý tối ưu hóa</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-10 font-medium">Dựa trên dữ liệu 7 ngày qua, đội ngũ đang có dấu hiệu quá tải vào khung giờ 14:00 - 16:00 mỗi ngày.</p>
+                    
+                    <div class="space-y-8">
+                        <div class="flex gap-4 group cursor-pointer">
+                            <div class="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30 group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-rose-500 text-[24px]">bolt</span>
+                            </div>
+                            <div>
+                                <p class="text-[15px] font-bold mb-1 group-hover:text-rose-400 transition-colors">Tăng cường nhân sự ca chiều</p>
+                                <p class="text-xs text-slate-400 leading-relaxed">Phân bổ thêm 2 nhân viên Part-time cho khu vực đóng gói.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 group cursor-pointer">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30 group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-emerald-500 text-[24px]">verified</span>
+                            </div>
+                            <div>
+                                <p class="text-[15px] font-bold mb-1 group-hover:text-emerald-400 transition-colors">Khen thưởng nhân sự</p>
+                                <p class="text-xs text-slate-400 leading-relaxed">Top 3 nhân sự đạt cột mốc 100 đơn hoàn thành đúng hạn.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="relative z-10 w-full py-4 bg-white text-[#1e293b] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:shadow-lg hover:shadow-white/5 transition-all mt-10 active:scale-95">
+                    Xem chi tiết báo cáo
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Leaderboard -->
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-fade-in-up">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-emerald-100 text-emerald-600 rounded-xl">
+                            <span class="material-symbols-outlined text-[20px]">stars</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-[#1e293b] font-headline">Bảng xếp hạng hiệu suất</h2>
+                    </div>
+                    <span class="px-3 py-1 bg-white border border-slate-200 text-slate-400 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-sm">Tháng hiện tại</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/10">
+                                <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Nhân viên</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Đảm nhận</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Hoàn thành</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Đúng hạn</th>
+                                <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Đánh giá</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody" class="divide-y divide-slate-50">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Department Performance -->
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-fade-in-up delay-150">
+                <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-primary-fixed text-primary rounded-xl">
+                            <span class="material-symbols-outlined text-[20px]">corporate_fare</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-[#1e293b] font-headline">Báo cáo hiệu suất Phòng ban</h2>
+                    </div>
+                    <span class="px-3 py-1 bg-white border border-slate-200 text-slate-400 rounded-lg text-[10px] font-bold uppercase tracking-widest shadow-sm">Tất cả đơn vị</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/10">
+                                <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Phòng ban</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Tổng nhận</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Hoàn thành</th>
+                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Đúng hạn</th>
+                                <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Hiệu suất</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deptPerformanceBody" class="divide-y divide-slate-50">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -2590,6 +2533,8 @@
                     if (window.updateProfilePage) window.updateProfilePage();
                 } else if (pageId === 'dashboard') {
                     if (window.updateDashboardStats) window.updateDashboardStats();
+                } else if (pageId === 'reports') {
+                    if (window.renderReports) window.renderReports();
                 }
             }
             
@@ -4144,10 +4089,154 @@
         }
     };
 
-    function getStatusColor(status) {
-        if (status === 'Hoàn thành') return 'bg-emerald-100 text-emerald-700';
-        if (status === 'Hủy') return 'bg-rose-100 text-rose-700';
-        if (status === 'Đang xử lý') return 'bg-blue-100 text-blue-700';
+    // ===== REPORTS & PERFORMANCE LOGIC =====
+    window.renderReports = function() {
+        if (!window.allOrdersData) return;
+
+        // 1. Top Metrics Calculation
+        const totalStaff = (window.allUsersData || []).length;
+        const completedOrders = window.allOrdersData.filter(o => o.status === 'Hoàn thành');
+        const onTimeOrders = completedOrders.filter(o => {
+            if (!o.deadline) return true;
+            const deadline = new Date(o.deadline);
+            const updated = o.updatedAt ? (o.updatedAt.toDate ? o.updatedAt.toDate() : new Date(o.updatedAt)) : new Date();
+            return updated <= deadline;
+        });
+
+        const efficiency = window.allOrdersData.length > 0 ? Math.round((completedOrders.length / window.allOrdersData.length) * 100) : 0;
+        const onTimeRate = completedOrders.length > 0 ? Math.round((onTimeOrders.length / completedOrders.length) * 100) : 0;
+
+        document.getElementById('repStatStaff').textContent = totalStaff;
+        document.getElementById('repStatEfficiency').textContent = efficiency + '%';
+        document.getElementById('repStatOnTime').textContent = onTimeRate + '%';
+        document.getElementById('repStatCompleted').textContent = completedOrders.length;
+
+        // 2. Weekly Schedule (Mocking for top creators/assignees)
+        // We'll look for orders with deployDate or deadline in current week
+        const scheduleBody = document.getElementById('weeklyScheduleBody');
+        const staffList = (window.allUsersData || []).filter(u => ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead'].includes(u.role) || u.department === 'Creative').slice(0, 5);
+        
+        let scheduleHtml = '';
+        staffList.forEach(staff => {
+            const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
+            scheduleHtml += `
+                <tr class="hover:bg-slate-50/50 transition-all group">
+                    <td class="py-5 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 border border-white shadow-sm ring-2 ring-slate-50">
+                                ${initials}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-[#1e293b]">${staff.name}</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department}</p>
+                            </div>
+                        </div>
+                    </td>
+                    ${[0, 1, 2, 3, 4].map(day => {
+                        const isToday = day === 1; // Simplified: assume Tue is Today for visual demo matching image
+                        const cellClass = isToday ? 'bg-primary/5' : '';
+                        
+                        // Pick 1-2 random orders for this staff on this day for demo
+                        const mockOrders = window.allOrdersData.filter(o => 
+                            (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name)
+                        ).slice(0, 2);
+
+                        let tasksHtml = '';
+                        if (mockOrders.length > 0 && Math.random() > 0.5) {
+                            mockOrders.forEach(o => {
+                                tasksHtml += `
+                                    <div class="mb-1.5 p-2 rounded-lg bg-rose-50 border-l-2 border-rose-400 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
+                                        <p class="text-[9px] font-black text-rose-600 truncate">#${o.code}</p>
+                                        <p class="text-[10px] font-bold text-slate-700 truncate">${o.category || 'Công việc'}</p>
+                                    </div>
+                                `;
+                            });
+                        }
+
+                        return `<td class="py-4 px-4 ${cellClass}">${tasksHtml}</td>`;
+                    }).join('')}
+                </tr>
+            `;
+        });
+        scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="6" class="py-10 text-center text-slate-400 font-medium">Chưa có lịch phân bổ tuần này</td></tr>';
+
+        // 3. Leaderboard
+        const leaderboardBody = document.getElementById('leaderboardBody');
+        const sortedStaff = (window.allUsersData || []).map(u => {
+            const assigned = window.allOrdersData.filter(o => o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name).length;
+            const completed = window.allOrdersData.filter(o => (o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name) && o.status === 'Hoàn thành').length;
+            const rate = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
+            return { ...u, assigned, completed, rate };
+        }).sort((a, b) => b.completed - a.completed).slice(0, 5);
+
+        let leaderboardHtml = '';
+        sortedStaff.forEach((s, idx) => {
+            const colors = ['text-rose-500 bg-rose-50', 'text-amber-500 bg-amber-50', 'text-blue-500 bg-blue-50', 'text-slate-500 bg-slate-50', 'text-slate-500 bg-slate-50'];
+            const rateColor = s.rate > 90 ? 'bg-emerald-500' : s.rate > 70 ? 'bg-amber-500' : 'bg-rose-500';
+            
+            leaderboardHtml += `
+                <tr class="hover:bg-slate-50/50 transition-all">
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <span class="w-5 text-[10px] font-black text-slate-300">0${idx + 1}</span>
+                            <p class="text-sm font-bold text-slate-700">${s.name}</p>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-center font-bold text-slate-600">${s.assigned}</td>
+                    <td class="py-4 px-4 text-center font-bold text-slate-600">${s.completed}</td>
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full ${rateColor}" style="width: ${s.rate}%"></div>
+                            </div>
+                            <span class="text-[10px] font-black text-slate-400 w-8">${s.rate}%</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-right">
+                        <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${colors[idx] || 'text-slate-500 bg-slate-50'}">
+                            ${s.rate > 95 ? 'Xuất sắc' : s.rate > 85 ? 'Tốt' : 'Khá'}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+        leaderboardBody.innerHTML = leaderboardHtml;
+
+        // 4. Department Performance
+        const deptBody = document.getElementById('deptPerformanceBody');
+        const depts = ['Marketing', 'Kinh doanh', 'Vận hành', 'Kỹ thuật'];
+        let deptHtml = '';
+        depts.forEach(d => {
+            const dOrders = window.allOrdersData.filter(o => o.department === d);
+            const dCompleted = dOrders.filter(o => o.status === 'Hoàn thành').length;
+            const dRate = dOrders.length > 0 ? Math.round((dCompleted / dOrders.length) * 100) : 0;
+            const dOnTime = dOrders.length > 0 ? 90 : 0; // Simplified
+            
+            deptHtml += `
+                <tr class="hover:bg-slate-50/50 transition-all">
+                    <td class="py-5 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[18px] text-slate-400">group</span>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700">${d}</span>
+                        </div>
+                    </td>
+                    <td class="py-5 px-4 text-center font-bold text-slate-600">${dOrders.length}</td>
+                    <td class="py-5 px-4 text-center font-bold text-emerald-600">${dCompleted}</td>
+                    <td class="py-5 px-4">
+                         <div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500" style="width: ${dOnTime}%"></div>
+                        </div>
+                    </td>
+                    <td class="py-5 px-6 text-right">
+                        <span class="text-sm font-black text-rose-500">${dRate}%</span>
+                    </td>
+                </tr>
+            `;
+        });
+        deptBody.innerHTML = deptHtml;
+    };
         return 'bg-amber-100 text-amber-700';
     }
 
