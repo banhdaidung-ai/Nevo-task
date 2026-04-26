@@ -1235,8 +1235,9 @@
                     </tbody>
                     <tfoot class="bg-[#f8fafc] font-bold text-[#1e293b] sticky bottom-0 z-20">
                         <tr id="planningTableFooterRow">
-                            <td colspan="5" class="py-4 px-6 text-rose-600 uppercase tracking-widest sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right">TỔNG CỘNG</td>
-                            <td id="planningTotalBudget" class="py-4 px-6 text-right sticky left-[780px] z-20 bg-[#f8fafc] border-r-2 border-slate-200 text-rose-600 font-bold">0</td>
+                            <td colspan="5" class="py-4 px-6 text-rose-600 uppercase tracking-widest sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right font-black">TỔNG CỘNG</td>
+                            <td id="planningTotalBudget" class="py-4 px-6 text-right sticky left-[780px] z-20 bg-[#f8fafc] border-r-2 border-slate-200 text-rose-600 font-black">0</td>
+                            <td id="planningGrandTotalOrders" class="py-4 px-6 text-center bg-rose-50 text-rose-700 font-black text-sm border-r border-slate-200">0</td>
                             <!-- Daily totals will be injected here -->
                             <td class="py-4 px-4 text-center sticky right-0 z-20 bg-[#f8fafc] border-l border-slate-100 text-slate-400">--</td>
                         </tr>
@@ -5206,10 +5207,10 @@
         const footerRow = document.getElementById('planningTableFooterRow');
         if(headerRow && footerRow) {
             const cols = headerRow.querySelectorAll('th');
-            for(let i=6; i<cols.length - 1; i++) cols[i].remove();
+            for(let i=7; i<cols.length - 1; i++) cols[i].remove();
             const lastHeader = headerRow.querySelector('th:last-child');
             const fCols = footerRow.querySelectorAll('td');
-            for(let i=2; i<fCols.length - 1; i++) fCols[i].remove();
+            for(let i=3; i<fCols.length - 1; i++) fCols[i].remove();
             const lastFooter = footerRow.querySelector('td:last-child');
 
             const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -5625,6 +5626,7 @@
         if(budgetCell) budgetCell.textContent = totalBudgetSum.toLocaleString();
         
         const summaryBudget = document.getElementById('planningSummaryTotalBudget');
+        const planningTotalBudget = document.getElementById('planningTotalBudget');
         if(summaryBudget) {
             if (totalBudgetSum >= 1000000000) {
                 summaryBudget.textContent = (totalBudgetSum / 1000000000).toFixed(2) + 'B';
@@ -5634,6 +5636,10 @@
                 summaryBudget.textContent = totalBudgetSum.toLocaleString();
             }
         }
+        if(planningTotalBudget) planningTotalBudget.textContent = totalBudgetSum.toLocaleString();
+
+        const planningGrandTotalOrders = document.getElementById('planningGrandTotalOrders');
+        if(planningGrandTotalOrders) planningGrandTotalOrders.textContent = totalOrdersCount.toLocaleString();
         
         const summaryStaffText = document.getElementById('planningSummaryStaffText');
         if(summaryStaffText) summaryStaffText.textContent = `${campaigns.size} chiến dịch từ ${depts.size} phòng ban`;
