@@ -2242,7 +2242,7 @@
 <!-- ====== FIREBASE JAVASCRIPT ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc, deleteDoc, updateDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -2269,6 +2269,175 @@
     window.fsDeleteDoc = deleteDoc;
     window.fsUpdateDoc = updateDoc;
     window.fsGetDoc = getDoc;
+    window.fsWhere = where;
+
+    // Middleware: Cập nhật đơn hàng kèm lưu lịch sử thay đổi (order_history)
+    window.updateOrderWithHistory = async function(orderId, updateData) {
+        if (!window.db || !window.fsUpdateDoc || !window.fsGetDoc) return;
+        try {
+            const orderRef = window.fsDoc(window.db, "orders", orderId);
+            const snap = await window.fsGetDoc(orderRef);
+            if (!snap.exists()) return;
+            const oldData = snap.data();
+            const userName = sessionStorage.getItem('nevo_user_name') || sessionStorage.getItem('nevo_user') || 'Hệ thống';
+            const changes = [];
+            const skipFields = ['updatedAt', 'lastUpdatedBy'];
+            const fieldLabels = {
+                'status': 'Trạng thái', 'title': 'Tiêu đề', 'requester': 'Người yêu cầu',
+                'department': 'Phòng ban', 'content': 'Nội dung', 'deadline': 'Hạn chót',
+                'deployDate': 'Ngày triển khai', 'category': 'Hạng mục', 'stylist': 'Stylist',
+                'assignedVideo': 'Video Editor', 'assignedPhoto': 'Photographer',
+                'costs': 'Chi phí chi tiết', 'totalCost': 'Tổng chi phí', 'note': 'Ghi chú'
+            };
+            for (const key in updateData) {
+                if (skipFields.includes(key)) continue;
+                if (JSON.stringify(oldData[key]) !== JSON.stringify(updateData[key])) {
+                    changes.push({
+                        field: key,
+                        label: fieldLabels[key] || key,
+                        oldValue: (oldData[key] === undefined || oldData[key] === null) ? 'Trống' : oldData[key],
+                        newValue: (updateData[key] === undefined || updateData[key] === null) ? 'Trống' : updateData[key]
+                    });
+                }
+            }
+            // Thực hiện cập nhật
+            await window.fsUpdateDoc(orderRef, {
+                ...updateData,
+                updatedAt: window.fsServerTimestamp(),
+                lastUpdatedBy: userName
+            });
+            // Nếu có thay đổi thực sự, lưu vào order_history
+            if (changes.length > 0) {
+                await window.fsAddDoc(window.fsCollection(window.db, "order_history"), {
+                    orderId: orderId,
+                    orderCode: oldData.code || 'N/A',
+                    operator: userName,
+                    timestamp: window.fsServerTimestamp(),
+                    changes: changes
+                });
+                // Log activity
+                if (window.logActivity) {
+                    window.logActivity('update', `Sửa đơn ${oldData.code}`, `Thay đổi ${changes.length} trường`, orderId, oldData.code);
+                }
+            }
+        } catch (e) { console.error("Order History Error:", e); }
+    };
+
+    window.openHistoryDrawer = async function(orderId, orderCode) {
+        const drawer = document.getElementById('historyDrawer');
+        const overlay = document.getElementById('historyDrawerOverlay');
+        const content = document.getElementById('historyDrawerContent');
+        const timeline = document.getElementById('historyTimeline');
+        const title = document.getElementById('historyDrawerTitle');
+        
+        title.textContent = `Lịch sử: ${orderCode}`;
+        timeline.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+                <div class="relative">
+                    <span class="material-symbols-outlined text-[48px] animate-spin text-primary/20">progress_activity</span>
+                    <span class="material-symbols-outlined text-[24px] absolute inset-0 flex items-center justify-center text-primary">history</span>
+                </div>
+                <p class="text-sm font-bold mt-4 tracking-wide text-slate-500">ĐANG TRUY XUẤT DỮ LIỆU...</p>
+            </div>`;
+        
+        drawer.classList.remove('hidden');
+        setTimeout(() => {
+            overlay.classList.replace('opacity-0', 'opacity-100');
+            content.classList.replace('translate-x-full', 'translate-x-0');
+        }, 10);
+        
+        try {
+            const historyRef = window.fsCollection(window.db, "order_history");
+            const q = window.fsQuery(historyRef, window.fsWhere("orderId", "==", orderId), window.fsOrderBy("timestamp", "desc"));
+            const snap = await window.fsGetDocs(q);
+            
+            if (snap.empty) {
+                timeline.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-20 text-slate-300">
+                        <span class="material-symbols-outlined text-[64px] mb-4 opacity-20">history_off</span>
+                        <p class="text-sm font-bold uppercase tracking-widest">Chưa có dữ liệu lịch sử</p>
+                    </div>`;
+                return;
+            }
+            
+            let html = '';
+            snap.forEach(doc => {
+                const h = doc.data();
+                const time = h.timestamp?.toDate ? h.timestamp.toDate() : new Date(h.timestamp);
+                const timeStr = time.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+                const dateStr = time.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                let changesHtml = '';
+                h.changes.forEach(c => {
+                    changesHtml += `
+                        <div class="mt-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm transition-all hover:border-primary/20">
+                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span> ${c.label}
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-[11px] text-slate-400 font-medium truncate italic line-through decoration-slate-300">${c.oldValue}</div>
+                                    <div class="text-[12px] text-slate-700 font-bold truncate mt-0.5">${c.newValue}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                    <div class="relative pl-10 pb-10 group/item">
+                        <!-- Timeline Line -->
+                        <div class="absolute left-[11px] top-0 bottom-0 w-0.5 bg-slate-200 group-last/item:bg-transparent"></div>
+                        
+                        <!-- Timeline Point -->
+                        <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-white border-4 border-slate-200 shadow-sm z-10 transition-all group-hover/item:border-primary group-hover/item:scale-110 flex items-center justify-center">
+                            <div class="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover/item:bg-primary"></div>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-[10px] font-black bg-primary text-white px-2 py-0.5 rounded shadow-sm">${timeStr}</span>
+                                <span class="text-[10px] font-bold text-slate-400">${dateStr}</span>
+                            </div>
+                            
+                            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-slate-200 shadow-sm transition-all group-hover/item:shadow-lg group-hover/item:border-primary/20 group-hover/item:-translate-y-1">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-black text-[10px] shadow-inner">${h.operator.substring(0,2).toUpperCase()}</div>
+                                        <div>
+                                            <div class="text-[13px] font-black text-slate-800">${h.operator}</div>
+                                            <div class="text-[10px] font-bold text-primary/70 uppercase tracking-tighter">System Update</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-1">
+                                    ${changesHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            timeline.innerHTML = html;
+        } catch (err) {
+            console.error("Lỗi tải lịch sử:", err);
+            timeline.innerHTML = '<div class="text-center py-10 text-red-500 font-bold">KHÔNG THỂ TẢI DỮ LIỆU LỊCH SỬ.</div>';
+        }
+    };
+
+    window.closeHistoryDrawer = function() {
+        const drawer = document.getElementById('historyDrawer');
+        const overlay = document.getElementById('historyDrawerOverlay');
+        const content = document.getElementById('historyDrawerContent');
+        
+        overlay.classList.replace('opacity-100', 'opacity-0');
+        content.classList.replace('translate-x-0', 'translate-x-full');
+        
+        setTimeout(() => {
+            drawer.classList.add('hidden');
+        }, 500);
+    };
     
     // Auto start tracking
     if (window.initOrdersTracker) {
@@ -3076,7 +3245,12 @@
             
             fullHtml += `
                     <tr class="${rowBgClass} transition-colors group relative border-b border-slate-100/50">
-                        <td class="font-headline font-bold text-[13px] text-primary col-code pl-4">${data.code || '-'}</td>
+                        <td class="font-headline font-bold text-[13px] text-primary col-code pl-4 cursor-pointer hover:underline decoration-2 underline-offset-4" onclick="openHistoryDrawer('${data.id}', '${data.code}')">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">history</span>
+                                ${data.code || '-'}
+                            </div>
+                        </td>
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'requester')">
                             <div class="display-val flex items-center gap-2">
                                 <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">${initials}</div>
@@ -3234,7 +3408,7 @@
             
             dashHtml += `
                 <tr class="hover:bg-surface-container-low transition-colors cursor-pointer" onclick="navigateTo('orders')">
-                    <td class="py-4 font-mono font-semibold text-primary text-sm">${data.code || '-'}</td>
+                    <td class="py-4 font-mono font-semibold text-primary text-sm hover:underline cursor-pointer" onclick="event.stopPropagation(); window.openHistoryDrawer('${data.id}', '${data.code}')">${data.code || '-'}</td>
                     <td class="py-4 font-medium text-sm text-slate-700">${data.requester || '-'}</td>
                     <td class="py-4 text-on-surface-variant text-[13px] font-bold truncate max-w-[200px]">${data.title || '-'}</td>
                     <td class="py-4 text-right">${statusBadgeDash}</td>
@@ -3303,7 +3477,7 @@
                 <div class="flex gap-4 group">
                     <div class="mt-1 w-2 h-2 rounded-full ${iconClass} flex-shrink-0"></div>
                     <div>
-                        <p class="text-sm font-semibold group-hover:text-primary transition-colors">${act.title}</p>
+                        <p class="text-sm font-semibold group-hover:text-primary transition-colors cursor-pointer" onclick="${act.orderId ? `window.openHistoryDrawer('${act.orderId}', '${act.orderCode}')` : ''}">${act.title}</p>
                         <p class="text-xs text-on-surface-variant mb-1">${act.description}</p>
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-bold text-slate-400">${timeSince(act.createdAt)}</span>
@@ -3582,8 +3756,7 @@
         btn.disabled = true;
         
         try {
-            const orderRef = window.fsDoc(window.db, "orders", id);
-            await window.fsUpdateDoc(orderRef, {
+            await window.updateOrderWithHistory(id, {
                 costs: costs,
                 totalCost: total
             });
@@ -3625,8 +3798,7 @@
         btn.disabled = true;
 
         try {
-            const orderRef = window.fsDoc(window.db, "orders", id);
-            await window.fsUpdateDoc(orderRef, {
+            await window.updateOrderWithHistory(id, {
                 status: status,
                 title: title,
                 requester: requester,
@@ -3638,8 +3810,7 @@
                 assignedPhoto: assignedPhoto,
                 department: department,
                 note: note,
-                content: content,
-                updatedAt: window.fsServerTimestamp()
+                content: content
             });
             
             btn.innerHTML = originalText;
@@ -3776,7 +3947,7 @@
         
         try {
             const orderRef = window.fsDoc(window.db, "orders", id);
-            await window.fsUpdateDoc(orderRef, {
+            await window.updateOrderWithHistory(id, {
                 [field]: newVal
             });
             showToast('Lưu tự động', 'Đã cập nhật', 'check_circle', 'text-tertiary');
@@ -4728,6 +4899,36 @@
 <div id="premium-tooltip" onmouseenter="clearTimeout(window.tooltipTimeout)" onmouseleave="window.hidePremiumTooltip()">
     <div class="tooltip-title"></div>
     <div class="tooltip-body"></div>
+</div>
+
+<!-- History Drawer -->
+<div id="historyDrawer" class="fixed inset-0 z-[100] overflow-hidden hidden" role="dialog" aria-modal="true">
+  <div class="absolute inset-0 overflow-hidden">
+    <div id="historyDrawerOverlay" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0" onclick="closeHistoryDrawer()"></div>
+    <div class="fixed inset-y-0 right-0 flex max-w-full pl-10">
+      <div id="historyDrawerContent" class="w-screen max-w-md transform transition-transform translate-x-full duration-500 ease-in-out">
+        <div class="flex h-full flex-col overflow-y-scroll bg-white shadow-2xl border-l border-slate-200">
+          <div class="px-6 py-8 bg-gradient-to-br from-primary to-[#2c3e50] text-white shrink-0 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="flex items-center justify-between relative z-10">
+              <div>
+                <h2 class="text-2xl font-black font-headline tracking-tight" id="historyDrawerTitle">Lịch sử đơn hàng</h2>
+                <p class="mt-1 text-xs text-indigo-100 font-bold uppercase tracking-widest opacity-80" id="historyDrawerSubTitle">Nhật ký thay đổi chi tiết</p>
+              </div>
+              <button onclick="closeHistoryDrawer()" class="rounded-full p-2 hover:bg-white/20 transition-all active:scale-90">
+                <span class="material-symbols-outlined text-[28px]">close</span>
+              </button>
+            </div>
+          </div>
+          <div class="relative flex-1 px-6 py-10 bg-slate-50/30">
+            <div id="historyTimeline" class="relative">
+              <!-- Items will be injected -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </body>
