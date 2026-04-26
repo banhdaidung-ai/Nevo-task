@@ -5594,7 +5594,9 @@
         
         const summaryBudget = document.getElementById('planningSummaryTotalBudget');
         if(summaryBudget) {
-            if (totalBudgetSum >= 1000000) {
+            if (totalBudgetSum >= 1000000000) {
+                summaryBudget.textContent = (totalBudgetSum / 1000000000).toFixed(2) + 'B';
+            } else if (totalBudgetSum >= 1000000) {
                 summaryBudget.textContent = (totalBudgetSum / 1000000).toFixed(1) + 'M';
             } else {
                 summaryBudget.textContent = totalBudgetSum.toLocaleString();
@@ -5638,6 +5640,7 @@
                 sortedTypes.forEach(([type, count], idx) => {
                     const color = idx === 0 ? 'text-blue-400' : 'text-slate-400';
                     detailHtml += `<span class="text-[10px] ${color} font-bold uppercase tracking-widest">${type}: ${count}</span>`;
+                    if (idx < sortedTypes.length - 1) detailHtml += `<span class="text-slate-600 font-normal">|</span>`;
                 });
                 summaryTypeDetail.innerHTML = detailHtml;
             } else {
