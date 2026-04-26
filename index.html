@@ -2348,7 +2348,8 @@
         
         try {
             const historyRef = window.fsCollection(window.db, "order_history");
-            const q = window.fsQuery(historyRef, window.fsWhere("orderId", "==", orderId), window.fsOrderBy("timestamp", "desc"));
+            // Bỏ window.fsOrderBy để tránh lỗi thiếu Composite Index trong Firestore
+            const q = window.fsQuery(historyRef, window.fsWhere("orderId", "==", orderId));
             const snap = await window.fsGetDocs(q);
             
             if (snap.empty) {
@@ -2360,9 +2361,17 @@
                 return;
             }
             
+            // Chuyển dữ liệu sang mảng và sắp xếp thủ công (Mới nhất lên đầu)
+            const historyData = [];
+            snap.forEach(doc => historyData.push(doc.data()));
+            historyData.sort((a, b) => {
+                const timeA = a.timestamp?.seconds || new Date(a.timestamp).getTime();
+                const timeB = b.timestamp?.seconds || new Date(b.timestamp).getTime();
+                return timeB - timeA;
+            });
+
             let html = '';
-            snap.forEach(doc => {
-                const h = doc.data();
+            historyData.forEach(h => {
                 const time = h.timestamp?.toDate ? h.timestamp.toDate() : new Date(h.timestamp);
                 const timeStr = time.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
                 const dateStr = time.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -2422,7 +2431,11 @@
             timeline.innerHTML = html;
         } catch (err) {
             console.error("Lỗi tải lịch sử:", err);
-            timeline.innerHTML = '<div class="text-center py-10 text-red-500 font-bold">KHÔNG THỂ TẢI DỮ LIỆU LỊCH SỬ.</div>';
+            timeline.innerHTML = `
+                <div class="text-center py-10">
+                    <div class="text-red-500 font-bold uppercase tracking-widest text-xs mb-2">KHÔNG THỂ TẢI DỮ LIỆU LỊCH SỬ.</div>
+                    <div class="text-[10px] text-slate-400 bg-red-50 p-3 rounded-lg border border-red-100 break-words font-mono">${err.message}</div>
+                </div>`;
         }
     };
 
