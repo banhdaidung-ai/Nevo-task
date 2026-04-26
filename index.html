@@ -5850,7 +5850,7 @@
         const currentQuarter = Math.floor(currentMonth / 3);
 
         const data = (window.allOrdersData || []).filter(o => {
-            const cost = parseFloat((o.cost || '0').toString().replace(/[^0-9]/g, '')) || 0;
+            const cost = Number(o.totalCost || 0);
             if (cost <= 0) return false;
             const d = o.deadline ? new Date(o.deadline) : null;
             if (!d) return false;
@@ -5867,12 +5867,14 @@
         const deptMap = {};
 
         data.forEach(o => {
-            const cost = parseFloat((o.cost || '0').toString().replace(/[^0-9]/g, '')) || 0;
+            const cost = Number(o.totalCost || 0);
             total += cost;
-            if (o.category === 'Hình Ảnh') photo += cost;
-            else if (o.category === 'Video') video += cost;
-            typeMap[o.category] = (typeMap[o.category] || 0) + cost;
-            deptMap[o.department] = (deptMap[o.department] || 0) + cost;
+            const cat = o.category || 'Khác';
+            const dept = o.department || 'Không xác định';
+            if (cat === 'Hình Ảnh') photo += cost;
+            else if (cat === 'Video') video += cost;
+            typeMap[cat] = (typeMap[cat] || 0) + cost;
+            deptMap[dept] = (deptMap[dept] || 0) + cost;
         });
 
         const elTotal = document.getElementById('budgetCardTotal');
@@ -5965,7 +5967,7 @@
         if(tbody) {
             tbody.innerHTML = '';
             data.forEach(o => {
-                const cVal = parseFloat((o.cost || '0').toString().replace(/[^0-9]/g, '')) || 0;
+                const cVal = Number(o.totalCost || 0);
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/80 transition-all cursor-pointer group border-b border-slate-50 last:border-none";
                 tr.onclick = () => window.jumpToOrder(o.id);
