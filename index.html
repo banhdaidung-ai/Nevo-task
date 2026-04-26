@@ -4106,137 +4106,147 @@
         const efficiency = window.allOrdersData.length > 0 ? Math.round((completedOrders.length / window.allOrdersData.length) * 100) : 0;
         const onTimeRate = completedOrders.length > 0 ? Math.round((onTimeOrders.length / completedOrders.length) * 100) : 0;
 
-        document.getElementById('repStatStaff').textContent = totalStaff;
-        document.getElementById('repStatEfficiency').textContent = efficiency + '%';
-        document.getElementById('repStatOnTime').textContent = onTimeRate + '%';
-        document.getElementById('repStatCompleted').textContent = completedOrders.length;
+        const statStaff = document.getElementById('repStatStaff');
+        const statEff = document.getElementById('repStatEfficiency');
+        const statOT = document.getElementById('repStatOnTime');
+        const statComp = document.getElementById('repStatCompleted');
+
+        if (statStaff) statStaff.textContent = totalStaff;
+        if (statEff) statEff.textContent = efficiency + '%';
+        if (statOT) statOT.textContent = onTimeRate + '%';
+        if (statComp) statComp.textContent = completedOrders.length;
 
         // 2. Weekly Schedule (Mocking for top creators/assignees)
-        // We'll look for orders with deployDate or deadline in current week
         const scheduleBody = document.getElementById('weeklyScheduleBody');
-        const staffList = (window.allUsersData || []).filter(u => ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead'].includes(u.role) || u.department === 'Creative').slice(0, 5);
-        
-        let scheduleHtml = '';
-        staffList.forEach(staff => {
-            const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
-            scheduleHtml += `
-                <tr class="hover:bg-slate-50/50 transition-all group">
-                    <td class="py-5 px-6">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 border border-white shadow-sm ring-2 ring-slate-50">
-                                ${initials}
+        if (scheduleBody) {
+            const staffList = (window.allUsersData || []).filter(u => ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead'].includes(u.role) || u.department === 'Creative').slice(0, 5);
+            
+            let scheduleHtml = '';
+            staffList.forEach(staff => {
+                const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
+                scheduleHtml += `
+                    <tr class="hover:bg-slate-50/50 transition-all group">
+                        <td class="py-5 px-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 border border-white shadow-sm ring-2 ring-slate-50">
+                                    ${initials}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-[#1e293b]">${staff.name}</p>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-sm font-bold text-[#1e293b]">${staff.name}</p>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department}</p>
-                            </div>
-                        </div>
-                    </td>
-                    ${[0, 1, 2, 3, 4].map(day => {
-                        const isToday = day === 1; // Simplified: assume Tue is Today for visual demo matching image
-                        const cellClass = isToday ? 'bg-primary/5' : '';
-                        
-                        // Pick 1-2 random orders for this staff on this day for demo
-                        const mockOrders = window.allOrdersData.filter(o => 
-                            (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name)
-                        ).slice(0, 2);
+                        </td>
+                        ${[0, 1, 2, 3, 4].map(day => {
+                            const isToday = day === 1; 
+                            const cellClass = isToday ? 'bg-primary/5' : '';
+                            const mockOrders = window.allOrdersData.filter(o => 
+                                (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name)
+                            ).slice(0, 2);
 
-                        let tasksHtml = '';
-                        if (mockOrders.length > 0 && Math.random() > 0.5) {
-                            mockOrders.forEach(o => {
-                                tasksHtml += `
-                                    <div class="mb-1.5 p-2 rounded-lg bg-rose-50 border-l-2 border-rose-400 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
-                                        <p class="text-[9px] font-black text-rose-600 truncate">#${o.code}</p>
-                                        <p class="text-[10px] font-bold text-slate-700 truncate">${o.category || 'Công việc'}</p>
-                                    </div>
-                                `;
-                            });
-                        }
-
-                        return `<td class="py-4 px-4 ${cellClass}">${tasksHtml}</td>`;
-                    }).join('')}
-                </tr>
-            `;
-        });
-        scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="6" class="py-10 text-center text-slate-400 font-medium">Chưa có lịch phân bổ tuần này</td></tr>';
+                            let tasksHtml = '';
+                            if (mockOrders.length > 0 && Math.random() > 0.5) {
+                                mockOrders.forEach(o => {
+                                    tasksHtml += `
+                                        <div class="mb-1.5 p-2 rounded-lg bg-rose-50 border-l-2 border-rose-400 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
+                                            <p class="text-[9px] font-black text-rose-600 truncate">#${o.code}</p>
+                                            <p class="text-[10px] font-bold text-slate-700 truncate">${o.category || 'Công việc'}</p>
+                                        </div>
+                                    `;
+                                });
+                            }
+                            return `<td class="py-4 px-4 ${cellClass}">${tasksHtml}</td>`;
+                        }).join('')}
+                    </tr>
+                `;
+            });
+            scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="6" class="py-10 text-center text-slate-400 font-medium">Chưa có lịch phân bổ tuần này</td></tr>';
+        }
 
         // 3. Leaderboard
         const leaderboardBody = document.getElementById('leaderboardBody');
-        const sortedStaff = (window.allUsersData || []).map(u => {
-            const assigned = window.allOrdersData.filter(o => o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name).length;
-            const completed = window.allOrdersData.filter(o => (o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name) && o.status === 'Hoàn thành').length;
-            const rate = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
-            return { ...u, assigned, completed, rate };
-        }).sort((a, b) => b.completed - a.completed).slice(0, 5);
+        if (leaderboardBody) {
+            const sortedStaff = (window.allUsersData || []).map(u => {
+                const assigned = window.allOrdersData.filter(o => o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name).length;
+                const completed = window.allOrdersData.filter(o => (o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name) && o.status === 'Hoàn thành').length;
+                const rate = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
+                return { ...u, assigned, completed, rate };
+            }).sort((a, b) => b.completed - a.completed).slice(0, 5);
 
-        let leaderboardHtml = '';
-        sortedStaff.forEach((s, idx) => {
-            const colors = ['text-rose-500 bg-rose-50', 'text-amber-500 bg-amber-50', 'text-blue-500 bg-blue-50', 'text-slate-500 bg-slate-50', 'text-slate-500 bg-slate-50'];
-            const rateColor = s.rate > 90 ? 'bg-emerald-500' : s.rate > 70 ? 'bg-amber-500' : 'bg-rose-500';
-            
-            leaderboardHtml += `
-                <tr class="hover:bg-slate-50/50 transition-all">
-                    <td class="py-4 px-6">
-                        <div class="flex items-center gap-3">
-                            <span class="w-5 text-[10px] font-black text-slate-300">0${idx + 1}</span>
-                            <p class="text-sm font-bold text-slate-700">${s.name}</p>
-                        </div>
-                    </td>
-                    <td class="py-4 px-4 text-center font-bold text-slate-600">${s.assigned}</td>
-                    <td class="py-4 px-4 text-center font-bold text-slate-600">${s.completed}</td>
-                    <td class="py-4 px-4">
-                        <div class="flex items-center gap-2">
-                            <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full ${rateColor}" style="width: ${s.rate}%"></div>
+            let leaderboardHtml = '';
+            sortedStaff.forEach((s, idx) => {
+                const colors = ['text-rose-500 bg-rose-50', 'text-amber-500 bg-amber-50', 'text-blue-500 bg-blue-50', 'text-slate-500 bg-slate-50', 'text-slate-500 bg-slate-50'];
+                const rateColor = s.rate > 90 ? 'bg-emerald-500' : s.rate > 70 ? 'bg-amber-500' : 'bg-rose-500';
+                leaderboardHtml += `
+                    <tr class="hover:bg-slate-50/50 transition-all">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center gap-3">
+                                <span class="w-5 text-[10px] font-black text-slate-300">0${idx + 1}</span>
+                                <p class="text-sm font-bold text-slate-700">${s.name}</p>
                             </div>
-                            <span class="text-[10px] font-black text-slate-400 w-8">${s.rate}%</span>
-                        </div>
-                    </td>
-                    <td class="py-4 px-6 text-right">
-                        <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${colors[idx] || 'text-slate-500 bg-slate-50'}">
-                            ${s.rate > 95 ? 'Xuất sắc' : s.rate > 85 ? 'Tốt' : 'Khá'}
-                        </span>
-                    </td>
-                </tr>
-            `;
-        });
-        leaderboardBody.innerHTML = leaderboardHtml;
+                        </td>
+                        <td class="py-4 px-4 text-center font-bold text-slate-600">${s.assigned}</td>
+                        <td class="py-4 px-4 text-center font-bold text-slate-600">${s.completed}</td>
+                        <td class="py-4 px-4">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full ${rateColor}" style="width: ${s.rate}%"></div>
+                                </div>
+                                <span class="text-[10px] font-black text-slate-400 w-8">${s.rate}%</span>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${colors[idx] || 'text-slate-500 bg-slate-50'}">
+                                ${s.rate > 95 ? 'Xuất sắc' : s.rate > 85 ? 'Tốt' : 'Khá'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            leaderboardBody.innerHTML = leaderboardHtml;
+        }
 
         // 4. Department Performance
         const deptBody = document.getElementById('deptPerformanceBody');
-        const depts = ['Marketing', 'Kinh doanh', 'Vận hành', 'Kỹ thuật'];
-        let deptHtml = '';
-        depts.forEach(d => {
-            const dOrders = window.allOrdersData.filter(o => o.department === d);
-            const dCompleted = dOrders.filter(o => o.status === 'Hoàn thành').length;
-            const dRate = dOrders.length > 0 ? Math.round((dCompleted / dOrders.length) * 100) : 0;
-            const dOnTime = dOrders.length > 0 ? 90 : 0; // Simplified
-            
-            deptHtml += `
-                <tr class="hover:bg-slate-50/50 transition-all">
-                    <td class="py-5 px-6">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                                <span class="material-symbols-outlined text-[18px] text-slate-400">group</span>
+        if (deptBody) {
+            const depts = ['Marketing', 'Kinh doanh', 'Vận hành', 'Kỹ thuật'];
+            let deptHtml = '';
+            depts.forEach(d => {
+                const dOrders = window.allOrdersData.filter(o => o.department === d);
+                const dCompleted = dOrders.filter(o => o.status === 'Hoàn thành').length;
+                const dRate = dOrders.length > 0 ? Math.round((dCompleted / dOrders.length) * 100) : 0;
+                const dOnTime = dOrders.length > 0 ? 90 : 0; 
+                deptHtml += `
+                    <tr class="hover:bg-slate-50/50 transition-all">
+                        <td class="py-5 px-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[18px] text-slate-400">group</span>
+                                </div>
+                                <span class="text-sm font-bold text-slate-700">${d}</span>
                             </div>
-                            <span class="text-sm font-bold text-slate-700">${d}</span>
-                        </div>
-                    </td>
-                    <td class="py-5 px-4 text-center font-bold text-slate-600">${dOrders.length}</td>
-                    <td class="py-5 px-4 text-center font-bold text-emerald-600">${dCompleted}</td>
-                    <td class="py-5 px-4">
-                         <div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-emerald-500" style="width: ${dOnTime}%"></div>
-                        </div>
-                    </td>
-                    <td class="py-5 px-6 text-right">
-                        <span class="text-sm font-black text-rose-500">${dRate}%</span>
-                    </td>
-                </tr>
-            `;
-        });
-        deptBody.innerHTML = deptHtml;
+                        </td>
+                        <td class="py-5 px-4 text-center font-bold text-slate-600">${dOrders.length}</td>
+                        <td class="py-5 px-4 text-center font-bold text-emerald-600">${dCompleted}</td>
+                        <td class="py-5 px-4">
+                             <div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500" style="width: ${dOnTime}%"></div>
+                            </div>
+                        </td>
+                        <td class="py-5 px-6 text-right">
+                            <span class="text-sm font-black text-rose-500">${dRate}%</span>
+                        </td>
+                    </tr>
+                `;
+            });
+            deptBody.innerHTML = deptHtml;
+        }
     };
+
+    function getStatusColor(status) {
+        if (status === 'Hoàn thành') return 'bg-emerald-100 text-emerald-700';
+        if (status === 'Hủy') return 'bg-rose-100 text-rose-700';
+        if (status === 'Đang xử lý') return 'bg-blue-100 text-blue-700';
         return 'bg-amber-100 text-amber-700';
     }
 
