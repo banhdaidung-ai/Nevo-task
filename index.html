@@ -4190,20 +4190,31 @@
         scheduleHead.innerHTML = headHtml;
 
         // Body
-        const staffList = (window.allUsersData || []).filter(u => ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead'].includes(u.role) || u.department === 'Creative').slice(0, 5);
+        let staffList = (window.allUsersData || []).filter(u => 
+            ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead', 'Editor'].some(r => (u.role || '').includes(r)) || 
+            (u.department || '').toLowerCase().includes('creative')
+        );
+        
+        // Fallback: Nếu không tìm thấy nhân sự Creative, lấy 5 người đầu tiên để lịch không bị trống
+        if (staffList.length === 0 && window.allUsersData.length > 0) {
+            staffList = window.allUsersData.slice(0, 5);
+        } else {
+            staffList = staffList.slice(0, 8);
+        }
+
         let scheduleHtml = '';
         staffList.forEach(staff => {
             const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
             scheduleHtml += `
                 <tr class="hover:bg-slate-50/50 transition-all group">
-                    <td class="py-5 px-6">
+                    <td class="py-5 px-6 border-r border-slate-50">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 border border-white shadow-sm ring-2 ring-slate-50">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 border border-white shadow-sm ring-2 ring-slate-50">
                                 ${initials}
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-[#1e293b]">${staff.name}</p>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department}</p>
+                                <p class="text-sm font-bold text-[#1e293b] truncate max-w-[120px]">${staff.name}</p>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department || 'Nhân sự'}</p>
                             </div>
                         </div>
                     </td>`;
@@ -4213,25 +4224,30 @@
                 const cellClass = isToday ? 'bg-primary/5' : '';
                 const dateStr = date.toISOString().split('T')[0];
                 
-                const tasks = window.allOrdersData.filter(o => 
+                // Lọc đơn hàng: khớp tên nhân sự và (Ngày triển khai hoặc Deadline nếu ngày triển khai trống)
+                const tasks = (window.allOrdersData || []).filter(o => 
                     (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name) &&
                     (o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr))
                 );
 
                 let tasksHtml = '';
                 tasks.forEach(o => {
+                    const statusColor = (o.status === 'Hoàn thành') ? 'border-emerald-500' : (o.status === 'Đang xử lý') ? 'border-amber-500' : 'border-primary';
                     tasksHtml += `
-                        <div class="mb-1.5 p-2 rounded-lg bg-white border-l-2 border-primary shadow-sm hover:scale-[1.02] transition-transform cursor-pointer" onclick="navigateTo('orders')">
-                            <p class="text-[9px] font-black text-primary truncate">#${o.code}</p>
-                            <p class="text-[10px] font-bold text-slate-700 truncate">${o.title}</p>
+                        <div class="mb-2 p-2 rounded-xl bg-white border-l-4 ${statusColor} shadow-sm hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer group/task" onclick="window.openHistoryDrawer('${o.id}', '${o.code}')">
+                            <div class="flex justify-between items-start mb-1">
+                                <p class="text-[9px] font-black text-slate-400 group-hover/task:text-primary">#${o.code}</p>
+                                <span class="w-1.5 h-1.5 rounded-full ${o.status === 'Hoàn thành' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-700 leading-tight line-clamp-2">${o.title}</p>
                         </div>
                     `;
                 });
-                scheduleHtml += `<td class="py-4 px-4 ${cellClass}">${tasksHtml}</td>`;
+                scheduleHtml += `<td class="py-4 px-3 border-r border-slate-50 ${cellClass}">${tasksHtml}</td>`;
             });
             scheduleHtml += `</tr>`;
         });
-        scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="8" class="py-10 text-center text-slate-400 font-medium">Chưa có dữ liệu lịch tuần</td></tr>';
+        scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="8" class="py-20 text-center"><div class="flex flex-col items-center gap-3 text-slate-300"><span class="material-symbols-outlined text-4xl">calendar_today</span><p class="text-sm font-bold uppercase tracking-widest">Chưa có dữ liệu lịch tuần</p></div></td></tr>';
     };
 
     window.renderMonthlyCalendar = function() {
