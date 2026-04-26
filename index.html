@@ -1281,49 +1281,49 @@
 
         <!-- Summary Cards Bottom -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in-up delay-300">
-            <!-- TỔNG NGÂN SÁCH DỰ KIẾN -->
+            <!-- TỔNG NGÂN SÁCH KẾ HOẠCH -->
             <div class="lg:col-span-5 bg-[#1b1c2e] text-white p-8 rounded-2xl flex flex-col justify-between shadow-lg relative overflow-hidden h-full">
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
                 <div class="relative z-10">
-                    <h3 class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Tổng Ngân sách Dự kiến</h3>
+                    <h3 class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2">Tổng Ngân sách Kế hoạch</h3>
                     <div class="text-5xl font-extrabold font-headline tracking-tighter flex items-end gap-2">
-                        1.25B <span class="text-sm text-slate-400 font-medium mb-1.5">VNĐ</span>
+                        <span id="planningSummaryTotalBudget">0</span> <span class="text-sm text-slate-400 font-medium mb-1.5">VNĐ</span>
                     </div>
                 </div>
                 <div class="mt-8 flex items-center gap-3 relative z-10">
-                    <div class="flex -space-x-3">
+                    <div class="flex -space-x-3" id="planningSummaryStaffAvatars">
                         <img class="w-8 h-8 rounded-full border-2 border-[#1b1c2e]" src="https://i.pravatar.cc/100?img=1" alt="Avatar">
                         <img class="w-8 h-8 rounded-full border-2 border-[#1b1c2e]" src="https://i.pravatar.cc/100?img=2" alt="Avatar">
-                        <img class="w-8 h-8 rounded-full border-2 border-[#1b1c2e]" src="https://i.pravatar.cc/100?img=3" alt="Avatar">
                     </div>
-                    <span class="text-xs text-slate-400">+ 12 cộng tác viên tham gia lập kế hoạch</span>
+                    <span class="text-xs text-slate-400" id="planningSummaryStaffText">Hệ thống đang tổng hợp dữ liệu...</span>
                 </div>
             </div>
 
-            <!-- TIẾN ĐỘ PHÊ DUYỆT -->
+            <!-- QUY MÔ TRIỂN KHAI -->
             <div class="lg:col-span-4 bg-white p-8 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center h-full">
-                <h3 class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-4">Tiến độ phê duyệt</h3>
+                <h3 class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-4">Quy mô triển khai</h3>
                 <div class="mb-2">
-                    <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[10px] font-bold">ĐÃ PHÊ DUYỆT 65%</span>
+                    <span class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[10px] font-bold" id="planningSummaryOrdersLabel">0 ĐƠN HÀNG</span>
                 </div>
                 <div class="w-full bg-slate-100 rounded-full h-2.5 mb-4 mt-2">
-                    <div class="bg-[#312e81] h-2.5 rounded-full" style="width: 65%"></div>
+                    <div id="planningSummaryOrdersBar" class="bg-[#312e81] h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    <span class="font-bold text-slate-700">3/5</span> cấp quản lý đã ký duyệt điện tử cho kế hoạch tháng này.
+                <p class="text-xs text-slate-500 leading-relaxed" id="planningSummaryOrdersText">
+                    Dựa trên dữ liệu kế hoạch tháng hiện tại.
                 </p>
             </div>
 
-            <!-- Thống kê thể loại (Smaller) -->
-            <div class="lg:col-span-3 bg-[#131b2e] text-white p-8 rounded-2xl border border-white/5 shadow-2xl shadow-slate-200 relative overflow-hidden animate-fade-in-up delay-225">
+            <!-- PHÂN BỔ LOẠI ORDER -->
+            <div class="lg:col-span-3 bg-[#131b2e] text-white p-8 rounded-2xl border border-white/5 shadow-2xl shadow-slate-200 relative overflow-hidden animate-fade-in-up delay-225 cursor-pointer hover:bg-[#1e293b] transition-all group" onclick="window.exportPlanningToExcel()">
                 <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
                 <div class="flex justify-between items-start relative z-10">
-                    <span class="material-symbols-outlined text-[28px] opacity-80">trending_up</span>
-                    <span class="material-symbols-outlined transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    <span class="material-symbols-outlined text-[28px] opacity-80">pie_chart</span>
+                    <span class="material-symbols-outlined transform group-hover:translate-x-1 transition-transform">download</span>
                 </div>
                 <div class="mt-8 relative z-10">
-                    <h2 class="text-xl font-bold font-headline mb-2">Xuất báo cáo chi tiết</h2>
-                    <p class="text-sm opacity-80 mb-6 leading-relaxed">Tự động tổng hợp dữ liệu và gửi qua email cho hội đồng quản trị.</p>
+                    <h2 class="text-xl font-bold font-headline mb-1" id="planningSummaryTopType">...</h2>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-4" id="planningSummaryTypeDetail">Đang phân tích cơ cấu...</p>
+                    <p class="text-[11px] opacity-60 leading-tight">Click để xuất bản kế hoạch chi tiết.</p>
                 </div>
             </div>
         </div>
@@ -5553,20 +5553,86 @@
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
-        let filteredData = window.planningRowsData.filter(row => {
+        let filteredData = (window.planningRowsData || []).filter(row => {
             const matchesMonth = row.month === monthFilter.value;
             const matchesDept = !deptFilter.value || row.dept === deptFilter.value;
             return matchesMonth && matchesDept;
         });
 
+        // 1. Calculate Metrics for Cards
         let totalBudgetSum = 0;
+        let totalOrdersCount = 0;
+        const typeCounts = {};
+        const campaigns = new Set();
+        const depts = new Set();
+
         filteredData.forEach(row => {
-            const cleanBudget = (row.budget || '0').replace(/[^0-9]/g, '');
+            const cleanBudget = (row.budget || '0').toString().replace(/[^0-9]/g, '');
             totalBudgetSum += (parseInt(cleanBudget) || 0);
+            
+            if(row.campaign) campaigns.add(row.campaign);
+            if(row.dept) depts.add(row.dept);
+            
+            let rowOrders = 0;
+            for(let i=1; i<=daysInMonth; i++) {
+                const val = parseInt(row.days[`d${i}`]) || 0;
+                rowOrders += val;
+            }
+            totalOrdersCount += rowOrders;
+            
+            if(rowOrders > 0 && row.type) {
+                typeCounts[row.type] = (typeCounts[row.type] || 0) + rowOrders;
+            }
         });
+
+        // Update Budget Card
         const budgetCell = document.getElementById('planningTotalBudget');
         if(budgetCell) budgetCell.textContent = totalBudgetSum.toLocaleString();
+        
+        const summaryBudget = document.getElementById('planningSummaryTotalBudget');
+        if(summaryBudget) {
+            if (totalBudgetSum >= 1000000) {
+                summaryBudget.textContent = (totalBudgetSum / 1000000).toFixed(1) + 'M';
+            } else {
+                summaryBudget.textContent = totalBudgetSum.toLocaleString();
+            }
+        }
+        
+        const summaryStaffText = document.getElementById('planningSummaryStaffText');
+        if(summaryStaffText) summaryStaffText.textContent = `${campaigns.size} chiến dịch từ ${depts.size} phòng ban`;
 
+        // Update Orders Card
+        const summaryOrdersLabel = document.getElementById('planningSummaryOrdersLabel');
+        if(summaryOrdersLabel) summaryOrdersLabel.textContent = `${totalOrdersCount} ĐƠN HÀNG`;
+        
+        const summaryOrdersBar = document.getElementById('planningSummaryOrdersBar');
+        if(summaryOrdersBar) {
+            // Intensity benchmark: 3 orders/day is "full" for display purpose
+            const intensity = Math.min(100, (totalOrdersCount / (daysInMonth * 3)) * 100);
+            summaryOrdersBar.style.width = `${intensity}%`;
+        }
+        
+        const summaryOrdersText = document.getElementById('planningSummaryOrdersText');
+        if(summaryOrdersText) {
+            const avg = (totalOrdersCount / daysInMonth).toFixed(1);
+            summaryOrdersText.innerHTML = `Trung bình <span class="font-bold text-slate-700">${avg}</span> đơn/ngày trong tháng ${month}.`;
+        }
+
+        // Update Type Card
+        const summaryTopType = document.getElementById('planningSummaryTopType');
+        const summaryTypeDetail = document.getElementById('planningSummaryTypeDetail');
+        if(summaryTopType && summaryTypeDetail) {
+            const sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+            if(sortedTypes.length > 0) {
+                summaryTopType.textContent = sortedTypes[0][0];
+                summaryTypeDetail.textContent = `Chiếm ${Math.round((sortedTypes[0][1]/totalOrdersCount)*100)}% tổng số đơn`;
+            } else {
+                summaryTopType.textContent = 'Chưa có đơn';
+                summaryTypeDetail.textContent = 'Hãy nhập số liệu vào bảng';
+            }
+        }
+
+        // 2. Daily Totals (Footer)
         for(let i=1; i<=daysInMonth; i++) {
             let total = 0;
             filteredData.forEach(row => total += (parseInt(row.days[`d${i}`]) || 0));
