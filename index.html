@@ -2280,7 +2280,7 @@
             if (!snap.exists()) return;
             const oldData = snap.data();
             const userName = sessionStorage.getItem('nevo_user_name') || sessionStorage.getItem('nevo_user') || 'Hệ thống';
-            const changes = [];
+            const changes = {};
             const skipFields = ['updatedAt', 'lastUpdatedBy'];
             const fieldLabels = {
                 'status': 'Trạng thái', 'title': 'Tiêu đề', 'requester': 'Người yêu cầu',
@@ -2292,12 +2292,11 @@
             for (const key in updateData) {
                 if (skipFields.includes(key)) continue;
                 if (JSON.stringify(oldData[key]) !== JSON.stringify(updateData[key])) {
-                    changes.push({
-                        field: key,
+                    changes[key] = {
                         label: fieldLabels[key] || key,
-                        oldValue: (oldData[key] === undefined || oldData[key] === null) ? 'Trống' : oldData[key],
-                        newValue: (updateData[key] === undefined || updateData[key] === null) ? 'Trống' : updateData[key]
-                    });
+                        old_value: (oldData[key] === undefined || oldData[key] === null) ? 'Trống' : oldData[key],
+                        new_value: (updateData[key] === undefined || updateData[key] === null) ? 'Trống' : updateData[key]
+                    };
                 }
             }
             // Thực hiện cập nhật
@@ -2307,7 +2306,8 @@
                 lastUpdatedBy: userName
             });
             // Nếu có thay đổi thực sự, lưu vào order_history
-            if (changes.length > 0) {
+            const changeKeys = Object.keys(changes);
+            if (changeKeys.length > 0) {
                 await window.fsAddDoc(window.fsCollection(window.db, "order_history"), {
                     orderId: orderId,
                     orderCode: oldData.code || 'N/A',
@@ -2317,7 +2317,7 @@
                 });
                 // Log activity
                 if (window.logActivity) {
-                    window.logActivity('update', `Sửa đơn ${oldData.code}`, `Thay đổi ${changes.length} trường`, orderId, oldData.code);
+                    window.logActivity('update', `Sửa đơn ${oldData.code}`, `Thay đổi ${changeKeys.length} trường`, orderId, oldData.code);
                 }
             }
         } catch (e) { console.error("Order History Error:", e); }
@@ -2379,16 +2379,17 @@
                 const dateStr = time.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
                 let changesHtml = '';
-                h.changes.forEach(c => {
+                Object.keys(h.changes || {}).forEach(key => {
+                    const c = h.changes[key];
                     changesHtml += `
                         <div class="mt-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm transition-all hover:border-primary/20">
                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span> ${c.label}
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span> ${c.label || key}
                             </div>
                             <div class="flex items-center gap-3">
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-[11px] text-slate-400 font-medium truncate italic line-through decoration-slate-300">${c.oldValue}</div>
-                                    <div class="text-[12px] text-slate-700 font-bold truncate mt-0.5">${c.newValue}</div>
+                                    <div class="text-[11px] text-slate-400 font-medium truncate italic line-through decoration-slate-300">${c.old_value}</div>
+                                    <div class="text-[12px] text-slate-700 font-bold truncate mt-0.5">${c.new_value}</div>
                                 </div>
                             </div>
                         </div>
@@ -2469,8 +2470,9 @@
             
             // 2. Chuẩn bị dữ liệu khôi phục (lấy giá trị cũ)
             const restoreData = {};
-            historyItem.changes.forEach(c => {
-                restoreData[c.field] = c.oldValue;
+            const changes = historyItem.changes || {};
+            Object.keys(changes).forEach(key => {
+                restoreData[key] = changes[key].old_value;
             });
 
             // 3. Cập nhật đơn hàng gốc
@@ -2478,6 +2480,15 @@
 
             // 4. Tạo bản ghi lịch sử mới ghi nhận hành động khôi phục
             const userName = sessionStorage.getItem('nevo_user') || 'Hệ thống';
+            const restoreChanges = {};
+            Object.keys(changes).forEach(key => {
+                restoreChanges[key] = {
+                    label: changes[key].label || key,
+                    old_value: 'Trạng thái hiện tại',
+                    new_value: changes[key].old_value
+                };
+            });
+
             await window.fsAddDoc(window.fsCollection(window.db, "order_history"), {
                 orderId: orderId,
                 orderCode: historyItem.orderCode || 'N/A',
@@ -2485,12 +2496,7 @@
                 timestamp: window.fsServerTimestamp(),
                 action: 'RESTORE',
                 details: `Khôi phục dữ liệu về phiên bản của ngày ${timeLabel}`,
-                changes: historyItem.changes.map(c => ({
-                    field: c.field,
-                    label: c.label,
-                    oldValue: 'Trạng thái hiện tại', // Giá trị trước khi nhấn nút khôi phục (đơn giản hóa)
-                    newValue: c.oldValue // Giá trị sau khi khôi phục (chính là oldValue của bản ghi cũ)
-                }))
+                changes: restoreChanges
             });
             
             showToast('Khôi phục dữ liệu thành công!', 'success');
