@@ -2622,6 +2622,9 @@
         setTimeout(() => {
             const newEl = document.getElementById('page-' + pageId);
             if (newEl) {
+                newEl.classList.add('active');
+                // Trigger reflow
+                void newEl.offsetWidth;
                 newEl.classList.add('visible');
                 
                 // Trigger page-specific renders
@@ -3709,6 +3712,10 @@
             snapshot.forEach((doc) => {
                 window.allOrdersData.push({ id: doc.id, ...doc.data() });
             });
+            
+            // Render visible components
+            if (currentPage === 'orders') window.renderOrdersTable();
+            if (currentPage === 'dashboard') window.renderDashboardTable();
             
             if (currentPage === 'reports') {
                 window.renderReports();
