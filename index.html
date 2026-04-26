@@ -2363,7 +2363,7 @@
             
             // Chuyển dữ liệu sang mảng và sắp xếp thủ công (Mới nhất lên đầu)
             const historyData = [];
-            snap.forEach(doc => historyData.push(doc.data()));
+            snap.forEach(doc => historyData.push({ id: doc.id, ...doc.data() }));
             historyData.sort((a, b) => {
                 const timeA = a.timestamp?.seconds || new Date(a.timestamp).getTime();
                 const timeB = b.timestamp?.seconds || new Date(b.timestamp).getTime();
@@ -2421,7 +2421,7 @@
                                         </div>
                                     </div>
                                     <!-- Nút Khôi phục -->
-                                    <button onclick="window.confirmRestoreOrder('${orderId}', ${index}, '${timeStr} ${dateStr}')" 
+                                    <button onclick="window.confirmRestoreOrder('${orderId}', '${h.id}', '${timeStr} ${dateStr}')" 
                                             class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all active:scale-95 group/btn border border-slate-100 hover:border-rose-100" 
                                             title="Khôi phục về trước thời điểm này">
                                         <span class="text-[10px] font-bold uppercase tracking-widest hidden group-hover/btn:block">Khôi phục</span>
@@ -2448,39 +2448,59 @@
         }
     };
 
-    window.confirmRestoreOrder = function(orderId, historyIndex, timeLabel) {
-        const historyItem = window.lastFetchedHistory[historyIndex];
-        if (!historyItem) return;
-
-        const isConfirmed = confirm(`BÁO CÁO SẾP:\n\nAnh có chắc chắn muốn khôi phục đơn hàng về trạng thái lúc [${timeLabel}] không?\n\nHành động này sẽ hoàn tác ${historyItem.changes.length} thay đổi mà ${historyItem.operator} đã thực hiện.`);
+    window.confirmRestoreOrder = function(orderId, historyId, timeLabel) {
+        const isConfirmed = confirm(`BÁO CÁO SẾP:\n\nAnh có chắc chắn muốn khôi phục đơn hàng về trạng thái lúc [${timeLabel}] không?\n\nHệ thống sẽ sử dụng các giá trị cũ từ bản ghi này để ghi đè lên dữ liệu hiện tại.`);
         
         if (isConfirmed) {
-            window.applyRestoreOrder(orderId, historyItem);
+            window.applyRestoreOrder(orderId, historyId, timeLabel);
         }
     };
 
-    window.applyRestoreOrder = async function(orderId, historyItem) {
+    window.applyRestoreOrder = async function(orderId, historyId, timeLabel) {
         try {
-            showToast('Đang thực hiện khôi phục...', 'info');
+            showToast('Đang truy xuất bản ghi lịch sử...', 'info');
             
-            // Chuẩn bị dữ liệu khôi phục (lấy giá trị cũ)
+            // 1. Lấy bản ghi lịch sử theo ID
+            const historySnap = await window.fsGetDoc(window.fsDoc(window.db, "order_history", historyId));
+            if (!historySnap.exists()) throw new Error("Không tìm thấy bản ghi lịch sử.");
+            const historyItem = historySnap.data();
+
+            showToast('Đang khôi phục dữ liệu...', 'info');
+            
+            // 2. Chuẩn bị dữ liệu khôi phục (lấy giá trị cũ)
             const restoreData = {};
             historyItem.changes.forEach(c => {
-                // Lưu ý: Chúng ta cần map field name từ label nếu cần, 
-                // nhưng trong log đã lưu field name chính xác (field)
                 restoreData[c.field] = c.oldValue;
             });
 
-            // Thực hiện cập nhật thông qua middleware để lưu tiếp lịch sử hành động khôi phục
-            // Chúng ta thêm một flag hoặc ghi chú đặc biệt cho việc khôi phục
-            await window.updateOrderWithHistory(orderId, restoreData);
+            // 3. Cập nhật đơn hàng gốc
+            await window.fsUpdateDoc(window.fsDoc(window.db, "orders", orderId), restoreData);
+
+            // 4. Tạo bản ghi lịch sử mới ghi nhận hành động khôi phục
+            const userName = sessionStorage.getItem('nevo_user') || 'Hệ thống';
+            await window.fsAddDoc(window.fsCollection(window.db, "order_history"), {
+                orderId: orderId,
+                orderCode: historyItem.orderCode || 'N/A',
+                operator: userName,
+                timestamp: window.fsServerTimestamp(),
+                action: 'RESTORE',
+                details: `Khôi phục dữ liệu về phiên bản của ngày ${timeLabel}`,
+                changes: historyItem.changes.map(c => ({
+                    field: c.field,
+                    label: c.label,
+                    oldValue: 'Trạng thái hiện tại', // Giá trị trước khi nhấn nút khôi phục (đơn giản hóa)
+                    newValue: c.oldValue // Giá trị sau khi khôi phục (chính là oldValue của bản ghi cũ)
+                }))
+            });
             
             showToast('Khôi phục dữ liệu thành công!', 'success');
             
-            // Đóng drawer và làm mới bảng
-            window.closeHistoryDrawer();
+            // 5. Reload lại bảng chính và Refresh Timeline
             if (window.renderOrdersTable) window.renderOrdersTable();
             if (window.renderDashboardTable) window.renderDashboardTable();
+            
+            // Refresh lại Timeline trong Drawer
+            window.openHistoryDrawer(orderId, historyItem.orderCode);
             
         } catch (err) {
             console.error("Lỗi khôi phục:", err);
