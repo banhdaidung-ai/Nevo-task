@@ -3395,7 +3395,7 @@
             const rowBgClass = getRowBgClass(data.status);
             
             fullHtml += `
-                    <tr class="${rowBgClass} transition-colors group relative border-b border-slate-100/50">
+                    <tr data-order-id="${data.id}" class="${rowBgClass} transition-colors group relative border-b border-slate-100/50">
                         <td class="font-headline font-bold text-[13px] text-primary col-code pl-4 cursor-pointer hover:underline decoration-2 underline-offset-4" onclick="openHistoryDrawer('${data.id}', '${data.code}')">
                             <div class="flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-100 transition-opacity">history</span>
@@ -4287,65 +4287,80 @@
         headHtml += `</tr>`;
         scheduleHead.innerHTML = headHtml;
 
-        // Body
-        let staffList = (window.allUsersData || []).filter(u => 
-            ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead', 'Editor'].some(r => (u.role || '').includes(r)) || 
-            (u.department || '').toLowerCase().includes('creative')
-        );
+        // 1. Filter staff based on assignments this week
+        const weekDatesStr = weekDates.map(d => d.toISOString().split('T')[0]);
+        const assignedStaffNames = new Set();
+        (window.allOrdersData || []).forEach(o => {
+            const dateStr = o.deployDate || o.deadline;
+            if (weekDatesStr.includes(dateStr)) {
+                if (o.assignedVideo) assignedStaffNames.add(o.assignedVideo);
+                if (o.assignedPhoto) assignedStaffNames.add(o.assignedPhoto);
+                if (o.stylist) assignedStaffNames.add(o.stylist);
+            }
+        });
+
+        let staffList = (window.allUsersData || []).filter(u => assignedStaffNames.has(u.name));
         
-        // Fallback: Nếu không tìm thấy nhân sự Creative, lấy 5 người đầu tiên để lịch không bị trống
-        if (staffList.length === 0 && window.allUsersData.length > 0) {
-            staffList = window.allUsersData.slice(0, 5);
-        } else {
-            staffList = staffList.slice(0, 8);
-        }
+        // Ensure we always have the 3 core positions if they have tasks
+        staffList = staffList.filter(u => 
+            ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Editor'].some(r => (u.role || '').includes(r))
+        );
 
         let scheduleHtml = '';
-        staffList.forEach(staff => {
-            const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
-            scheduleHtml += `
-                <tr class="hover:bg-slate-50/50 transition-all group">
-                    <td class="py-5 px-6 border-r border-slate-50">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 border border-white shadow-sm ring-2 ring-slate-50">
-                                ${initials}
+        if (staffList.length === 0) {
+            scheduleHtml = '<tr><td colspan="8" class="py-20 text-center"><div class="flex flex-col items-center gap-3 text-slate-300"><span class="material-symbols-outlined text-4xl">person_off</span><p class="text-sm font-bold uppercase tracking-widest">Không có nhân sự được phân công tuần này</p></div></td></tr>';
+        } else {
+            staffList.forEach(staff => {
+                const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
+                scheduleHtml += `
+                    <tr class="hover:bg-slate-50/50 transition-all group">
+                        <td class="py-5 px-6 border-r border-slate-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500 border border-white shadow-sm ring-2 ring-slate-50">
+                                    ${initials}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-[#1e293b] truncate max-w-[120px]">${staff.name}</p>
+                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || 'Nhân sự'}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p class="text-sm font-bold text-[#1e293b] truncate max-w-[120px]">${staff.name}</p>
-                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department || 'Nhân sự'}</p>
-                            </div>
-                        </div>
-                    </td>`;
-            
-            weekDates.forEach(date => {
-                const isToday = date.toDateString() === new Date().toDateString();
-                const cellClass = isToday ? 'bg-primary/5' : '';
-                const dateStr = date.toISOString().split('T')[0];
+                        </td>`;
                 
-                // Lọc đơn hàng: khớp tên nhân sự và (Ngày triển khai hoặc Deadline nếu ngày triển khai trống)
-                const tasks = (window.allOrdersData || []).filter(o => 
-                    (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name) &&
-                    (o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr))
-                );
+                weekDates.forEach(date => {
+                    const isToday = date.toDateString() === new Date().toDateString();
+                    const cellClass = isToday ? 'bg-primary/5' : '';
+                    const dateStr = date.toISOString().split('T')[0];
+                    
+                    const tasks = (window.allOrdersData || []).filter(o => 
+                        (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name) &&
+                        (o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr))
+                    );
 
-                let tasksHtml = '';
-                tasks.forEach(o => {
-                    const statusColor = (o.status === 'Hoàn thành') ? 'border-emerald-500' : (o.status === 'Đang xử lý') ? 'border-amber-500' : 'border-primary';
-                    tasksHtml += `
-                        <div class="mb-2 p-2 rounded-xl bg-white border-l-4 ${statusColor} shadow-sm hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer group/task" onclick="window.openHistoryDrawer('${o.id}', '${o.code}')">
-                            <div class="flex justify-between items-start mb-1">
-                                <p class="text-[9px] font-black text-slate-400 group-hover/task:text-primary">#${o.code}</p>
-                                <span class="w-1.5 h-1.5 rounded-full ${o.status === 'Hoàn thành' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+                    let tasksHtml = '';
+                    tasks.forEach(o => {
+                        const statusColor = (o.status === 'Hoàn thành') ? 'border-emerald-500' : (o.status === 'Đang xử lý') ? 'border-amber-500' : 'border-primary';
+                        const badgeColor = (o.status === 'Hoàn thành') ? 'bg-emerald-500' : (o.status === 'Đang xử lý') ? 'bg-amber-500' : 'bg-primary';
+                        // Strip HTML for tooltip
+                        const cleanContent = (o.content || o.title || '').replace(/<[^>]*>?/gm, '').substring(0, 200);
+                        
+                        tasksHtml += `
+                            <div class="mb-2 p-2 rounded-xl bg-white border-l-4 ${statusColor} shadow-sm hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer group/task" 
+                                 onclick="window.jumpToOrder('${o.id}')"
+                                 title="NỘI DUNG: ${cleanContent}\nTRẠNG THÁI: ${o.status}">
+                                <div class="flex justify-between items-start mb-1">
+                                    <p class="text-[9px] font-black text-slate-400 group-hover/task:text-primary">#${o.code}</p>
+                                    <span class="w-1.5 h-1.5 rounded-full ${badgeColor}"></span>
+                                </div>
+                                <p class="text-[10px] font-bold text-slate-700 leading-tight line-clamp-2">${o.title}</p>
                             </div>
-                            <p class="text-[10px] font-bold text-slate-700 leading-tight line-clamp-2">${o.title}</p>
-                        </div>
-                    `;
+                        `;
+                    });
+                    scheduleHtml += `<td class="py-4 px-3 border-r border-slate-50 ${cellClass}">${tasksHtml}</td>`;
                 });
-                scheduleHtml += `<td class="py-4 px-3 border-r border-slate-50 ${cellClass}">${tasksHtml}</td>`;
+                scheduleHtml += `</tr>`;
             });
-            scheduleHtml += `</tr>`;
-        });
-        scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="8" class="py-20 text-center"><div class="flex flex-col items-center gap-3 text-slate-300"><span class="material-symbols-outlined text-4xl">calendar_today</span><p class="text-sm font-bold uppercase tracking-widest">Chưa có dữ liệu lịch tuần</p></div></td></tr>';
+        }
+        scheduleBody.innerHTML = scheduleHtml;
     };
 
     window.renderMonthlyCalendar = function() {
@@ -4363,7 +4378,7 @@
 
         let html = '';
         for (let i = 0; i < startOffset; i++) {
-            html += `<div class="bg-white/50 min-h-[120px] p-2 border-b border-r border-slate-100"></div>`;
+            html += `<div class="bg-slate-50/30 min-h-[140px] p-2 border-b border-r border-slate-100"></div>`;
         }
 
         for (let d = 1; d <= daysInMonth; d++) {
@@ -4371,26 +4386,52 @@
             const isToday = date.toDateString() === new Date().toDateString();
             const dateStr = date.toISOString().split('T')[0];
             
-            const tasks = window.allOrdersData.filter(o => o.deployDate === dateStr || o.deadline === dateStr);
+            const tasks = (window.allOrdersData || []).filter(o => o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr));
             
+            let tasksHtml = '';
+            tasks.forEach(o => {
+                const badgeColor = (o.status === 'Hoàn thành') ? 'bg-emerald-500' : (o.status === 'Đang xử lý') ? 'bg-amber-500' : 'bg-primary';
+                const cleanContent = (o.content || o.title || '').replace(/<[^>]*>?/gm, '').substring(0, 150);
+                
+                tasksHtml += `
+                    <div class="mb-1 px-1.5 py-0.5 rounded bg-slate-50 border-l-2 border-${badgeColor.replace('bg-','')} flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 transition-all" 
+                         onclick="window.jumpToOrder('${o.id}')"
+                         title="NỘI DUNG: ${cleanContent}\nTRẠNG THÁI: ${o.status}">
+                        <span class="w-1 h-1 rounded-full ${badgeColor} shrink-0"></span>
+                        <span class="text-[9px] font-bold text-slate-600 truncate">${o.code || '...'}</span>
+                    </div>
+                `;
+            });
+
             html += `
-                <div class="bg-white min-h-[120px] p-2 border-b border-r border-slate-100 group relative">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-black ${isToday ? 'bg-primary text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg shadow-primary/20' : 'text-slate-400'}">${d}</span>
-                        ${tasks.length > 0 ? `<span class="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-md">${tasks.length} đơn</span>` : ''}
+                <div class="bg-white min-h-[140px] p-2 border-b border-r border-slate-100 group relative ${isToday ? 'ring-1 ring-inset ring-primary/20 bg-primary/5' : ''}">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-black ${isToday ? 'bg-primary text-white w-6 h-6 flex items-center justify-center rounded-full shadow-md' : 'text-slate-400'}">${d}</span>
+                        ${tasks.length > 5 ? `<span class="text-[8px] font-black text-primary">+${tasks.length - 5}</span>` : ''}
                     </div>
-                    <div class="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
-                        ${tasks.slice(0, 3).map(o => `
-                            <div class="p-1 rounded bg-slate-50 border-l-2 border-slate-200 text-[8px] font-bold text-slate-600 truncate cursor-pointer hover:bg-slate-100" onclick="navigateTo('orders')">
-                                ${o.code}: ${o.title}
-                            </div>
-                        `).join('')}
-                        ${tasks.length > 3 ? `<p class="text-[8px] text-slate-400 font-bold ml-1">+${tasks.length - 3} thêm...</p>` : ''}
+                    <div class="space-y-1 overflow-y-auto max-h-[100px] scrollbar-hide">
+                        ${tasksHtml}
                     </div>
-                </div>
-            `;
+                </div>`;
         }
         grid.innerHTML = html;
+    };
+
+    window.jumpToOrder = function(orderId) {
+        window.navigateTo('orders');
+        setTimeout(() => {
+            const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+            if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                row.classList.add('bg-primary/10', 'ring-2', 'ring-primary/40');
+                row.style.transition = 'all 0.5s ease';
+                setTimeout(() => {
+                    row.classList.remove('bg-primary/10', 'ring-2', 'ring-primary/40');
+                }, 3000);
+            } else {
+                console.log("Order row not found in current view");
+            }
+        }, 600);
     };
 
     window.changeMonth = function(delta) {
