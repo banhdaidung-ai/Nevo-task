@@ -1420,26 +1420,49 @@
                         <h2 class="text-lg font-bold text-[#1e293b] font-headline">Lịch trình làm việc tuần này</h2>
                     </div>
                     <div class="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                        <button class="px-4 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold uppercase tracking-widest shadow-sm">Tuần này</button>
-                        <button class="px-4 py-1.5 rounded-lg text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">Tháng này</button>
+                        <button id="btnScheduleWeek" onclick="switchScheduleView('week')" class="px-4 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all">Tuần này</button>
+                        <button id="btnScheduleMonth" onclick="switchScheduleView('month')" class="px-4 py-1.5 rounded-lg text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">Tháng này</button>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
+                <div id="weeklyScheduleContainer" class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50/30">
-                                <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 min-w-[200px]">Nhân viên</th>
-                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 2</th>
-                                <th class="py-4 px-4 text-[10px] font-black text-primary uppercase tracking-widest border-b border-primary/20 text-center bg-primary/5 w-[15%]">Thứ 3 (Nay)</th>
-                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 4</th>
-                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 5</th>
-                                <th class="py-4 px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center w-[15%]">Thứ 6</th>
-                            </tr>
+                        <thead id="weeklyScheduleHead">
+                            <!-- Dynamic Head -->
                         </thead>
                         <tbody id="weeklyScheduleBody" class="divide-y divide-slate-50">
                             <!-- Dynamic Content -->
                         </tbody>
                     </table>
+                </div>
+                <!-- Monthly Calendar Container -->
+                <div id="monthlyCalendarContainer" class="hidden p-6">
+                    <div id="calendarHeader" class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-4">
+                            <h3 id="calendarMonthTitle" class="text-xl font-black text-[#1e293b] font-headline uppercase tracking-tight">Tháng 04 / 2026</h3>
+                            <div class="flex gap-1">
+                                <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
+                                <button onclick="changeMonth(1)" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đơn hàng</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-primary/20 border border-primary/30"></span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hôm nay</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-2xl overflow-hidden">
+                        ${['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'].map(day => `
+                            <div class="bg-slate-50 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">${day}</div>
+                        `).join('')}
+                        <div id="calendarGrid" class="contents">
+                            <!-- Calendar Days -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -4090,6 +4113,162 @@
     };
 
     // ===== REPORTS & PERFORMANCE LOGIC =====
+    let currentCalendarDate = new Date();
+    let currentScheduleView = 'week';
+
+    window.switchScheduleView = function(view) {
+        currentScheduleView = view;
+        const btnWeek = document.getElementById('btnScheduleWeek');
+        const btnMonth = document.getElementById('btnScheduleMonth');
+        const weekCont = document.getElementById('weeklyScheduleContainer');
+        const monthCont = document.getElementById('monthlyCalendarContainer');
+
+        if (!btnWeek) return;
+
+        if (view === 'week') {
+            btnWeek.classList.add('bg-primary', 'text-white');
+            btnWeek.classList.remove('text-slate-400');
+            btnMonth.classList.remove('bg-primary', 'text-white');
+            btnMonth.classList.add('text-slate-400');
+            weekCont.classList.remove('hidden');
+            monthCont.classList.add('hidden');
+            window.renderWeeklySchedule();
+        } else {
+            btnMonth.classList.add('bg-primary', 'text-white');
+            btnMonth.classList.remove('text-slate-400');
+            btnWeek.classList.remove('bg-primary', 'text-white');
+            btnWeek.classList.add('text-slate-400');
+            monthCont.classList.remove('hidden');
+            weekCont.classList.add('hidden');
+            window.renderMonthlyCalendar();
+        }
+    };
+
+    window.renderWeeklySchedule = function() {
+        const scheduleBody = document.getElementById('weeklyScheduleBody');
+        const scheduleHead = document.getElementById('weeklyScheduleHead');
+        if (!scheduleBody || !scheduleHead) return;
+
+        // Dynamic Header with real dates
+        const now = new Date();
+        const currentDay = now.getDay(); 
+        const diff = now.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+        const monday = new Date(new Date().setDate(diff));
+        
+        const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+        let headHtml = `<tr class="bg-slate-50/30">
+            <th class="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 min-w-[200px]">Nhân viên</th>`;
+        
+        const weekDates = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            weekDates.push(d);
+            const isToday = d.toDateString() === new Date().toDateString();
+            const colorClass = isToday ? 'text-primary' : 'text-slate-400';
+            const borderClass = isToday ? 'border-primary/20 bg-primary/5' : 'border-slate-100';
+            headHtml += `<th class="py-4 px-4 text-[10px] font-black ${colorClass} uppercase tracking-widest border-b ${borderClass} text-center w-[12%]">
+                ${days[i]}<br><span class="text-[9px] opacity-60">${d.getDate()}/${d.getMonth() + 1}</span>
+            </th>`;
+        }
+        headHtml += `</tr>`;
+        scheduleHead.innerHTML = headHtml;
+
+        // Body
+        const staffList = (window.allUsersData || []).filter(u => ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead'].includes(u.role) || u.department === 'Creative').slice(0, 5);
+        let scheduleHtml = '';
+        staffList.forEach(staff => {
+            const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
+            scheduleHtml += `
+                <tr class="hover:bg-slate-50/50 transition-all group">
+                    <td class="py-5 px-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 border border-white shadow-sm ring-2 ring-slate-50">
+                                ${initials}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-[#1e293b]">${staff.name}</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department}</p>
+                            </div>
+                        </div>
+                    </td>`;
+            
+            weekDates.forEach(date => {
+                const isToday = date.toDateString() === new Date().toDateString();
+                const cellClass = isToday ? 'bg-primary/5' : '';
+                const dateStr = date.toISOString().split('T')[0];
+                
+                const tasks = window.allOrdersData.filter(o => 
+                    (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name) &&
+                    (o.deployDate === dateStr || o.deadline === dateStr)
+                );
+
+                let tasksHtml = '';
+                tasks.forEach(o => {
+                    tasksHtml += `
+                        <div class="mb-1.5 p-2 rounded-lg bg-white border-l-2 border-primary shadow-sm hover:scale-[1.02] transition-transform cursor-pointer" onclick="navigateTo('orders')">
+                            <p class="text-[9px] font-black text-primary truncate">#${o.code}</p>
+                            <p class="text-[10px] font-bold text-slate-700 truncate">${o.title}</p>
+                        </div>
+                    `;
+                });
+                scheduleHtml += `<td class="py-4 px-4 ${cellClass}">${tasksHtml}</td>`;
+            });
+            scheduleHtml += `</tr>`;
+        });
+        scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="8" class="py-10 text-center text-slate-400 font-medium">Chưa có dữ liệu lịch tuần</td></tr>';
+    };
+
+    window.renderMonthlyCalendar = function() {
+        const grid = document.getElementById('calendarGrid');
+        const title = document.getElementById('calendarMonthTitle');
+        if (!grid || !title) return;
+
+        const year = currentCalendarDate.getFullYear();
+        const month = currentCalendarDate.getMonth();
+        title.textContent = `Tháng ${month + 1} / ${year}`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+
+        let html = '';
+        for (let i = 0; i < startOffset; i++) {
+            html += `<div class="bg-white/50 min-h-[120px] p-2 border-b border-r border-slate-100"></div>`;
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(year, month, d);
+            const isToday = date.toDateString() === new Date().toDateString();
+            const dateStr = date.toISOString().split('T')[0];
+            
+            const tasks = window.allOrdersData.filter(o => o.deployDate === dateStr || o.deadline === dateStr);
+            
+            html += `
+                <div class="bg-white min-h-[120px] p-2 border-b border-r border-slate-100 group relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-black ${isToday ? 'bg-primary text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg shadow-primary/20' : 'text-slate-400'}">${d}</span>
+                        ${tasks.length > 0 ? `<span class="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-md">${tasks.length} đơn</span>` : ''}
+                    </div>
+                    <div class="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
+                        ${tasks.slice(0, 3).map(o => `
+                            <div class="p-1 rounded bg-slate-50 border-l-2 border-slate-200 text-[8px] font-bold text-slate-600 truncate cursor-pointer hover:bg-slate-100" onclick="navigateTo('orders')">
+                                ${o.code}: ${o.title}
+                            </div>
+                        `).join('')}
+                        ${tasks.length > 3 ? `<p class="text-[8px] text-slate-400 font-bold ml-1">+${tasks.length - 3} thêm...</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        grid.innerHTML = html;
+    };
+
+    window.changeMonth = function(delta) {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+        window.renderMonthlyCalendar();
+    };
+
     window.renderReports = function() {
         if (!window.allOrdersData) return;
 
@@ -4116,52 +4295,8 @@
         if (statOT) statOT.textContent = onTimeRate + '%';
         if (statComp) statComp.textContent = completedOrders.length;
 
-        // 2. Weekly Schedule (Mocking for top creators/assignees)
-        const scheduleBody = document.getElementById('weeklyScheduleBody');
-        if (scheduleBody) {
-            const staffList = (window.allUsersData || []).filter(u => ['Video Editor', 'Photographer', 'Stylist', 'Admin', 'Lead'].includes(u.role) || u.department === 'Creative').slice(0, 5);
-            
-            let scheduleHtml = '';
-            staffList.forEach(staff => {
-                const initials = staff.name ? staff.name.split(' ').map(n => n[0]).join('') : '??';
-                scheduleHtml += `
-                    <tr class="hover:bg-slate-50/50 transition-all group">
-                        <td class="py-5 px-6">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 border border-white shadow-sm ring-2 ring-slate-50">
-                                    ${initials}
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-[#1e293b]">${staff.name}</p>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${staff.role || staff.department}</p>
-                                </div>
-                            </div>
-                        </td>
-                        ${[0, 1, 2, 3, 4].map(day => {
-                            const isToday = day === 1; 
-                            const cellClass = isToday ? 'bg-primary/5' : '';
-                            const mockOrders = window.allOrdersData.filter(o => 
-                                (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name)
-                            ).slice(0, 2);
-
-                            let tasksHtml = '';
-                            if (mockOrders.length > 0 && Math.random() > 0.5) {
-                                mockOrders.forEach(o => {
-                                    tasksHtml += `
-                                        <div class="mb-1.5 p-2 rounded-lg bg-rose-50 border-l-2 border-rose-400 shadow-sm hover:scale-[1.02] transition-transform cursor-pointer">
-                                            <p class="text-[9px] font-black text-rose-600 truncate">#${o.code}</p>
-                                            <p class="text-[10px] font-bold text-slate-700 truncate">${o.category || 'Công việc'}</p>
-                                        </div>
-                                    `;
-                                });
-                            }
-                            return `<td class="py-4 px-4 ${cellClass}">${tasksHtml}</td>`;
-                        }).join('')}
-                    </tr>
-                `;
-            });
-            scheduleBody.innerHTML = scheduleHtml || '<tr><td colspan="6" class="py-10 text-center text-slate-400 font-medium">Chưa có lịch phân bổ tuần này</td></tr>';
-        }
+        // 2. Schedule Logic
+        window.switchScheduleView(currentScheduleView);
 
         // 3. Leaderboard
         const leaderboardBody = document.getElementById('leaderboardBody');
