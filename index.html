@@ -4352,13 +4352,12 @@
                     tasks.forEach(o => {
                         const statusColor = (o.status === 'Hoàn thành') ? 'border-emerald-500' : (o.status === 'Đang xử lý') ? 'border-amber-500' : 'border-primary';
                         const badgeColor = (o.status === 'Hoàn thành') ? 'bg-emerald-500' : (o.status === 'Đang xử lý') ? 'bg-amber-500' : 'bg-primary';
-                        // Strip HTML for tooltip
-                        const cleanContent = (o.content || o.title || '').replace(/<[^>]*>?/gm, '').substring(0, 200);
                         
                         tasksHtml += `
                             <div class="mb-2 p-2 rounded-xl bg-white border-l-4 ${statusColor} shadow-sm hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer group/task" 
                                  onclick="window.jumpToOrder('${o.id}')"
-                                 title="NỘI DUNG: ${cleanContent}\nTRẠNG THÁI: ${o.status}">
+                                 onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(o.title || '-')}', '${encodeURIComponent(o.content || o.title || '-')}')"
+                                 onmouseleave="window.hidePremiumTooltip()">
                                 <div class="flex justify-between items-start mb-1">
                                     <p class="text-[9px] font-black text-slate-400 group-hover/task:text-primary">#${o.code}</p>
                                     <span class="w-1.5 h-1.5 rounded-full ${badgeColor}"></span>
@@ -4404,12 +4403,12 @@
             let tasksHtml = '';
             tasks.forEach(o => {
                 const badgeColor = (o.status === 'Hoàn thành') ? 'bg-emerald-500' : (o.status === 'Đang xử lý') ? 'bg-amber-500' : 'bg-primary';
-                const cleanContent = (o.content || o.title || '').replace(/<[^>]*>?/gm, '').substring(0, 150);
                 
                 tasksHtml += `
                     <div class="mb-1 px-1.5 py-0.5 rounded bg-slate-50 border-l-2 border-${badgeColor.replace('bg-','')} flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 transition-all" 
                          onclick="window.jumpToOrder('${o.id}')"
-                         title="NỘI DUNG: ${cleanContent}\nTRẠNG THÁI: ${o.status}">
+                         onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(o.code + ': ' + o.title)}', '${encodeURIComponent(o.content || o.title || '-')}')"
+                         onmouseleave="window.hidePremiumTooltip()">
                         <span class="w-1 h-1 rounded-full ${badgeColor} shrink-0"></span>
                         <span class="text-[9px] font-bold text-slate-600 truncate">${o.code || '...'}</span>
                     </div>
