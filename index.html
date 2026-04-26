@@ -1470,43 +1470,31 @@
                 </div>
             </div>
 
-            <!-- Optimization Sidebar -->
-            <div class="bg-[#1e293b] rounded-3xl p-8 text-white flex flex-col justify-between relative overflow-hidden shadow-xl animate-fade-in-up delay-200">
+            <!-- Category Statistics Sidebar -->
+            <div id="categoryStatsSidebar" class="bg-[#1e293b] rounded-3xl p-8 text-white flex flex-col relative overflow-hidden shadow-xl animate-fade-in-up delay-200 min-h-[500px]">
                 <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
                 <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-secondary/10 rounded-full blur-3xl"></div>
                 
-                <div class="relative z-10">
+                <div class="relative z-10 h-full flex flex-col">
                     <div class="flex items-center gap-2 mb-6">
-                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-400">AI Intelligence</span>
+                        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Data Analytics</span>
                     </div>
-                    <h3 class="text-2xl font-bold font-headline mb-4 tracking-tight leading-tight">Gợi ý tối ưu hóa</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed mb-10 font-medium">Dựa trên dữ liệu 7 ngày qua, đội ngũ đang có dấu hiệu quá tải vào khung giờ 14:00 - 16:00 mỗi ngày.</p>
+                    <h3 class="text-2xl font-bold font-headline mb-2 tracking-tight leading-tight">Thống kê thể loại</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-8 font-medium">Tỷ lệ phân bổ các loại hình dịch vụ trong tổng số đơn hàng.</p>
                     
-                    <div class="space-y-8">
-                        <div class="flex gap-4 group cursor-pointer">
-                            <div class="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center shrink-0 border border-rose-500/30 group-hover:scale-110 transition-transform">
-                                <span class="material-symbols-outlined text-rose-500 text-[24px]">bolt</span>
-                            </div>
-                            <div>
-                                <p class="text-[15px] font-bold mb-1 group-hover:text-rose-400 transition-colors">Tăng cường nhân sự ca chiều</p>
-                                <p class="text-xs text-slate-400 leading-relaxed">Phân bổ thêm 2 nhân viên Part-time cho khu vực đóng gói.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-4 group cursor-pointer">
-                            <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30 group-hover:scale-110 transition-transform">
-                                <span class="material-symbols-outlined text-emerald-500 text-[24px]">verified</span>
-                            </div>
-                            <div>
-                                <p class="text-[15px] font-bold mb-1 group-hover:text-emerald-400 transition-colors">Khen thưởng nhân sự</p>
-                                <p class="text-xs text-slate-400 leading-relaxed">Top 3 nhân sự đạt cột mốc 100 đơn hoàn thành đúng hạn.</p>
-                            </div>
+                    <div id="categoryStatsList" class="space-y-6 flex-1">
+                        <!-- Progress bars will be injected here -->
+                        <div class="flex flex-col items-center justify-center h-full py-10 opacity-20">
+                            <span class="material-symbols-outlined text-4xl mb-2">analytics</span>
+                            <p class="text-[10px] font-black uppercase tracking-widest">Đang tải dữ liệu...</p>
                         </div>
                     </div>
+                    
+                    <button class="w-full py-4 bg-white/5 border border-white/10 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all mt-8 active:scale-95" onclick="navigateTo('reports')">
+                        Xem báo cáo chi tiết
+                    </button>
                 </div>
-                <button class="relative z-10 w-full py-4 bg-white text-[#1e293b] font-black text-[11px] uppercase tracking-widest rounded-2xl hover:shadow-lg hover:shadow-white/5 transition-all mt-10 active:scale-95">
-                    Xem chi tiết báo cáo
-                </button>
             </div>
         </div>
 
@@ -3625,7 +3613,10 @@
             // Render visible components
             if (currentPage === 'orders') window.renderOrdersTable();
             if (currentPage === 'dashboard') window.renderDashboardTable();
-            if (currentPage === 'reports') window.renderReports();
+            if (currentPage === 'reports') {
+                window.renderReports();
+                if (typeof window.renderCategoryStats === 'function') window.renderCategoryStats();
+            }
             if (currentPage === 'planning') {
                 if (typeof window.renderPlanningReport === 'function') window.renderPlanningReport();
             }
@@ -4298,6 +4289,61 @@
     window.changeMonth = function(delta) {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
         window.renderMonthlyCalendar();
+    };
+
+    window.renderCategoryStats = function() {
+        const container = document.getElementById('categoryStatsList');
+        if (!container || !window.allOrdersData) return;
+
+        const categories = {};
+        let total = 0;
+        
+        window.allOrdersData.forEach(o => {
+            const cat = o.category || 'Khác';
+            categories[cat] = (categories[cat] || 0) + 1;
+            total++;
+        });
+
+        if (total === 0) {
+            container.innerHTML = '<div class="text-slate-500 text-center py-10 font-bold uppercase tracking-widest text-[10px]">Chưa có dữ liệu</div>';
+            return;
+        }
+
+        // Sort categories by count desc
+        const sortedCats = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+        
+        const colors = {
+            'Video': 'bg-rose-500',
+            'Hình Ảnh': 'bg-blue-500',
+            'Livestream': 'bg-emerald-500',
+            'Giả Live': 'bg-amber-500',
+            'Khác': 'bg-slate-500'
+        };
+
+        let html = '';
+        sortedCats.forEach(([name, count]) => {
+            const percent = Math.round((count / total) * 100);
+            const color = colors[name] || 'bg-primary';
+            html += `
+                <div class="space-y-2 group/cat cursor-default">
+                    <div class="flex justify-between items-end">
+                        <span class="text-sm font-bold group-hover/cat:text-primary transition-colors">${name}</span>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-[10px] font-black text-white/40 uppercase tracking-tighter">${count} đơn</span>
+                            <span class="text-lg font-black text-white">${percent}%</span>
+                        </div>
+                    </div>
+                    <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full ${color} rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.3)]" style="width: 0%" id="cat-bar-${name.replace(/\s+/g, '-')}"></div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const bar = document.getElementById(`cat-bar-${name.replace(/\s+/g, '-')}`);
+                if (bar) bar.style.width = `${percent}%`;
+            }, 100);
+        });
+        container.innerHTML = html;
     };
 
     window.renderReports = function() {
