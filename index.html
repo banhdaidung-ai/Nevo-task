@@ -1707,7 +1707,18 @@
                             
                             <!-- Dept/Cat Filter -->
                             <div class="flex items-center gap-3">
-                                <select id="budgetFilterDept" onchange="window.renderBudgetReport()" class="bg-white border-slate-200 rounded-2xl px-4 py-2 text-[11px] font-bold text-slate-600 focus:ring-primary/20 outline-none shadow-sm min-w-[160px]">
+                                <select id="budgetFilterMonth" onchange="window.renderBudgetReport()" class="bg-white border-slate-200 rounded-2xl px-4 py-2 text-[11px] font-bold text-slate-600 focus:ring-primary/20 outline-none shadow-sm min-w-[100px]">
+                                    <option value="all">Tất cả tháng</option>
+                                    <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+                                    <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                                    <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+                                    <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                                </select>
+                                <select id="budgetFilterYear" onchange="window.renderBudgetReport()" class="bg-white border-slate-200 rounded-2xl px-4 py-2 text-[11px] font-bold text-slate-600 focus:ring-primary/20 outline-none shadow-sm min-w-[90px]">
+                                    <option value="all">Tất cả năm</option>
+                                    <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
+                                </select>
+                                <select id="budgetFilterDept" onchange="window.renderBudgetReport()" class="bg-white border-slate-200 rounded-2xl px-4 py-2 text-[11px] font-bold text-slate-600 focus:ring-primary/20 outline-none shadow-sm min-w-[150px]">
                                     <option value="all">Tất cả phòng ban</option>
                                 </select>
                                 <select id="budgetFilterCategory" onchange="window.renderBudgetReport()" class="bg-white border-slate-200 rounded-2xl px-4 py-2 text-[11px] font-bold text-slate-600 focus:ring-primary/20 outline-none shadow-sm min-w-[160px]">
@@ -1934,13 +1945,13 @@
                                         <th class="py-5 px-4 text-center">
                                             <div class="flex items-center justify-center gap-1">
                                                 Loại chi
-                                                <button onclick="window.manageFinanceDropdown('type')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
+                                                <button onclick="window.manageFinanceDropdown('types')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
                                             </div>
                                         </th>
                                         <th class="py-5 px-4 text-center">
                                             <div class="flex items-center justify-center gap-1">
                                                 Người chi
-                                                <button onclick="window.manageFinanceDropdown('spender')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
+                                                <button onclick="window.manageFinanceDropdown('spenders')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
                                             </div>
                                         </th>
                                         <th id="finCategoryHeaderEnd" class="hidden"></th>
@@ -4368,6 +4379,10 @@
             if (currentPage === 'planning') {
                 if (typeof window.renderPlanningReport === 'function') window.renderPlanningReport();
             }
+            if (currentPage === 'budgetReport') {
+                if (typeof window.renderBudgetReport === 'function') window.renderBudgetReport();
+                if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
+            }
         });
 
         // --- 4. ACTIVITIES SYNC ---
@@ -6440,79 +6455,47 @@
         }
     };
 
-    // ====== BUDGET REPORT LOGIC ======
-    window.budgetPeriod = 'month';
-    window.budgetChart = null;
-
-    window.setBudgetPeriod = function(p) {
-        window.budgetPeriod = p;
-        const btnM = document.getElementById('btnBudgetMonth');
-        const btnQ = document.getElementById('btnBudgetQuarter');
-        if(btnM && btnQ) {
-            btnM.className = p === 'month' 
-                ? 'px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold shadow-lg shadow-primary/20 transition-all'
-                : 'px-6 py-2.5 rounded-xl text-slate-500 text-xs font-bold hover:bg-slate-50 transition-all';
-            btnQ.className = p === 'quarter' 
-                ? 'px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold shadow-lg shadow-primary/20 transition-all'
-                : 'px-6 py-2.5 rounded-xl text-slate-500 text-xs font-bold hover:bg-slate-50 transition-all';
-        }
-        window.renderBudgetReport();
     };
 
+
     window.renderBudgetReport = function() {
-        const now = new Date();
-        const currentMonth = now.getMonth(); 
-        const currentYear = now.getFullYear();
-        const currentQuarter = Math.floor(currentMonth / 3);
+        const mEl = document.getElementById('budgetFilterMonth');
+        const yEl = document.getElementById('budgetFilterYear');
+        const dEl = document.getElementById('budgetFilterDept');
+        const cEl = document.getElementById('budgetFilterCategory');
+        
+        const filterMonth = mEl ? mEl.value : 'all';
+        const filterYear = yEl ? yEl.value : 'all';
+        const filterDept = dEl ? dEl.value : 'all';
+        const filterCat = cEl ? cEl.value : 'all';
 
-        // Khởi tạo danh sách phòng ban cho bộ lọc nếu chưa có
-        const deptFilter = document.getElementById('budgetFilterDept');
-        if (deptFilter && deptFilter.options.length <= 1) {
-            let depts = [];
-            if (window.departmentsData && window.departmentsData.length > 0) {
-                depts = window.departmentsData.map(d => d.name || d.id);
-            } else if (window.allOrdersData) {
-                // Dự phòng: lấy từ các đơn hàng hiện có
-                depts = [...new Set(window.allOrdersData.map(o => o.department).filter(Boolean))].sort();
-            }
-
-            if (depts.length > 0) {
-                depts.forEach(name => {
-                    const opt = document.createElement('option');
-                    opt.value = name;
-                    opt.textContent = name;
-                    deptFilter.appendChild(opt);
-                });
-            }
+        // Initialize Dept Filter if empty
+        if (dEl && dEl.options.length <= 1) {
+            const depts = [...new Set((window.allOrdersData || []).map(o => o.department).filter(Boolean))].sort();
+            depts.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name; opt.textContent = name;
+                dEl.appendChild(opt);
+            });
         }
 
-        const selectedDept = document.getElementById('budgetFilterDept')?.value || 'all';
-        const selectedCat = document.getElementById('budgetFilterCategory')?.value || 'all';
-
-        const data = (window.allOrdersData || []).filter(o => {
+        const orders = window.allOrdersData || [];
+        const data = orders.filter(o => {
             const cost = Number(o.totalCost || 0);
             if (cost <= 0) return false;
             
-            // Lọc theo thời gian
-            const d = o.deadline ? new Date(o.deadline) : null;
-            if (!d) return false;
-            let timeMatch = false;
-            if (window.budgetPeriod === 'month') {
-                timeMatch = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-            } else {
-                const q = Math.floor(d.getMonth() / 3);
-                timeMatch = q === currentQuarter && d.getFullYear() === currentYear;
-            }
-            if (!timeMatch) return false;
+            const d = o.deadline ? new Date(o.deadline) : (o.orderDate ? new Date(o.orderDate) : null);
+            if (!d || isNaN(d.getTime())) return false;
 
-            // Lọc theo Phòng ban
-            if (selectedDept !== 'all' && o.department !== selectedDept) return false;
-
-            // Lọc theo Thể loại
-            if (selectedCat !== 'all' && o.category !== selectedCat) return false;
-
-            return true;
+            const matchesMonth = filterMonth === 'all' || (d.getMonth() + 1 === parseInt(filterMonth));
+            const matchesYear = filterYear === 'all' || (d.getFullYear() === parseInt(filterYear));
+            const matchesDept = filterDept === 'all' || o.department === filterDept;
+            const matchesCat = filterCat === 'all' || o.category === filterCat;
+            
+            return matchesMonth && matchesYear && matchesDept && matchesCat;
         });
+
+        console.log(`Budget Report: ${data.length}/${orders.length} orders match filters`);
 
         let total = 0;
         let basicTotal = 0;
@@ -6888,8 +6871,9 @@
             const types = []; const spenders = [];
             snap.forEach(d => {
                 const data = d.data();
-                if (data.type === 'expenseType') types.push({id: d.id, val: data.val});
-                if (data.type === 'spender') spenders.push({id: d.id, val: data.val});
+                const t = (data.type || "").toLowerCase();
+                if (t.includes('type')) types.push({id: d.id, val: data.val});
+                else if (t.includes('spend')) spenders.push({id: d.id, val: data.val});
             });
             window.financeConfigs = { types, spenders };
             if (typeof populateFinanceSelects === 'function') populateFinanceSelects();
@@ -7314,8 +7298,10 @@
     // Config Management
     window.manageFinanceDropdown = function(type) {
         try {
-            console.log("manageFinanceDropdown called with type:", type);
-            window.currentFinConfigType = type; // Store 'types' or 'spenders'
+            // Normalize to plural
+            const normalizedType = (type === 'type' || type === 'types') ? 'types' : 'spenders';
+            console.log("manageFinanceDropdown called with type:", type, "-> normalized:", normalizedType);
+            window.currentFinConfigType = normalizedType; 
             
             const title = (type === 'types' || type === 'type') ? 'Quản lý Loại chi phí' : 'Quản lý Người chi';
             const icon = (type === 'types' || type === 'type') ? 'category' : 'person';
