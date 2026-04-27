@@ -243,10 +243,27 @@
             flex: 1; min-height: unset !important;
         }
         
-        /* List Styles for Editor */
-        #orderEditor ul { list-style-type: disc; padding-left: 2rem; margin: 1rem 0; }
-        #orderEditor ol { list-style-type: decimal; padding-left: 2rem; margin: 1rem 0; }
-        #orderEditor li { margin-bottom: 0.25rem; }
+        /* List Styles for Editor - Universal fix for Create and Edit */
+        [contenteditable="true"] ul, 
+        .editor-container [contenteditable="true"] ul { 
+            list-style-type: disc !important; 
+            padding-left: 2.5rem !important; 
+            margin: 1rem 0 !important; 
+            display: block !important;
+        }
+        [contenteditable="true"] ol,
+        .editor-container [contenteditable="true"] ol { 
+            list-style-type: decimal !important; 
+            padding-left: 2.5rem !important; 
+            margin: 1rem 0 !important; 
+            display: block !important;
+        }
+        [contenteditable="true"] li,
+        .editor-container [contenteditable="true"] li { 
+            display: list-item !important;
+            margin-bottom: 0.25rem !important; 
+            list-style-position: outside !important;
+        }
 
         /* Person Bage Styles */
         .name-badge {
