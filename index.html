@@ -1992,87 +1992,90 @@
                 </div>
             </div>
         </div>
-            <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <button onclick="navigateTo('reports')" class="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
-                            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        <div id="page-detailed-report" class="page hidden">
+            <div class="max-w-full mx-auto px-4 md:px-8 py-8 md:py-12">
+                <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <button onclick="navigateTo('reports')" class="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+                                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                            </button>
+                            <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-primary">Advanced Analytics</span>
+                        </div>
+                        <h1 class="text-3xl font-black font-headline text-[#131b2e] tracking-tight">Báo cáo Phân tích Chi tiết</h1>
+                        <p class="text-on-surface-variant font-medium mt-1">Dữ liệu tổng hợp và phân tích xu hướng vận hành.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="window.print()" class="px-5 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">print</span> Xuất PDF
                         </button>
-                        <span class="text-[11px] font-extrabold uppercase tracking-[0.2em] text-primary">Advanced Analytics</span>
+                        <button class="px-5 py-3 bg-primary text-white rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-primary/20 transition-all flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">calendar_month</span> 30 ngày qua
+                        </button>
                     </div>
-                    <h1 class="text-3xl font-black font-headline text-[#131b2e] tracking-tight">Báo cáo Phân tích Chi tiết</h1>
-                    <p class="text-on-surface-variant font-medium mt-1">Dữ liệu tổng hợp và phân tích xu hướng vận hành.</p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="window.print()" class="px-5 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
-                        <span class="material-symbols-outlined text-[18px]">print</span> Xuất PDF
-                    </button>
-                    <button class="px-5 py-3 bg-primary text-white rounded-2xl text-sm font-bold hover:shadow-lg hover:shadow-primary/20 transition-all flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">calendar_month</span> 30 ngày qua
-                    </button>
-                </div>
-            </div>
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tổng đơn hoàn thành</p>
-                    <div class="flex items-end gap-2">
-                        <h4 id="det-total-done" class="text-3xl font-black text-slate-800">0</h4>
-                        <span class="text-[11px] font-bold text-emerald-500 mb-1">+12%</span>
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tổng đơn hoàn thành</p>
+                        <div class="flex items-end gap-2">
+                            <h4 id="det-total-done" class="text-3xl font-black text-slate-800">0</h4>
+                            <span class="text-[11px] font-bold text-emerald-500 mb-1">+12%</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Thời gian TB / Đơn</p>
+                        <div class="flex items-end gap-2">
+                            <h4 id="det-avg-time" class="text-3xl font-black text-slate-800">2.4</h4>
+                            <span class="text-[10px] font-bold text-slate-500 mb-1">ngày</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Hiệu suất Stylist</p>
+                        <div class="flex items-end gap-2">
+                            <h4 id="det-stylist-rate" class="text-3xl font-black text-slate-800">92%</h4>
+                            <span class="text-[11px] font-bold text-emerald-500 mb-1">↑</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tỷ lệ đúng Deadline</p>
+                        <div class="flex items-end gap-2">
+                            <h4 id="det-deadline-rate" class="text-3xl font-black text-slate-800">88%</h4>
+                            <span class="text-[11px] font-bold text-rose-500 mb-1">↓</span>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Thời gian TB / Đơn</p>
-                    <div class="flex items-end gap-2">
-                        <h4 id="det-avg-time" class="text-3xl font-black text-slate-800">2.4</h4>
-                        <span class="text-[10px] font-bold text-slate-500 mb-1">ngày</span>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Hiệu suất Stylist</p>
-                    <div class="flex items-end gap-2">
-                        <h4 id="det-stylist-rate" class="text-3xl font-black text-slate-800">92%</h4>
-                        <span class="text-[11px] font-bold text-emerald-500 mb-1">↑</span>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tỷ lệ đúng Deadline</p>
-                    <div class="flex items-end gap-2">
-                        <h4 id="det-deadline-rate" class="text-3xl font-black text-slate-800">88%</h4>
-                        <span class="text-[11px] font-bold text-rose-500 mb-1">↓</span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Charts Row 1 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">trending_up</span> Xu hướng Đơn hàng
-                    </h3>
-                    <div class="h-[300px] w-full">
-                        <canvas id="chartTrend"></canvas>
+                <!-- Charts Row 1 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">trending_up</span> Xu hướng Đơn hàng
+                        </h3>
+                        <div class="h-[300px] w-full">
+                            <canvas id="chartTrend"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">pie_chart</span> Cơ cấu Thể loại
+                        </h3>
+                        <div class="h-[300px] w-full flex justify-center">
+                            <canvas id="chartCategory"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">pie_chart</span> Cơ cấu Thể loại
-                    </h3>
-                    <div class="h-[300px] w-full flex justify-center">
-                        <canvas id="chartCategory"></canvas>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Charts Row 2 -->
-            <div class="grid grid-cols-1 gap-8 mb-10">
-                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">groups</span> Hiệu suất Nhân sự (Đơn hoàn thành)
-                    </h3>
-                    <div class="h-[400px] w-full">
-                        <canvas id="chartStaff"></canvas>
+                <!-- Charts Row 2 -->
+                <div class="grid grid-cols-1 gap-8 mb-10">
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">groups</span> Hiệu suất Nhân sự (Đơn hoàn thành)
+                        </h3>
+                        <div class="h-[400px] w-full">
+                            <canvas id="chartStaff"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
