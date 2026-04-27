@@ -234,13 +234,12 @@
         #orderEditor:focus {
             outline: none;
         }
-        /* Fullscreen Editor */
         .editor-container.fullscreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 10000; background: white; padding: 2rem;
             display: flex; flex-direction: column;
         }
-        .editor-container.fullscreen #orderEditor {
+        .editor-container.fullscreen [contenteditable="true"] {
             flex: 1; min-height: unset !important;
         }
         
@@ -5117,8 +5116,16 @@
     });
 
     // ===== Rich Text Editor Logic =====
+    window.lastFocusedEditorId = 'orderEditor';
+    
+    document.addEventListener('focusin', (e) => {
+        if (e.target && e.target.contentEditable === 'true') {
+            window.lastFocusedEditorId = e.target.id;
+        }
+    });
+
     window.editorCmd = function(cmd, val = null) {
-        const editor = document.getElementById('orderEditor');
+        const editor = document.getElementById(window.lastFocusedEditorId);
         if (editor) editor.focus();
         document.execCommand(cmd, false, val);
     };
@@ -5127,10 +5134,14 @@
         const container = document.getElementById(containerId);
         if (container) {
             container.classList.toggle('fullscreen');
-            const icon = container.querySelector('[onclick*="toggleEditorFullscreen"] span');
-            if (icon) {
+            // Cập nhật icon trên tất cả các nút fullscreen trong container này
+            const icons = container.querySelectorAll('[onclick*="toggleEditorFullscreen"] span');
+            icons.forEach(icon => {
                 icon.textContent = container.classList.contains('fullscreen') ? 'fullscreen_exit' : 'fullscreen';
-            }
+            });
+            
+            // Khóa cuộn trang khi ở chế độ toàn màn hình
+            document.body.style.overflow = container.classList.contains('fullscreen') ? 'hidden' : '';
         }
     };
 
