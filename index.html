@@ -4319,6 +4319,7 @@
             snapshot.forEach(doc => window.departmentsData.push({ id: doc.id, ...doc.data() }));
             populateDropdown('department', window.departmentsData);
             populateDropdown('editOrderDepartment', window.departmentsData);
+            populateDropdown('budgetFilterDept', window.departmentsData, 'Tất cả phòng ban', 'all');
             populateMultiSelect('menu-department', window.departmentsData, 'department');
             if (typeof window.updatePlanningDepartmentFilter === 'function') {
                 window.updatePlanningDepartmentFilter();
@@ -4353,6 +4354,7 @@
             });
             populateDropdown('orderCategory', window.orderCategoriesData, '- Chọn thể loại -');
             populateDropdown('editOrderCategory', window.orderCategoriesData, '- Chọn thể loại -');
+            populateDropdown('budgetFilterCategory', window.orderCategoriesData, 'Tất cả hạng mục', 'all');
             populateMultiSelect('menu-category', window.orderCategoriesData, 'category');
             if (window.allOrdersData.length > 0) window.renderOrdersTable();
         });
@@ -4396,11 +4398,11 @@
         });
     };
 
-    function populateDropdown(selectId, data, defaultText = null) {
+    function populateDropdown(selectId, data, defaultText = null, defaultValue = "") {
         const select = document.getElementById(selectId);
         if (!select) return;
         const currentVal = select.value;
-        let html = defaultText ? `<option value="">${defaultText}</option>` : '';
+        let html = defaultText ? `<option value="${defaultValue}">${defaultText}</option>` : '';
         html += data.map(item => `<option value="${item.name}">${item.name}</option>`).join('');
         select.innerHTML = html;
         if (currentVal && data.some(d => d.name === currentVal)) {
@@ -6475,15 +6477,7 @@
             const filterDept = dEl ? dEl.value : 'all';
             const filterCat = cEl ? cEl.value : 'all';
 
-            // Initialize Dept Filter if empty
-            if (dEl && dEl.options.length <= 1) {
-                const depts = [...new Set((window.allOrdersData || []).map(o => o.department).filter(Boolean))].sort();
-                depts.forEach(name => {
-                    const opt = document.createElement('option');
-                    opt.value = name; opt.textContent = name;
-                    dEl.appendChild(opt);
-                });
-            }
+            // Dept Filter is now populated dynamically in initOrdersTracker
 
             const orders = window.allOrdersData || [];
         const data = orders.filter(o => {
