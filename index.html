@@ -6460,7 +6460,8 @@
 
 
     window.renderBudgetReport = function() {
-        const mEl = document.getElementById('budgetFilterMonth');
+        try {
+            const mEl = document.getElementById('budgetFilterMonth');
         const yEl = document.getElementById('budgetFilterYear');
         const dEl = document.getElementById('budgetFilterDept');
         const cEl = document.getElementById('budgetFilterCategory');
@@ -6482,14 +6483,19 @@
 
         const orders = window.allOrdersData || [];
         const data = orders.filter(o => {
-            // Keep filter for production budget, but maybe allow zero cost for planning visibility
-            // However, the user said "production cost data", so they expect costs.
-            // Let's allow cost >= 0.
             const cost = Number(o.totalCost || 0);
             
-            const dStr = o.deadline || o.orderDate || o.createdAt;
-            const d = dStr ? new Date(dStr) : null;
-            if (!d || isNaN(d.getTime())) return (filterMonth === 'all' && filterYear === 'all'); // Show if no filter
+            // Safe date parsing
+            let d = null;
+            try {
+                const dStr = o.deadline || o.orderDate;
+                if (dStr) d = new Date(dStr);
+                else if (o.createdAt) {
+                    d = (typeof o.createdAt.toDate === 'function') ? o.createdAt.toDate() : new Date(o.createdAt);
+                }
+            } catch (e) { console.warn("Date parse error for order", o.id, e); }
+
+            if (!d || isNaN(d.getTime())) return (filterMonth === 'all' && filterYear === 'all');
 
             const matchesMonth = filterMonth === 'all' || (d.getMonth() + 1 === parseInt(filterMonth));
             const matchesYear = filterYear === 'all' || (d.getFullYear() === parseInt(filterYear));
@@ -6727,7 +6733,10 @@
                 });
             }
             if(totalEl) totalEl.textContent = total.toLocaleString() + ' VNĐ';
-        };
+        } catch (e) {
+            console.error("Critical error in renderBudgetReport:", e);
+        }
+    };
 
     window.budgetPeriod = 'month';
     window.setBudgetPeriod = function(p) {
