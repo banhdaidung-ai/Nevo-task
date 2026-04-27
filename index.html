@@ -524,7 +524,6 @@
                 <a href="#" data-page="orders" onclick="navigateTo('orders')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
                 <a href="#" data-page="planning" onclick="navigateTo('planning')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
                 <a href="#" data-page="budgetReport" onclick="navigateTo('budgetReport')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
-                <a href="#" data-page="finance" onclick="navigateTo('finance')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Ngân sách</a>
                 <a href="#" data-page="reports" onclick="navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Lịch làm việc</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-slate-500 hover:text-red-600 transition-all duration-200 hidden">Quản trị</a>
                 <a href="support.html" target="_blank" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
@@ -1679,35 +1678,53 @@
             <div class="max-w-full mx-auto px-4 md:px-8 py-8 md:py-12">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                     <div>
-                        <h1 class="text-4xl font-black text-[#131b2e] font-headline mb-2 tracking-tight">Báo cáo Chi phí Sản xuất</h1>
-                        <p class="text-slate-500 text-sm font-medium">Theo dõi và tối ưu hóa ngân sách sản xuất nội dung Kinetic.</p>
+                        <h1 class="text-4xl font-black text-[#131b2e] font-headline mb-2 tracking-tight">Quản lý Chi phí & Ngân sách</h1>
+                        <p class="text-slate-500 text-sm font-medium">Theo dõi chi phí sản xuất và quản lý dòng tiền hệ thống.</p>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                        <!-- Bộ lọc Phòng ban -->
-                        <div class="relative">
-                            <select id="budgetFilterDept" onchange="window.renderBudgetReport()" class="pl-8 pr-10 py-2.5 rounded-xl bg-slate-50 border-none text-[11px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer min-w-[140px]">
-                                <option value="all">Tất cả Phòng ban</option>
-                                <!-- Sẽ được đổ dữ liệu động -->
-                            </select>
-                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">domain</span>
-                        </div>
-                        
-                        <!-- Bộ lọc Thể loại -->
-                        <div class="relative">
-                            <select id="budgetFilterCategory" onchange="window.renderBudgetReport()" class="pl-8 pr-10 py-2.5 rounded-xl bg-slate-50 border-none text-[11px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer min-w-[140px]">
-                                <option value="all">Tất cả Thể loại</option>
-                                <option value="Hình Ảnh">Hình Ảnh</option>
-                                <option value="Video">Video</option>
-                                <option value="Giả Live">Giả Live</option>
-                            </select>
-                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">category</span>
-                        </div>
+                </div>
 
-                        <div class="w-px h-6 bg-slate-100 mx-1"></div>
+                <!-- Tab Switcher -->
+                <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit mb-10 border border-slate-200/50 shadow-inner">
+                    <button id="tabBtnProduction" onclick="window.switchBudgetTab('production')" class="px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-white text-primary shadow-sm">
+                        <span class="material-symbols-outlined text-sm">movie</span>
+                        Báo cáo sản xuất
+                    </button>
+                    <button id="tabBtnFinance" onclick="window.switchBudgetTab('finance')" class="px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 text-slate-500 hover:bg-white/50">
+                        <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+                        Quản lý ngân sách
+                    </button>
+                </div>
 
-                        <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl">
-                            <button onclick="window.setBudgetPeriod('month')" id="btnBudgetMonth" class="px-5 py-2 rounded-lg bg-primary text-white text-[10px] font-black shadow-lg shadow-primary/20 transition-all uppercase tracking-wider">Tháng</button>
-                            <button onclick="window.setBudgetPeriod('quarter')" id="btnBudgetQuarter" class="px-5 py-2 rounded-lg text-slate-500 text-[10px] font-black hover:bg-white transition-all uppercase tracking-wider">Quý</button>
+                <!-- Tab 1: Production Cost Report -->
+                <div id="budget-tab-production" class="budget-tab-content">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                        <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+                            <!-- Bộ lọc Phòng ban -->
+                            <div class="relative">
+                                <select id="budgetFilterDept" onchange="window.renderBudgetReport()" class="pl-8 pr-10 py-2.5 rounded-xl bg-slate-50 border-none text-[11px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer min-w-[140px]">
+                                    <option value="all">Tất cả Phòng ban</option>
+                                    <!-- Sẽ được đổ dữ liệu động -->
+                                </select>
+                                <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">domain</span>
+                            </div>
+                            
+                            <!-- Bộ lọc Thể loại -->
+                            <div class="relative">
+                                <select id="budgetFilterCategory" onchange="window.renderBudgetReport()" class="pl-8 pr-10 py-2.5 rounded-xl bg-slate-50 border-none text-[11px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer min-w-[140px]">
+                                    <option value="all">Tất cả Thể loại</option>
+                                    <option value="Hình Ảnh">Hình Ảnh</option>
+                                    <option value="Video">Video</option>
+                                    <option value="Giả Live">Giả Live</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">category</span>
+                            </div>
+
+                            <div class="w-px h-6 bg-slate-100 mx-1"></div>
+
+                            <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl">
+                                <button onclick="window.setBudgetPeriod('month')" id="btnBudgetMonth" class="px-5 py-2 rounded-lg bg-primary text-white text-[10px] font-black shadow-lg shadow-primary/20 transition-all uppercase tracking-wider">Tháng</button>
+                                <button onclick="window.setBudgetPeriod('quarter')" id="btnBudgetQuarter" class="px-5 py-2 rounded-lg text-slate-500 text-[10px] font-black hover:bg-white transition-all uppercase tracking-wider">Quý</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1827,163 +1844,142 @@
                         <p class="text-xs text-slate-400 font-medium" id="budgetPaginationInfo">Hiển thị 0 đơn hàng</p>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Page: Finance & Budget Management -->
-        <div id="page-finance" class="page">
-            <div class="max-w-full mx-auto px-4 md:px-8 py-8 md:py-12">
-                <!-- Header & Controls -->
-                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 shadow-sm border border-orange-50">
-                            <span class="material-symbols-outlined text-[32px]">account_balance_wallet</span>
-                        </div>
-                        <div>
-                            <h1 class="text-4xl font-black text-[#131b2e] font-headline mb-1 tracking-tight">Quản lý Ngân sách</h1>
-                            <p class="text-slate-500 text-sm font-medium">Hệ thống kê khai và quản lý dòng tiền chi tiết.</p>
+                <!-- Tab 2: Finance & Budget Management -->
+                <div id="budget-tab-finance" class="budget-tab-content hidden">
+                    <!-- Finance Control Bar -->
+                    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-6">
+                        <div class="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-3xl shadow-sm border border-slate-100">
+                            <div class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl">
+                                <span class="material-symbols-outlined text-slate-400 text-sm">calendar_month</span>
+                                <select id="financeFilterMonth" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
+                                    <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+                                    <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                                    <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+                                    <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                                </select>
+                                <select id="financeFilterYear" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
+                                    <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
+                                </select>
+                            </div>
+                            <div class="w-px h-8 bg-slate-100 mx-1"></div>
+                            <button onclick="window.openManageColumnsModal()" class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all">
+                                <span class="material-symbols-outlined text-sm">view_column</span>
+                                Cột chi phí
+                            </button>
+                            <button onclick="window.addNewExpenseRow()" class="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#131b2e] text-white text-xs font-bold shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all">
+                                <span class="material-symbols-outlined text-sm">add</span>
+                                Thêm dòng
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-3xl shadow-sm border border-slate-100">
-                        <div class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl">
-                            <span class="material-symbols-outlined text-slate-400 text-sm">calendar_month</span>
-                            <select id="financeFilterMonth" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
-                                <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
-                                <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
-                                <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
-                                <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-                            </select>
-                            <select id="financeFilterYear" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
-                                <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
-                            </select>
-                        </div>
-                        <div class="w-px h-8 bg-slate-100 mx-1"></div>
-                        <button onclick="window.openManageColumnsModal()" class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all">
-                            <span class="material-symbols-outlined text-sm">view_column</span>
-                            Cột chi phí
-                        </button>
-                        <button onclick="window.addNewExpenseRow()" class="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#131b2e] text-white text-xs font-bold shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all">
-                            <span class="material-symbols-outlined text-sm">add</span>
-                            Thêm dòng
-                        </button>
-                    </div>
-                </div>
 
-                <!-- Finance KPIs -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                    <!-- Total Cumulative -->
-                    <div class="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 mb-6">
-                                <span class="material-symbols-outlined">history</span>
-                            </div>
-                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-2">Tổng chi tiêu tích lũy</h3>
-                            <div class="text-2xl font-black text-slate-800 font-headline" id="finKpiCumulative">0</div>
-                        </div>
-                    </div>
-                    <!-- Monthly Budget -->
-                    <div class="bg-indigo-600 p-8 rounded-[32px] text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
-                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white mb-6">
-                                <span class="material-symbols-outlined">payments</span>
-                            </div>
-                            <h3 class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black mb-2">Ngân sách dự kiến tháng</h3>
-                            <div class="text-2xl font-black font-headline" id="finKpiMonthlyBudget">0</div>
-                        </div>
-                    </div>
-                    <!-- Spent this month -->
-                    <div class="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <div class="flex justify-between items-start mb-6">
-                                <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600">
-                                    <span class="material-symbols-outlined">trending_up</span>
+                    <!-- Finance KPIs -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                        <!-- Total Cumulative -->
+                        <div class="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 mb-6">
+                                    <span class="material-symbols-outlined">history</span>
                                 </div>
-                                <div class="text-right">
-                                    <span class="text-[10px] font-black text-orange-500 bg-orange-50 px-2 py-1 rounded-lg" id="finSpentPerc">0%</span>
+                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-2">Tổng chi tiêu tích lũy</h3>
+                                <div class="text-2xl font-black text-slate-800 font-headline" id="finKpiCumulative">0</div>
+                            </div>
+                        </div>
+                        <!-- Monthly Budget -->
+                        <div class="bg-indigo-600 p-8 rounded-[32px] text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
+                            <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white mb-6">
+                                    <span class="material-symbols-outlined">payments</span>
+                                </div>
+                                <h3 class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black mb-2">Ngân sách dự kiến tháng</h3>
+                                <div class="text-2xl font-black font-headline" id="finKpiMonthlyBudget">0</div>
+                            </div>
+                        </div>
+                        <!-- Spent this month -->
+                        <div class="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
+                            <div class="relative z-10">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600">
+                                        <span class="material-symbols-outlined">trending_up</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[10px] font-black text-orange-500 bg-orange-50 px-2 py-1 rounded-lg" id="finSpentPerc">0%</span>
+                                    </div>
+                                </div>
+                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-2">Đã chi tiêu tháng</h3>
+                                <div class="text-2xl font-black text-slate-800 font-headline" id="finKpiSpent">0</div>
+                                <div class="mt-4 w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
+                                    <div id="finSpentBar" class="bg-orange-500 h-full transition-all duration-1000" style="width: 0%"></div>
                                 </div>
                             </div>
-                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-2">Đã chi tiêu tháng</h3>
-                            <div class="text-2xl font-black text-slate-800 font-headline" id="finKpiSpent">0</div>
-                            <div class="mt-4 w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
-                                <div id="finSpentBar" class="bg-orange-500 h-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                        <!-- Remaining -->
+                        <div class="bg-emerald-500 p-8 rounded-[32px] text-white shadow-xl shadow-emerald-100 relative overflow-hidden group">
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white mb-6">
+                                    <span class="material-symbols-outlined">account_balance</span>
+                                </div>
+                                <h3 class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black mb-2">Ngân sách còn lại</h3>
+                                <div class="text-2xl font-black font-headline" id="finKpiRemaining">0</div>
                             </div>
                         </div>
                     </div>
-                    <!-- Remaining -->
-                    <div class="bg-emerald-500 p-8 rounded-[32px] text-white shadow-xl shadow-emerald-100 relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white mb-6">
-                                <span class="material-symbols-outlined">account_balance</span>
+
+                    <!-- Finance Charts -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+                        <div class="lg:col-span-4 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm">
+                            <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider mb-8 border-l-4 border-indigo-500 pl-4">Phân bổ chi phí</h3>
+                            <div class="relative aspect-square max-w-[240px] mx-auto mb-8">
+                                <canvas id="finDonutChart"></canvas>
                             </div>
-                            <h3 class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black mb-2">Ngân sách còn lại</h3>
-                            <div class="text-2xl font-black font-headline" id="finKpiRemaining">0</div>
+                            <div id="finDonutLegend" class="space-y-3"></div>
+                        </div>
+                        <div class="lg:col-span-8 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm">
+                            <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider mb-8 border-l-4 border-orange-500 pl-4">Kế hoạch vs Thực tế</h3>
+                            <div class="h-[300px]">
+                                <canvas id="finBarChart"></canvas>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Finance Charts -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
-                    <div class="lg:col-span-4 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm">
-                        <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider mb-8 border-l-4 border-indigo-500 pl-4">Phân bổ chi phí</h3>
-                        <div class="relative aspect-square max-w-[240px] mx-auto mb-8">
-                            <canvas id="finDonutChart"></canvas>
+                    <!-- Main Ledger Table -->
+                    <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse min-w-[1200px]">
+                                <thead>
+                                    <tr class="bg-orange-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-orange-100">
+                                        <th class="py-5 px-4 text-center w-12 sticky left-0 bg-white z-20">#</th>
+                                        <th class="py-5 px-4 w-32 sticky left-12 bg-white z-20">Ngày chi</th>
+                                        <th class="py-5 px-6 min-w-[300px] sticky left-[176px] bg-white z-20">Nội dung chi</th>
+                                        <th class="py-5 px-4 text-center">
+                                            <div class="flex items-center justify-center gap-1">
+                                                Loại chi
+                                                <button onclick="window.manageFinanceDropdown('type')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
+                                            </div>
+                                        </th>
+                                        <th class="py-5 px-4 text-center">
+                                            <div class="flex items-center justify-center gap-1">
+                                                Người chi
+                                                <button onclick="window.manageFinanceDropdown('spender')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
+                                            </div>
+                                        </th>
+                                        <th id="finCategoryHeaderEnd" class="hidden"></th>
+                                    </tr>
+                                    <tr class="bg-white text-[9px] font-bold text-blue-500 uppercase border-b border-slate-50">
+                                        <td colspan="5" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td>
+                                    </tr>
+                                    <tr class="bg-orange-500 text-white text-[10px] font-black uppercase">
+                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td>
+                                    </tr>
+                                    <tr class="bg-yellow-400 text-[#131b2e] text-[10px] font-black uppercase">
+                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td>
+                                    </tr>
+                                </thead>
+                                <tbody id="financeTableBody" class="divide-y divide-slate-50"></tbody>
+                            </table>
                         </div>
-                        <div id="finDonutLegend" class="space-y-3"></div>
-                    </div>
-                    <div class="lg:col-span-8 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm">
-                        <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider mb-8 border-l-4 border-orange-500 pl-4">Kế hoạch vs Thực tế</h3>
-                        <div class="h-[300px]">
-                            <canvas id="finBarChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Main Ledger Table -->
-                <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto custom-scrollbar">
-                        <table class="w-full text-left border-collapse min-w-[1200px]">
-                            <thead>
-                                <tr class="bg-orange-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-orange-100">
-                                    <th class="py-5 px-4 text-center w-12 sticky left-0 bg-white z-20">#</th>
-                                    <th class="py-5 px-4 w-32 sticky left-12 bg-white z-20">Ngày chi</th>
-                                    <th class="py-5 px-6 min-w-[300px] sticky left-[176px] bg-white z-20">Nội dung chi</th>
-                                    <th class="py-5 px-4 text-center">
-                                        <div class="flex items-center justify-center gap-1">
-                                            Loại chi
-                                            <button onclick="window.manageFinanceDropdown('type')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
-                                        </div>
-                                    </th>
-                                    <th class="py-5 px-4 text-center">
-                                        <div class="flex items-center justify-center gap-1">
-                                            Người chi
-                                            <button onclick="window.manageFinanceDropdown('spender')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
-                                        </div>
-                                    </th>
-                                    <!-- Dynamic Category Headers will be injected here -->
-                                    <th id="finCategoryHeaderEnd" class="hidden"></th>
-                                </tr>
-                                <!-- Expense Code Row -->
-                                <tr class="bg-white text-[9px] font-bold text-blue-500 uppercase border-b border-slate-50">
-                                    <td colspan="5" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td>
-                                    <!-- Dynamic Codes injected here -->
-                                </tr>
-                                <!-- Plan Row -->
-                                <tr class="bg-orange-500 text-white text-[10px] font-black uppercase">
-                                    <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td>
-                                    <!-- Dynamic Plan values injected here -->
-                                </tr>
-                                <!-- Remaining Row -->
-                                <tr class="bg-yellow-400 text-[#131b2e] text-[10px] font-black uppercase">
-                                    <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td>
-                                    <!-- Dynamic Remaining values injected here -->
-                                </tr>
-                            </thead>
-                            <tbody id="financeTableBody" class="divide-y divide-slate-50">
-                                <!-- Data rows injected here -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -3263,9 +3259,6 @@
                 }
                 if (pageId === 'budgetReport') {
                     if (typeof window.renderBudgetReport === 'function') window.renderBudgetReport();
-                }
-                if (pageId === 'finance') {
-                    if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
                 }
                 if (pageId === 'detailed-report') {
                     if (typeof window.renderDetailedReport === 'function') window.renderDetailedReport();
@@ -6850,12 +6843,37 @@
         }
     }
 
-    window.renderFinancePage = function() {
-        const page = document.getElementById('page-finance');
-        if (!page || page.classList.contains('hidden')) return;
+    window.switchBudgetTab = function(tabId) {
+        // Hide all tab contents
+        document.querySelectorAll('.budget-tab-content').forEach(tab => tab.classList.add('hidden'));
+        // Show selected tab content
+        document.getElementById(`budget-tab-${tabId}`).classList.remove('hidden');
 
-        const month = parseInt(document.getElementById('financeFilterMonth').value);
-        const year = parseInt(document.getElementById('financeFilterYear').value);
+        // Update Button UI
+        const btnProd = document.getElementById('tabBtnProduction');
+        const btnFin = document.getElementById('tabBtnFinance');
+
+        if (tabId === 'production') {
+            btnProd.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-white text-primary shadow-sm';
+            btnFin.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 text-slate-500 hover:bg-white/50';
+            if (typeof window.renderBudgetReport === 'function') window.renderBudgetReport();
+        } else {
+            btnFin.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-white text-primary shadow-sm';
+            btnProd.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 text-slate-500 hover:bg-white/50';
+            if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
+        }
+    };
+
+    window.renderFinancePage = function() {
+        const tab = document.getElementById('budget-tab-finance');
+        if (!tab || tab.classList.contains('hidden')) return;
+
+        const mEl = document.getElementById('financeFilterMonth');
+        const yEl = document.getElementById('financeFilterYear');
+        if(!mEl || !yEl) return;
+
+        const month = parseInt(mEl.value);
+        const year = parseInt(yEl.value);
 
         // Filter data for current month
         const filtered = window.financeExpenses.filter(e => {
