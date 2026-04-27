@@ -236,11 +236,27 @@
         }
         .editor-container.fullscreen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 10000; background: white; padding: 2rem;
-            display: flex; flex-direction: column;
+            z-index: 10000; background: #f8fafc; padding: 1.5rem;
+            display: flex; flex-direction: column; gap: 0;
+        }
+        .editor-container.fullscreen > div:first-child {
+            border-radius: 12px 12px 0 0 !important;
+            background: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+            padding: 0.75rem 1.5rem !important;
+            z-index: 10;
         }
         .editor-container.fullscreen [contenteditable="true"] {
             flex: 1; min-height: unset !important;
+            background: white !important;
+            border-radius: 0 0 12px 12px !important;
+            padding: 2rem !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+        }
+        .editor-container.fullscreen .ml-auto {
+            background: #fee2e2 !important; /* Màu nền nhạt để làm nổi bật nút thu nhỏ */
+            color: #b80035 !important;
+            border: 1px solid #fecaca !important;
         }
         
         /* List Styles for Editor - Universal fix for Create and Edit */
