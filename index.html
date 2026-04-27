@@ -175,28 +175,36 @@
         /* Order Table Compact Mode & Filtering */
         .table-compact th { padding: 0.5rem 0.75rem !important; }
         .table-compact td { padding: 0.4rem 0.75rem !important; }
-        .sort-icon { font-size: 14px !important; cursor: pointer; color: #94a3b8; transition: color 0.15s; }
-        .sort-icon.active { color: #b80035; }
+        .sort-icon { font-size: 13px !important; cursor: pointer; color: #94a3b8; transition: all 0.2s ease; margin-left: 2px; }
+        .sort-icon.active { color: #b80035; transform: scale(1.1); }
         .column-filter {
-            width: 100%; height: 32px; min-width: 110px;
-            border: 1px solid #e2e8f0; border-radius: 12px; padding: 0 12px;
-            font-size: 11px; font-weight: 500; outline: none; transition: all 0.2s;
-            background: #ffffff; color: #475569;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            width: 100%; height: 34px; min-width: 110px;
+            border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 0 12px 0 38px !important;
+            font-size: 11px; font-weight: 500; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff; color: #334155;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+            text-transform: none !important;
+            appearance: none; -webkit-appearance: none;
+        }
+        .column-filter-container { position: relative; width: 100%; }
+        .column-filter-icon {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            font-size: 16px !important; color: #94a3b8; pointer-events: none; opacity: 0.8;
         }
         .column-filter:focus { 
             background: #ffffff;
-            box-shadow: 0 0 0 2px rgba(184, 0, 53, 0.1); 
+            border-color: #b80035;
+            box-shadow: 0 0 0 3px rgba(184, 0, 53, 0.08); 
             color: #0f172a;
         }
-        .column-filter::placeholder { color: #94a3b8; font-weight: 400; }
+        .column-filter::placeholder { color: #94a3b8; font-weight: 400; opacity: 0.5; }
         select.column-filter {
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
-            background-position: right 10px center;
+            background-position: right 12px center;
             background-size: 12px;
-            padding-right: 24px;
+            padding-right: 28px; padding-left: 14px;
             cursor: pointer;
         }
         /* Editor Styles */
@@ -254,18 +262,21 @@
         #mainOrdersTable th:nth-child(9), #mainOrdersTable td:nth-child(9) { min-width: 110px; } /* Dates */
         #mainOrdersTable th:last-child, #mainOrdersTable td:last-child { min-width: 80px; } /* Thao tác */
         
-        /* Multi-select Dropdown */
         .multi-select-container { position: relative; width: 100%; }
         .multi-select-trigger {
-            width: 100%; height: 32px; border: 1px solid #e2e8f0; border-radius: 12px;
+            width: 100%; height: 34px; border: 1px solid #e2e8f0; border-radius: 12px;
             padding: 0 12px; font-size: 11px; font-weight: 500; background: #ffffff;
-            color: #475569; display: flex; items-center justify-between; cursor: pointer;
-            transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); user-select: none;
+            color: #334155; display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03); user-select: none;
+            text-transform: none !important; overflow: hidden; white-space: nowrap;
         }
+        .multi-select-trigger:hover { border-color: #cbd5e1; background: #fcfcfd; }
+        .multi-select-trigger.active { border-color: #b80035; box-shadow: 0 0 0 3px rgba(184, 0, 53, 0.08); }
         .multi-select-trigger:after {
-            content: "\e5cf"; font-family: 'Material Symbols Outlined'; font-size: 14px;
-            color: #94a3b8; margin-left: 4px;
+            content: "\e5cf"; font-family: 'Material Symbols Outlined'; font-size: 16px;
+            color: #94a3b8; margin-left: 6px; transition: transform 0.2s; opacity: 0.8; flex-shrink: 0;
         }
+        .multi-select-container.open .multi-select-trigger:after { transform: rotate(180deg); }
         .multi-select-menu {
             position: absolute; top: 100%; left: 0; z-index: 50; width: 100%; min-width: 180px;
             background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 4px;
@@ -291,11 +302,12 @@
         /* Date Range Popover */
         .date-range-container { position: relative; width: 100%; }
         .date-range-trigger {
-            width: 100%; height: 32px; border: 1px solid #e2e8f0; border-radius: 12px;
-            padding: 0 10px; font-size: 11px; font-weight: 500; background: #ffffff;
-            color: #475569; display: flex; items-center justify-between; cursor: pointer;
-            transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); user-select: none;
+            width: 100%; height: 34px; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 0 12px; font-size: 11px; font-weight: 500; background: #ffffff;
+            color: #334155; display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03); user-select: none;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-transform: none !important;
         }
         .date-range-trigger:before {
             content: "\e916"; font-family: 'Material Symbols Outlined'; font-size: 14px;
@@ -931,98 +943,104 @@
             <!-- Table -->
             <div class="overflow-auto flex-1 relative">
                 <table id="mainOrdersTable" class="w-full text-left border-separate border-spacing-0 table-auto min-w-full table-compact">
-                    <thead class="text-[#64748b] bg-[#e0e7ff] sticky top-0 z-20 shadow-sm text-[10px] font-extrabold uppercase tracking-widest">
+                    <thead class="text-slate-500 bg-slate-50/80 sticky top-0 z-20 shadow-sm text-[10px] font-bold uppercase tracking-wider border-b border-slate-200/60 backdrop-blur-md">
                         <tr>
-                            <th class="cursor-pointer group/h pl-4 py-4 bg-[#e0e7ff] min-w-[100px]" onclick="toggleSort('code')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h pl-6 py-4 min-w-[110px]" onclick="toggleSort('code')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Mã đơn hàng <span class="material-symbols-outlined sort-icon" id="sort-code">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[130px]" onclick="toggleSort('requester')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[140px]" onclick="toggleSort('requester')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Người yêu cầu <span class="material-symbols-outlined sort-icon" id="sort-requester">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[110px]" onclick="toggleSort('department')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[120px]" onclick="toggleSort('department')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Phòng ban <span class="material-symbols-outlined sort-icon" id="sort-department">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[100px]" onclick="toggleSort('category')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[110px]" onclick="toggleSort('category')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Thể loại <span class="material-symbols-outlined sort-icon" id="sort-category">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[200px] w-[25%]" onclick="toggleSort('title')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[220px] w-[20%]" onclick="toggleSort('title')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Nội dung <span class="material-symbols-outlined sort-icon" id="sort-title">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[150px]" onclick="toggleSort('note')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[160px]" onclick="toggleSort('note')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Ghi chú <span class="material-symbols-outlined sort-icon" id="sort-note">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[110px]" onclick="toggleSort('orderDate')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[120px]" onclick="toggleSort('orderDate')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Ngày order <span class="material-symbols-outlined sort-icon" id="sort-orderDate">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('deployDate')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[130px]" onclick="toggleSort('deployDate')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Ngày triển khai <span class="material-symbols-outlined sort-icon" id="sort-deployDate">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[110px]" onclick="toggleSort('deadline')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[120px]" onclick="toggleSort('deadline')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Deadline <span class="material-symbols-outlined sort-icon" id="sort-deadline">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('status')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[130px]" onclick="toggleSort('status')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Trạng thái <span class="material-symbols-outlined sort-icon" id="sort-status">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('totalCost')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5 justify-end pr-4">
+                            <th class="cursor-pointer group/h py-4 min-w-[130px]" onclick="toggleSort('totalCost')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 justify-end pr-4 group-hover/h:text-primary transition-colors">
                                     Chi phí <span class="material-symbols-outlined sort-icon" id="sort-totalCost">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('stylist')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[130px]" onclick="toggleSort('stylist')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Stylist <span class="material-symbols-outlined sort-icon" id="sort-stylist">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('assignedVideo')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[130px]" onclick="toggleSort('assignedVideo')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Video <span class="material-symbols-outlined sort-icon" id="sort-assignedVideo">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="cursor-pointer group/h py-4 bg-[#e0e7ff] min-w-[120px]" onclick="toggleSort('assignedPhoto')">
-                                <div class="flex items-center whitespace-nowrap gap-1.5">
+                            <th class="cursor-pointer group/h py-4 min-w-[130px]" onclick="toggleSort('assignedPhoto')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
                                     Photo <span class="material-symbols-outlined sort-icon" id="sort-assignedPhoto">unfold_more</span>
                                 </div>
                             </th>
-                            <th class="text-right py-4 pr-4 bg-[#e0e7ff] min-w-[80px]">Thao tác</th>
+                            <th class="text-right py-4 pr-6 min-w-[100px]">Thao tác</th>
                         </tr>
-                        <!-- Filter Row -->
-                        <tr class="bg-slate-50 border-b border-indigo-100">
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('code', this.value)" placeholder="ID..."></th>
-                            <th class="p-2 bg-slate-50">
+                        <tr class="bg-slate-50/40 border-b border-slate-200/50">
+                            <!-- 1. Code -->
+                            <th class="px-2 py-3">
+                                <div class="column-filter-container">
+                                    <span class="material-symbols-outlined column-filter-icon">search</span>
+                                    <input type="text" class="column-filter" onkeyup="updateColumnFilter('code', this.value)" placeholder="Mã đơn...">
+                                </div>
+                            </th>
+                            <!-- 2. Requester -->
+                            <th class="px-2 py-3">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-requester" data-label="Người yêu cầu" onclick="toggleMultiSelect('menu-requester')">Người yêu cầu</div>
                                     <div class="multi-select-menu" id="menu-requester"></div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 3. Department -->
+                            <th class="px-2 py-3">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-department" data-label="Phòng ban" onclick="toggleMultiSelect('menu-department')">Phòng ban</div>
-                                    <div class="multi-select-menu" id="menu-department">
-                                        <!-- Will be populated dynamicly -->
-                                    </div>
+                                    <div class="multi-select-menu" id="menu-department"></div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 4. Category -->
+                            <th class="px-2 py-3">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-category" data-label="Thể loại" onclick="toggleMultiSelect('menu-category')">Thể loại</div>
                                     <div class="multi-select-menu" id="menu-category">
@@ -1046,71 +1064,116 @@
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung..."></th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú..."></th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 5. Title -->
+                            <th class="px-2 py-3">
+                                <div class="column-filter-container">
+                                    <span class="material-symbols-outlined column-filter-icon">format_list_bulleted</span>
+                                    <input type="text" class="column-filter" onkeyup="updateColumnFilter('title', this.value)" placeholder="Nội dung...">
+                                </div>
+                            </th>
+                            <!-- 6. Note -->
+                            <th class="px-2 py-3">
+                                <div class="column-filter-container">
+                                    <span class="material-symbols-outlined column-filter-icon">sticky_note_2</span>
+                                    <input type="text" class="column-filter" onkeyup="updateColumnFilter('note', this.value)" placeholder="Ghi chú...">
+                                </div>
+                            </th>
+                            <!-- 7. Order Date -->
+                            <th class="px-2 py-3">
                                 <div class="date-range-container">
-                                    <div class="date-range-trigger" id="trigger-orderDate" data-label="Ngày order" onclick="toggleDateRange('menu-orderDate')">Ngày order</div>
-                                    <div class="date-range-menu" id="menu-orderDate">
-                                        <span class="date-range-label">Từ ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('orderDate', this.value, 'start')">
-                                        <span class="date-range-label">Đến ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('orderDate', this.value, 'end')">
+                                    <div class="date-range-trigger" id="trigger-orderDate" data-label="Ngày order" onclick="toggleDateRange('orderDate')">Ngày order</div>
+                                    <div class="date-range-menu shadow-2xl" id="menu-orderDate">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="date-range-label">Từ ngày</label>
+                                                <input type="date" id="orderDate_start" class="w-full" onchange="updateColumnFilter('orderDate_start', this.value)">
+                                            </div>
+                                            <div>
+                                                <label class="date-range-label">Đến ngày</label>
+                                                <input type="date" id="orderDate_end" class="w-full" onchange="updateColumnFilter('orderDate_end', this.value)">
+                                            </div>
+                                            <button onclick="toggleDateRange('orderDate')" class="w-full py-2 bg-primary text-white rounded-lg text-[11px] font-bold mt-2">Áp dụng</button>
+                                        </div>
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 8. Deploy Date -->
+                            <th class="px-2 py-3">
                                 <div class="date-range-container">
-                                    <div class="date-range-trigger" id="trigger-deployDate" data-label="Ngày triển khai" onclick="toggleDateRange('menu-deployDate')">Ngày triển khai</div>
-                                    <div class="date-range-menu" id="menu-deployDate">
-                                        <span class="date-range-label">Từ ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('deployDate', this.value, 'start')">
-                                        <span class="date-range-label">Đến ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('deployDate', this.value, 'end')">
+                                    <div class="date-range-trigger" id="trigger-deployDate" data-label="Ngày triển khai" onclick="toggleDateRange('deployDate')">Ngày triển khai</div>
+                                    <div class="date-range-menu shadow-2xl" id="menu-deployDate">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="date-range-label">Từ ngày</label>
+                                                <input type="date" id="deployDate_start" class="w-full" onchange="updateColumnFilter('deployDate_start', this.value)">
+                                            </div>
+                                            <div>
+                                                <label class="date-range-label">Đến ngày</label>
+                                                <input type="date" id="deployDate_end" class="w-full" onchange="updateColumnFilter('deployDate_end', this.value)">
+                                            </div>
+                                            <button onclick="toggleDateRange('deployDate')" class="w-full py-2 bg-primary text-white rounded-lg text-[11px] font-bold mt-2">Áp dụng</button>
+                                        </div>
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 9. Deadline -->
+                            <th class="px-2 py-3">
                                 <div class="date-range-container">
-                                    <div class="date-range-trigger" id="trigger-deadline" data-label="Deadline" onclick="toggleDateRange('menu-deadline')">Deadline</div>
-                                    <div class="date-range-menu" id="menu-deadline">
-                                        <span class="date-range-label">Từ ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('deadline', this.value, 'start')">
-                                        <span class="date-range-label">Đến ngày</span>
-                                        <input type="date" onchange="updateDateRangeFilter('deadline', this.value, 'end')">
+                                    <div class="date-range-trigger" id="trigger-deadline" data-label="Deadline" onclick="toggleDateRange('deadline')">Deadline</div>
+                                    <div class="date-range-menu shadow-2xl" id="menu-deadline">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="date-range-label">Từ ngày</label>
+                                                <input type="date" id="deadline_start" class="w-full" onchange="updateColumnFilter('deadline_start', this.value)">
+                                            </div>
+                                            <div>
+                                                <label class="date-range-label">Đến ngày</label>
+                                                <input type="date" id="deadline_end" class="w-full" onchange="updateColumnFilter('deadline_end', this.value)">
+                                            </div>
+                                            <button onclick="toggleDateRange('deadline')" class="w-full py-2 bg-primary text-white rounded-lg text-[11px] font-bold mt-2">Áp dụng</button>
+                                        </div>
                                     </div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 10. Status -->
+                            <th class="px-2 py-3">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-status" data-label="Trạng thái" onclick="toggleMultiSelect('menu-status')">Trạng thái</div>
-                                    <div class="multi-select-menu" id="menu-status">
-                                        <!-- Populated from statuses collection -->
-                                    </div>
+                                    <div class="multi-select-menu" id="menu-status"></div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50"><input type="text" class="column-filter w-full text-right" onkeyup="updateColumnFilter('totalCost', this.value)" placeholder="Số tiền..."></th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 11. Cost -->
+                            <th class="px-2 py-3">
+                                <div class="column-filter-container">
+                                    <span class="material-symbols-outlined column-filter-icon" style="left: auto; right: 10px; transform: translateY(-50%); font-size: 13px !important">monetization_on</span>
+                                    <input type="text" class="column-filter text-right" style="padding-left: 12px !important; padding-right: 32px !important" onkeyup="updateColumnFilter('totalCost', this.value)" placeholder="Số tiền...">
+                                </div>
+                            </th>
+                            <!-- 12. Stylist -->
+                            <th class="px-2 py-3">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-stylist" data-label="Stylist" onclick="toggleMultiSelect('menu-stylist')">Stylist</div>
                                     <div class="multi-select-menu" id="menu-stylist"></div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 13. Video -->
+                            <th class="px-2 py-3">
                                 <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-assignedVideo" data-label="Video" onclick="toggleMultiSelect('menu-video')">Video</div>
-                                    <div class="multi-select-menu" id="menu-video"></div>
+                                    <div class="multi-select-trigger" id="trigger-assignedVideo" data-label="Video" onclick="toggleMultiSelect('menu-assignedVideo')">Video</div>
+                                    <div class="multi-select-menu" id="menu-assignedVideo"></div>
                                 </div>
                             </th>
-                            <th class="p-2 bg-slate-50">
+                            <!-- 14. Photo -->
+                            <th class="px-2 py-3">
                                 <div class="multi-select-container">
-                                    <div class="multi-select-trigger" id="trigger-assignedPhoto" data-label="Photo" onclick="toggleMultiSelect('menu-photo')">Photo</div>
-                                    <div class="multi-select-menu" id="menu-photo"></div>
+                                    <div class="multi-select-trigger" id="trigger-assignedPhoto" data-label="Photo" onclick="toggleMultiSelect('menu-assignedPhoto')">Photo</div>
+                                    <div class="multi-select-menu" id="menu-assignedPhoto"></div>
                                 </div>
                             </th>
-                            <th class="p-2 text-center bg-slate-50">
-                                <button class="clear-filters-btn" onclick="clearAllFilters()" title="Xóa tất cả bộ lọc">
-                                    <span class="material-symbols-outlined">close</span>
+                            <!-- 15. Actions -->
+                            <th class="px-2 py-3 text-right">
+                                <button onclick="clearAllFilters()" class="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm group mx-auto" title="Xóa tất cả bộ lọc">
+                                    <span class="material-symbols-outlined text-[18px] group-hover:rotate-90 transition-transform duration-300">filter_alt_off</span>
                                 </button>
                             </th>
                         </tr>
@@ -3195,6 +3258,7 @@
         // Reset Multi-select Triggers
         document.querySelectorAll('.multi-select-trigger, .date-range-trigger').forEach(trigger => {
             trigger.textContent = trigger.getAttribute('data-label');
+            trigger.classList.remove('active');
             trigger.style.color = '';
             trigger.style.borderColor = '';
             // Highlight "All" option
@@ -3227,7 +3291,8 @@
     };
 
     window.toggleDateRange = function(id) {
-        const menu = document.getElementById(id);
+        // Chỉ tìm chính xác menu thả xuống, tránh nhầm với thẻ input có id trùng tên (như id="deadline")
+        const menu = document.getElementById('menu-' + id);
         if (!menu) return;
         const isShown = menu.classList.contains('show');
         document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(m => m.classList.remove('show'));
@@ -3498,7 +3563,7 @@
         }
 
         if (pagedData.length === 0) {
-            tbodyFull.innerHTML = `<tr><td colspan="14" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+            tbodyFull.innerHTML = `<tr><td colspan="15" class="px-6 py-8 text-center text-slate-400">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
             updatePaginationUI(0);
             return;
         }
@@ -3532,7 +3597,7 @@
                     const icon = getGroupIcon(sortConfig.key);
                     fullHtml += `
                         <tr class="group-header-row">
-                            <td colspan="14">
+                            <td colspan="15">
                                 <div class="group-header-content">
                                     <span class="material-symbols-outlined text-[16px] text-slate-400">${icon}</span>
                                     <span>${headerText}</span>
@@ -3866,8 +3931,8 @@
             // Multi-select staff
             populateMultiSelect('menu-requester', staff, 'requester');
             populateMultiSelect('menu-stylist', creativeStaff, 'stylist');
-            populateMultiSelect('menu-video', creativeStaff, 'assignedVideo');
-            populateMultiSelect('menu-photo', creativeStaff, 'assignedPhoto');
+            populateMultiSelect('menu-assignedVideo', creativeStaff, 'assignedVideo');
+            populateMultiSelect('menu-assignedPhoto', creativeStaff, 'assignedPhoto');
             
             // Populate Edit Modal Personnel Dropdowns
             populateDropdown('editOrderStylist', creativeStaff, '- Chưa chọn -');
