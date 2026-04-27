@@ -6187,13 +6187,23 @@
 
         // Khởi tạo danh sách phòng ban cho bộ lọc nếu chưa có
         const deptFilter = document.getElementById('budgetFilterDept');
-        if (deptFilter && deptFilter.options.length <= 1 && window.systemConfigs && window.systemConfigs.departments) {
-            window.systemConfigs.departments.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d;
-                opt.textContent = d;
-                deptFilter.appendChild(opt);
-            });
+        if (deptFilter && deptFilter.options.length <= 1) {
+            let depts = [];
+            if (window.departmentsData && window.departmentsData.length > 0) {
+                depts = window.departmentsData.map(d => d.name || d.id);
+            } else if (window.allOrdersData) {
+                // Dự phòng: lấy từ các đơn hàng hiện có
+                depts = [...new Set(window.allOrdersData.map(o => o.department).filter(Boolean))].sort();
+            }
+
+            if (depts.length > 0) {
+                depts.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    deptFilter.appendChild(opt);
+                });
+            }
         }
 
         const selectedDept = document.getElementById('budgetFilterDept')?.value || 'all';
