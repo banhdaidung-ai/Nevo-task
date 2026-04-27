@@ -6506,7 +6506,7 @@
             const matchesDept = filterDept === 'all' || o.department === filterDept;
             const matchesCat = filterCat === 'all' || o.category === filterCat;
             
-            return matchesMonth && matchesYear && matchesDept && matchesCat;
+            return matchesMonth && matchesYear && matchesDept && matchesCat && cost > 0;
         });
 
         console.log(`Budget Report: Found ${data.length} orders matching filters`);
