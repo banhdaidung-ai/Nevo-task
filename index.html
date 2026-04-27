@@ -5259,6 +5259,8 @@
         if (e.key === 'Escape') {
             const overlay = document.getElementById('editorFullscreenOverlay');
             if (overlay && window._fsContainerId) {
+                e.preventDefault();
+                e.stopPropagation();
                 toggleEditorFullscreen(window._fsContainerId);
             }
         }
