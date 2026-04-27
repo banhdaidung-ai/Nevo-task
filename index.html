@@ -1860,8 +1860,14 @@
                             <span class="material-symbols-outlined text-sm">view_column</span>
                             Cột chi phí
                         </button>
+                        <button onclick="window.toggleFinanceDashboard()" id="btnToggleFinanceDash" class="flex items-center gap-2 px-6 py-2 rounded-2xl bg-indigo-50 text-indigo-600 text-[11px] font-black border border-indigo-100 transition-all hover:bg-indigo-100">
+                            <span class="material-symbols-outlined text-sm" id="iconToggleFinanceDash">visibility</span>
+                            <span id="textToggleFinanceDash">Xem báo cáo tổng quát</span>
+                        </button>
                     </div>
                 </div>
+
+                <div id="financeDashboardWrapper" class="hidden space-y-10 mb-10">
 
                     <!-- Finance KPIs -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -1932,6 +1938,7 @@
                             </div>
                         </div>
                     </div>
+                </div> <!-- End of financeDashboardWrapper -->
 
                     <!-- Main Ledger Table -->
                     <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
@@ -6742,6 +6749,25 @@
         document.getElementById('periodBtnMonth').className = p === 'month' ? 'px-4 py-2 rounded-xl text-[11px] font-black transition-all bg-indigo-600 text-white shadow-md' : 'px-4 py-2 rounded-xl text-[11px] font-black transition-all text-slate-500 hover:bg-slate-50';
         document.getElementById('periodBtnQuarter').className = p === 'quarter' ? 'px-4 py-2 rounded-xl text-[11px] font-black transition-all bg-indigo-600 text-white shadow-md' : 'px-4 py-2 rounded-xl text-[11px] font-black transition-all text-slate-500 hover:bg-slate-50';
         window.renderBudgetReport();
+    };
+
+    window.toggleFinanceDashboard = function() {
+        const wrapper = document.getElementById('financeDashboardWrapper');
+        const icon = document.getElementById('iconToggleFinanceDash');
+        const text = document.getElementById('textToggleFinanceDash');
+        if (!wrapper) return;
+        
+        if (wrapper.classList.contains('hidden')) {
+            wrapper.classList.remove('hidden');
+            if (icon) icon.textContent = 'visibility_off';
+            if (text) text.textContent = 'Ẩn báo cáo tổng quát';
+            // Trigger chart re-render to fix scaling issues when appearing from hidden
+            if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
+        } else {
+            wrapper.classList.add('hidden');
+            if (icon) icon.textContent = 'visibility';
+            if (text) text.textContent = 'Xem báo cáo tổng quát';
+        }
     };
 
     window.switchBudgetTab = function(tab) {
