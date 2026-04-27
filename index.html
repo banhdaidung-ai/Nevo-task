@@ -1681,9 +1681,33 @@
                         <h1 class="text-4xl font-black text-[#131b2e] font-headline mb-2 tracking-tight">Báo cáo Chi phí Sản xuất</h1>
                         <p class="text-slate-500 text-sm font-medium">Theo dõi và tối ưu hóa ngân sách sản xuất nội dung Kinetic.</p>
                     </div>
-                    <div class="flex items-center gap-3 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-                        <button onclick="window.setBudgetPeriod('month')" id="btnBudgetMonth" class="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold shadow-lg shadow-primary/20 transition-all">Tháng này</button>
-                        <button onclick="window.setBudgetPeriod('quarter')" id="btnBudgetQuarter" class="px-6 py-2.5 rounded-xl text-slate-500 text-xs font-bold hover:bg-slate-50 transition-all">Quý này</button>
+                    <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+                        <!-- Bộ lọc Phòng ban -->
+                        <div class="relative">
+                            <select id="budgetFilterDept" onchange="window.renderBudgetReport()" class="pl-8 pr-10 py-2.5 rounded-xl bg-slate-50 border-none text-[11px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer min-w-[140px]">
+                                <option value="all">Tất cả Phòng ban</option>
+                                <!-- Sẽ được đổ dữ liệu động -->
+                            </select>
+                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">domain</span>
+                        </div>
+                        
+                        <!-- Bộ lọc Thể loại -->
+                        <div class="relative">
+                            <select id="budgetFilterCategory" onchange="window.renderBudgetReport()" class="pl-8 pr-10 py-2.5 rounded-xl bg-slate-50 border-none text-[11px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer min-w-[140px]">
+                                <option value="all">Tất cả Thể loại</option>
+                                <option value="Hình Ảnh">Hình Ảnh</option>
+                                <option value="Video">Video</option>
+                                <option value="Giả Live">Giả Live</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">category</span>
+                        </div>
+
+                        <div class="w-px h-6 bg-slate-100 mx-1"></div>
+
+                        <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl">
+                            <button onclick="window.setBudgetPeriod('month')" id="btnBudgetMonth" class="px-5 py-2 rounded-lg bg-primary text-white text-[10px] font-black shadow-lg shadow-primary/20 transition-all uppercase tracking-wider">Tháng</button>
+                            <button onclick="window.setBudgetPeriod('quarter')" id="btnBudgetQuarter" class="px-5 py-2 rounded-lg text-slate-500 text-[10px] font-black hover:bg-white transition-all uppercase tracking-wider">Quý</button>
+                        </div>
                     </div>
                 </div>
 
@@ -6161,17 +6185,43 @@
         const currentYear = now.getFullYear();
         const currentQuarter = Math.floor(currentMonth / 3);
 
+        // Khởi tạo danh sách phòng ban cho bộ lọc nếu chưa có
+        const deptFilter = document.getElementById('budgetFilterDept');
+        if (deptFilter && deptFilter.options.length <= 1 && window.systemConfigs && window.systemConfigs.departments) {
+            window.systemConfigs.departments.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                deptFilter.appendChild(opt);
+            });
+        }
+
+        const selectedDept = document.getElementById('budgetFilterDept')?.value || 'all';
+        const selectedCat = document.getElementById('budgetFilterCategory')?.value || 'all';
+
         const data = (window.allOrdersData || []).filter(o => {
             const cost = Number(o.totalCost || 0);
             if (cost <= 0) return false;
+            
+            // Lọc theo thời gian
             const d = o.deadline ? new Date(o.deadline) : null;
             if (!d) return false;
+            let timeMatch = false;
             if (window.budgetPeriod === 'month') {
-                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                timeMatch = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
             } else {
                 const q = Math.floor(d.getMonth() / 3);
-                return q === currentQuarter && d.getFullYear() === currentYear;
+                timeMatch = q === currentQuarter && d.getFullYear() === currentYear;
             }
+            if (!timeMatch) return false;
+
+            // Lọc theo Phòng ban
+            if (selectedDept !== 'all' && o.department !== selectedDept) return false;
+
+            // Lọc theo Thể loại
+            if (selectedCat !== 'all' && o.category !== selectedCat) return false;
+
+            return true;
         });
 
         let total = 0;
