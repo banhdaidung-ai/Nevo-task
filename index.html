@@ -2096,7 +2096,7 @@
                                  <button onclick="editorInsertTable()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn bảng tính">
                                     <span class="material-symbols-outlined text-lg">table_view</span>
                                 </button>
-                                 <button onclick="toggleEditorFullscreen()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors ml-auto" title="Toàn màn hình">
+                                 <button onclick="toggleEditorFullscreen('orderEditorContainer')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors ml-auto" title="Toàn màn hình">
                                      <span class="material-symbols-outlined text-lg">fullscreen</span>
                                  </button>
                             </div>
@@ -2426,26 +2426,29 @@
                         <input id="editOrderTitle" type="text" class="w-full bg-[#e8eefc] border-none rounded-[12px] px-5 py-3.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow">
                     </div>
 
-                    <!-- Nội dung chi tiết -->
                     <div class="space-y-1.5">
                         <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Nội dung chi tiết</label>
-                        <div class="w-full bg-[#e8eefc] rounded-[16px] overflow-hidden focus-within:ring-2 focus-within:ring-[#b80035]/50 transition-shadow">
-                            <div class="bg-[#dce4f7] px-3 py-2 flex flex-wrap items-center gap-1.5 border-b border-white/40">
-                                <button onclick="editorCmd('bold')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In đậm"><span class="material-symbols-outlined text-[18px]">format_bold</span></button>
-                                <button onclick="editorCmd('italic')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In nghiêng"><span class="material-symbols-outlined text-[18px]">format_italic</span></button>
-                                <button onclick="editorCmd('underline')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Gạch chân"><span class="material-symbols-outlined text-[18px]">format_underlined</span></button>
+                        <div id="editOrderEditorContainer" class="editor-container w-full bg-[#e8eefc] rounded-[16px] overflow-hidden border border-outline-variant/30 transition-all">
+                            <div class="bg-[#dce4f7] px-3 py-2 flex flex-wrap items-center gap-1 p-2 border-b border-white/40">
+                                <button onclick="editorCmd('bold')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In đậm"><span class="material-symbols-outlined text-[18px]">format_bold</span></button>
+                                <button onclick="editorCmd('italic')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In nghiêng"><span class="material-symbols-outlined text-[18px]">format_italic</span></button>
+                                <button onclick="editorCmd('underline')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Gạch chân"><span class="material-symbols-outlined text-[18px]">format_underlined</span></button>
                                 <div class="w-[1px] h-4 bg-slate-400/30 mx-1"></div>
-                                <button onclick="editorCmd('justifyLeft')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors"><span class="material-symbols-outlined text-[18px]">format_align_left</span></button>
-                                <button onclick="editorCmd('justifyCenter')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors"><span class="material-symbols-outlined text-[18px]">format_align_center</span></button>
-                                <button onclick="editorCmd('insertUnorderedList')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors"><span class="material-symbols-outlined text-[18px]">format_list_bulleted</span></button>
+                                <button onclick="editorCmd('insertUnorderedList')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Danh sách"><span class="material-symbols-outlined text-[18px]">format_list_bulleted</span></button>
+                                <button onclick="editorCmd('insertOrderedList')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Danh sách số"><span class="material-symbols-outlined text-[18px]">format_list_numbered</span></button>
                                 <div class="w-[1px] h-4 bg-slate-400/30 mx-1"></div>
-                                <button onclick="var url=prompt('Nhập link:', 'https://'); if(url) editorCmd('createLink', url)" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn link"><span class="material-symbols-outlined text-[18px]">link</span></button>
-                                <button onclick="var url=prompt('Nhập link ảnh:', 'https://'); if(url) editorCmd('insertImage', url)" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn ảnh"><span class="material-symbols-outlined text-[18px]">image</span></button>
+                                <button onclick="editorCmd('justifyLeft')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Căn trái"><span class="material-symbols-outlined text-[18px]">format_align_left</span></button>
+                                <button onclick="editorCmd('justifyCenter')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Căn giữa"><span class="material-symbols-outlined text-[18px]">format_align_center</span></button>
+                                <button onclick="editorCmd('justifyRight')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Căn phải"><span class="material-symbols-outlined text-[18px]">format_align_right</span></button>
                                 <div class="w-[1px] h-4 bg-slate-400/30 mx-1"></div>
-                                <button onclick="editorInsertTable()" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn bảng"><span class="material-symbols-outlined text-[18px]">table_view</span></button>
-                                <button onclick="editorCmd('insertHTML', '<br><table class=\'w-full border-collapse border border-slate-300 my-2\'><tr><th class=\'border border-slate-300 p-2 bg-slate-100\'>Tiêu đề</th><th class=\'border border-slate-300 p-2 bg-slate-100\'>Nội dung</th></tr><tr><td class=\'border border-slate-300 p-2\'>...</td><td class=\'border border-slate-300 p-2\'>...</td></tr></table><br>')" class="p-2 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Bảng mẫu"><span class="material-symbols-outlined text-[18px]">grid_on</span></button>
+                                <button onclick="editorInsertLink()" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn link"><span class="material-symbols-outlined text-[18px]">link</span></button>
+                                <button onclick="editorInsertImage()" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn ảnh"><span class="material-symbols-outlined text-[18px]">image</span></button>
+                                <button onclick="editorInsertTable()" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Chèn bảng"><span class="material-symbols-outlined text-[18px]">table_view</span></button>
+                                <button onclick="toggleEditorFullscreen('editOrderEditorContainer')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors ml-auto" title="Toàn màn hình">
+                                     <span class="material-symbols-outlined text-lg">fullscreen</span>
+                                </button>
                             </div>
-                            <div id="editOrderContent" contenteditable="true" class="w-full px-5 py-4 text-[15px] font-medium text-slate-700 h-[500px] overflow-y-auto outline-none leading-relaxed custom-scrollbar"></div>
+                            <div id="editOrderContent" contenteditable="true" class="w-full px-5 py-4 text-[15px] font-medium text-slate-700 min-h-[400px] h-[500px] overflow-y-auto outline-none leading-relaxed custom-scrollbar"></div>
                         </div>
                     </div>
                 </div>
@@ -5120,11 +5123,11 @@
         document.execCommand(cmd, false, val);
     };
 
-    window.toggleEditorFullscreen = function() {
-        const container = document.getElementById('orderEditorContainer');
+    window.toggleEditorFullscreen = function(containerId) {
+        const container = document.getElementById(containerId);
         if (container) {
             container.classList.toggle('fullscreen');
-            const icon = container.querySelector('[onclick="toggleEditorFullscreen()"] span');
+            const icon = container.querySelector('[onclick*="toggleEditorFullscreen"] span');
             if (icon) {
                 icon.textContent = container.classList.contains('fullscreen') ? 'fullscreen_exit' : 'fullscreen';
             }
