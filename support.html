@@ -32,9 +32,9 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;line-height
 .note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:1rem;margin:1rem 0;font-size:13px;display:flex;align-items:flex-start;gap:8px}
 .note .material-symbols-outlined{color:#3b82f6;font-size:20px;flex-shrink:0;margin-top:1px}
 .kbd{background:#e2e8f0;padding:2px 8px;border-radius:4px;font-family:monospace;font-size:12px;font-weight:600;border:1px solid #cbd5e1}
-ul.feature-list{list-style:none;padding:0;margin:0.75rem 0}
-ul.feature-list li{padding:6px 0 6px 28px;position:relative;font-size:14px}
-ul.feature-list li::before{content:"✓";position:absolute;left:4px;color:#b80035;font-weight:700}
+ul.fl{list-style:none;padding:0;margin:0.75rem 0}
+ul.fl li{padding:6px 0 6px 28px;position:relative;font-size:14px}
+ul.fl li::before{content:"✓";position:absolute;left:4px;color:#b80035;font-weight:700}
 .footer-support{text-align:center;padding:2rem;color:#64748b;font-size:13px}
 @media(max-width:768px){.hero h1{font-size:1.75rem}.section{padding:1.25rem}}
 </style>
@@ -49,242 +49,167 @@ ul.feature-list li::before{content:"✓";position:absolute;left:4px;color:#b8003
 
 <div class="container">
 
-<!-- MỤC LỤC -->
 <div class="toc">
     <h2><span class="material-symbols-outlined">list</span> Mục lục hướng dẫn</h2>
-    <a href="#create-order"><span class="material-symbols-outlined">add_circle</span> 1. Cách tạo đơn hàng mới</a>
-    <a href="#edit-order"><span class="material-symbols-outlined">edit_note</span> 2. Cách chỉnh sửa đơn hàng</a>
-    <a href="#filter"><span class="material-symbols-outlined">filter_alt</span> 3. Cách sử dụng bộ lọc</a>
-    <a href="#history"><span class="material-symbols-outlined">history</span> 4. Cách xem lịch sử đơn hàng</a>
-    <a href="#planning"><span class="material-symbols-outlined">event_note</span> 5. Cách lên kế hoạch order</a>
-    <a href="#profile"><span class="material-symbols-outlined">person</span> 6. Cách xem hồ sơ cá nhân</a>
+    <a href="#s1"><span class="material-symbols-outlined">add_circle</span> 1. Cách tạo đơn hàng mới</a>
+    <a href="#s2"><span class="material-symbols-outlined">edit_note</span> 2. Cách chỉnh sửa đơn hàng</a>
+    <a href="#s3"><span class="material-symbols-outlined">filter_alt</span> 3. Cách sử dụng bộ lọc</a>
+    <a href="#s4"><span class="material-symbols-outlined">history</span> 4. Cách xem lịch sử đơn hàng</a>
+    <a href="#s5"><span class="material-symbols-outlined">event_note</span> 5. Cách lên kế hoạch order</a>
+    <a href="#s6"><span class="material-symbols-outlined">person</span> 6. Cách xem hồ sơ cá nhân</a>
 </div>
 
-<!-- 1. TẠO ĐƠN HÀNG -->
-<div class="section" id="create-order">
+<!-- 1 -->
+<div class="section" id="s1">
     <h2><span class="material-symbols-outlined">add_circle</span> 1. Cách tạo đơn hàng mới</h2>
-    <p>Để tạo một đơn hàng mới trong hệ thống, anh/chị thực hiện theo các bước sau:</p>
 
-    <h3>📌 Truy cập trang tạo đơn</h3>
-    <div class="step">
-        <span class="step-num">1</span> Từ thanh điều hướng phía trên, nhấn vào nút <strong>"+ Tạo đơn"</strong> (nút màu đỏ nằm ở góc phải trên cùng). Hoặc vào menu <strong>Tạo đơn mới</strong> trên thanh điều hướng.
-    </div>
+    <h3>📌 Bước 1: Truy cập trang tạo đơn</h3>
+    <div class="step"><span class="step-num">1</span> Nhấn nút <strong>"+ Tạo đơn"</strong> (nút màu đỏ ở góc phải trên cùng thanh điều hướng). Trang "Tạo Đơn Hàng Mới" sẽ hiện ra.</div>
 
-    <h3>📌 Điền thông tin cơ bản</h3>
-    <div class="step">
-        <span class="step-num">2</span> <strong>Người yêu cầu:</strong> Nhập tên người yêu cầu tạo đơn hàng.
-    </div>
-    <div class="step">
-        <span class="step-num">3</span> <strong>Thể loại đơn:</strong> Chọn thể loại đơn hàng từ danh sách thả xuống (Ví dụ: Mua nguyên vật liệu, Bảo trì thiết bị, Dịch vụ IT...).
-    </div>
-    <div class="step">
-        <span class="step-num">4</span> <strong>Phòng ban:</strong> Chọn phòng ban liên quan từ danh sách.
-    </div>
-    <div class="step">
-        <span class="step-num">5</span> <strong>Ngày đặt hàng & Ngày triển khai:</strong> Chọn ngày bắt đầu và ngày dự kiến triển khai.
-    </div>
-    <div class="step">
-        <span class="step-num">6</span> <strong>Hạn chót:</strong> Đặt deadline cho đơn hàng.
-    </div>
-    <div class="step">
-        <span class="step-num">7</span> <strong>Tiêu đề đơn hàng:</strong> Nhập tiêu đề mô tả ngắn gọn nội dung đơn hàng.
-    </div>
+    <h3>📌 Bước 2: Điền thông tin chung</h3>
+    <p>Trang tạo đơn có phần <strong>"Thông tin chung"</strong> gồm các trường sau:</p>
+    <div class="step"><span class="step-num">2</span> <strong>Mã đơn hàng:</strong> Được hệ thống tự động cấp phát (VD: NEVO-001), anh/chị không cần nhập.</div>
+    <div class="step"><span class="step-num">3</span> <strong>Phòng ban yêu cầu:</strong> Chọn từ danh sách thả xuống (Phòng Kế hoạch & Kinh doanh, Ban Điều hành Dự án, Phòng Nhân sự, Tổ Kỹ thuật - Hạ tầng).</div>
+    <div class="step"><span class="step-num">4</span> <strong>Người yêu cầu:</strong> Chọn người yêu cầu từ danh sách thả xuống (có icon 👤 bên trái).</div>
+    <div class="step"><span class="step-num">5</span> <strong>Hạn chót (Deadline):</strong> Nhấn vào ô ngày có icon ⏰ để chọn ngày hạn chót.</div>
+    <div class="step"><span class="step-num">6</span> <strong>Thể loại:</strong> Chọn thể loại đơn hàng từ danh sách (VD: Video, Photo, v.v.).</div>
+    <div class="step"><span class="step-num">7</span> <strong>Tiêu đề đơn hàng:</strong> Nhập tiêu đề mô tả ngắn gọn nội dung đơn hàng.</div>
 
-    <h3>📌 Soạn nội dung chi tiết</h3>
-    <div class="step">
-        <span class="step-num">8</span> Sử dụng <strong>trình soạn thảo văn bản</strong> để nhập nội dung chi tiết. Thanh công cụ hỗ trợ:
-    </div>
-    <ul class="feature-list">
+    <h3>📌 Bước 3: Soạn nội dung chi tiết</h3>
+    <div class="step"><span class="step-num">8</span> Phía dưới phần Thông tin chung là trình soạn thảo văn bản <strong>"Nội dung chi tiết"</strong>. Thanh công cụ phía trên có các nút:</div>
+    <ul class="fl">
         <li><strong>B / I / U</strong> — In đậm, in nghiêng, gạch chân</li>
-        <li><strong>Danh sách</strong> — Tạo danh sách có dấu đầu dòng hoặc số thứ tự</li>
+        <li><strong>Danh sách</strong> — Dấu đầu dòng (●) hoặc đánh số (1, 2, 3)</li>
         <li><strong>Căn lề</strong> — Trái, giữa, phải</li>
-        <li><strong>Chèn link, ảnh, bảng</strong> — Bổ sung tài liệu tham khảo</li>
-        <li><strong>Phóng to</strong> — Nhấn biểu tượng ⛶ để soạn thảo toàn màn hình. Nhấn <span class="kbd">ESC</span> hoặc nút "Thu nhỏ" để quay lại.</li>
+        <li><strong>Chèn</strong> — Link, hình ảnh, bảng</li>
+        <li><strong>Phóng to ⛶</strong> — Mở toàn màn hình để soạn thảo thoải mái hơn. Nhấn nút <strong>"Thu nhỏ"</strong> hoặc phím <span class="kbd">ESC</span> để trở về.</li>
     </ul>
 
-    <h3>📌 Gửi đơn hàng</h3>
-    <div class="step">
-        <span class="step-num">9</span> Sau khi điền đầy đủ thông tin, nhấn nút <strong>"Tạo đơn hàng"</strong> ở cuối trang. Hệ thống sẽ tự động tạo mã đơn (VD: NEVO-001) và lưu vào cơ sở dữ liệu.
-    </div>
+    <h3>📌 Bước 4: Xác nhận tạo đơn</h3>
+    <div class="step"><span class="step-num">9</span> Nhấn nút <strong>"Xác nhận tạo đơn"</strong> ở góc phải phía trên trang. Hoặc nhấn <strong>"Hủy bỏ"</strong> để quay lại trang Đơn hàng.</div>
 
     <div class="tip">
         <span class="material-symbols-outlined">lightbulb</span>
-        <div><strong>Mẹo:</strong> Mã đơn hàng (NEVO-XXX) được hệ thống tạo tự động và duy nhất, anh/chị không cần nhập.</div>
+        <div><strong>Mẹo:</strong> Phía cuối form có dòng lưu ý: "Hạn chót sẽ được thông báo tự động đến các bộ phận liên quan."</div>
     </div>
 </div>
 
-<!-- 2. CHỈNH SỬA ĐƠN HÀNG -->
-<div class="section" id="edit-order">
+<!-- 2 -->
+<div class="section" id="s2">
     <h2><span class="material-symbols-outlined">edit_note</span> 2. Cách chỉnh sửa đơn hàng</h2>
-    <p>Khi cần cập nhật thông tin đơn hàng đã tạo, thực hiện như sau:</p>
 
-    <div class="step">
-        <span class="step-num">1</span> Vào trang <strong>"Đơn hàng"</strong> từ thanh điều hướng phía trên.
+    <div class="step"><span class="step-num">1</span> Vào trang <strong>"Đơn hàng"</strong> từ thanh điều hướng phía trên.</div>
+    <div class="step"><span class="step-num">2</span> Tìm đơn hàng cần sửa trong bảng danh sách. Ở cột <strong>"Thao tác"</strong> (cột cuối cùng bên phải), nhấn vào biểu tượng <strong>✏️ bút chì</strong>.</div>
+    <div class="step"><span class="step-num">3</span> Cửa sổ chỉnh sửa (popup) sẽ hiện ra. Bố cục gồm 2 phần:<br>
+        — <strong>Bên trái:</strong> Thông tin chính (Người yêu cầu, Hạn chót, Trạng thái, Phòng ban, Người phụ trách, Tiêu đề, Nội dung chi tiết).<br>
+        — <strong>Bên phải:</strong> Thông tin bổ sung (Stylist, Video, Photo, Chi phí, Ghi chú).
     </div>
-    <div class="step">
-        <span class="step-num">2</span> Tìm đơn hàng cần chỉnh sửa trong bảng danh sách. Có thể dùng <strong>bộ lọc</strong> hoặc <strong>thanh tìm kiếm</strong> để tìm nhanh.
-    </div>
-    <div class="step">
-        <span class="step-num">3</span> Nhấn vào biểu tượng <strong>✏️ (bút chì)</strong> ở cột hành động bên phải của đơn hàng cần sửa.
-    </div>
-    <div class="step">
-        <span class="step-num">4</span> Cửa sổ chỉnh sửa sẽ hiện ra với đầy đủ thông tin hiện tại. Anh/chị có thể thay đổi:
-    </div>
-    <ul class="feature-list">
-        <li>Người yêu cầu, hạn chót, trạng thái</li>
-        <li>Phòng ban, tiêu đề đơn hàng</li>
-        <li>Nội dung chi tiết (có trình soạn thảo đầy đủ)</li>
-        <li>Chi phí, ghi chú, thành viên tham gia</li>
-    </ul>
-    <div class="step">
-        <span class="step-num">5</span> Sau khi chỉnh sửa xong, nhấn nút <strong>"LƯU THAY ĐỔI"</strong> để cập nhật. Hoặc nhấn <strong>"HỦY BỎ"</strong> để hủy.
-    </div>
+    <div class="step"><span class="step-num">4</span> Trình soạn thảo <strong>"Nội dung chi tiết"</strong> trong cửa sổ chỉnh sửa cũng có đầy đủ chức năng: in đậm, danh sách, chèn bảng, phóng to toàn màn hình, v.v.</div>
+    <div class="step"><span class="step-num">5</span> Sau khi chỉnh sửa xong, nhấn nút <strong>"LƯU THAY ĐỔI"</strong> (nút đỏ phía dưới). Hoặc nhấn <strong>"HỦY BỎ"</strong> để đóng mà không lưu.</div>
 
     <div class="note">
         <span class="material-symbols-outlined">info</span>
-        <div><strong>Lưu ý:</strong> Trình soạn thảo trong phần chỉnh sửa cũng hỗ trợ đầy đủ các tính năng: in đậm, danh sách, chèn bảng, phóng to toàn màn hình, v.v.</div>
+        <div><strong>Lưu ý:</strong> Anh/chị có thể thay đổi trạng thái đơn hàng (Chờ duyệt → Đang xử lý → Hoàn thành) trực tiếp trong cửa sổ chỉnh sửa.</div>
     </div>
 </div>
 
-<!-- 3. BỘ LỌC -->
-<div class="section" id="filter">
+<!-- 3 -->
+<div class="section" id="s3">
     <h2><span class="material-symbols-outlined">filter_alt</span> 3. Cách sử dụng bộ lọc</h2>
-    <p>Bộ lọc giúp anh/chị nhanh chóng tìm kiếm đơn hàng theo nhiều tiêu chí khác nhau.</p>
+    <p>Trang Đơn hàng cung cấp hệ thống lọc đa tầng mạnh mẽ:</p>
 
-    <h3>📌 Vị trí bộ lọc</h3>
-    <div class="step">
-        <span class="step-num">1</span> Truy cập trang <strong>"Đơn hàng"</strong>. Phía trên bảng danh sách sẽ có khu vực <strong>Bộ lọc nâng cao</strong> với các trường lọc.
-    </div>
+    <h3>📌 Thanh tìm kiếm chung</h3>
+    <div class="step"><span class="step-num">1</span> Phía trên bảng có ô <strong>"Tìm kiếm mã đơn, tên người yêu cầu hoặc nội dung công việc..."</strong>. Gõ từ khóa vào đây, bảng sẽ lọc tự động ngay lập tức.</div>
 
-    <h3>📌 Các tiêu chí lọc</h3>
-    <div class="step">
-        <span class="step-num">2</span> <strong>Tìm kiếm:</strong> Nhập từ khóa vào ô tìm kiếm để lọc theo mã đơn, tiêu đề hoặc người yêu cầu.
-    </div>
-    <div class="step">
-        <span class="step-num">3</span> <strong>Trạng thái:</strong> Chọn từ danh sách: Chờ duyệt, Đang xử lý, Hoàn thành...
-    </div>
-    <div class="step">
-        <span class="step-num">4</span> <strong>Phòng ban:</strong> Lọc đơn hàng theo phòng ban cụ thể.
-    </div>
-    <div class="step">
-        <span class="step-num">5</span> <strong>Thể loại đơn:</strong> Lọc theo loại đơn hàng.
-    </div>
-    <div class="step">
-        <span class="step-num">6</span> <strong>Khoảng ngày đặt hàng:</strong> Chọn ngày bắt đầu và ngày kết thúc để lọc theo khoảng thời gian.
-    </div>
-    <div class="step">
-        <span class="step-num">7</span> <strong>Khoảng deadline:</strong> Lọc đơn hàng theo hạn chót.
-    </div>
+    <h3>📌 Lọc nhanh theo trạng thái</h3>
+    <div class="step"><span class="step-num">2</span> Bên phải thanh tìm kiếm có các nút <strong>Lọc Nhanh</strong>: Tất cả, Đang sản xuất, Đang hậu kỳ, Hoàn thành, Chờ duyệt. Nhấn vào nút nào để lọc theo trạng thái đó.</div>
 
-    <h3>📌 Áp dụng & Xóa bộ lọc</h3>
-    <div class="step">
-        <span class="step-num">8</span> Bộ lọc được <strong>áp dụng tự động</strong> ngay khi anh/chị thay đổi giá trị. Để xóa tất cả bộ lọc, nhấn nút <strong>"Xóa lọc"</strong>.
-    </div>
+    <h3>📌 Bộ lọc theo cột (dưới tiêu đề bảng)</h3>
+    <div class="step"><span class="step-num">3</span> Ngay bên dưới hàng tiêu đề của bảng là <strong>hàng bộ lọc theo từng cột</strong>. Mỗi cột có kiểu lọc riêng:</div>
+    <ul class="fl">
+        <li><strong>Mã đơn, Nội dung, Ghi chú, Chi phí:</strong> Ô nhập liệu — gõ từ khóa để lọc</li>
+        <li><strong>Người yêu cầu, Phòng ban, Thể loại, Trạng thái, Stylist, Video, Photo:</strong> Danh sách đổ xuống đa chọn — nhấn vào để mở menu, tích chọn nhiều giá trị cùng lúc</li>
+        <li><strong>Ngày order, Ngày triển khai, Deadline:</strong> Bộ lọc khoảng ngày — nhấn vào để mở popup chọn "Từ ngày" → "Đến ngày", rồi nhấn <strong>"Áp dụng"</strong></li>
+    </ul>
+
+    <h3>📌 Xóa bộ lọc</h3>
+    <div class="step"><span class="step-num">4</span> Nhấn nút <strong>"Xóa bộ lọc"</strong> (ở góc trái phía trên bảng, bên cạnh nút "Xuất dữ liệu") hoặc nhấn <strong>biểu tượng ✕ tròn màu hồng</strong> ở cuối hàng lọc để xóa tất cả bộ lọc.</div>
+
+    <h3>📌 Sắp xếp theo cột</h3>
+    <div class="step"><span class="step-num">5</span> Nhấn vào <strong>tiêu đề cột</strong> bất kỳ (Mã đơn hàng, Người yêu cầu, Deadline, v.v.) để sắp xếp tăng/giảm dần. Icon mũi tên sẽ cho biết hướng sắp xếp hiện tại.</div>
 
     <div class="tip">
         <span class="material-symbols-outlined">lightbulb</span>
-        <div><strong>Mẹo:</strong> Có thể kết hợp nhiều bộ lọc cùng lúc. Ví dụ: lọc theo trạng thái "Đang xử lý" + phòng ban "Kỹ thuật" để xem các đơn kỹ thuật đang xử lý.</div>
+        <div><strong>Mẹo:</strong> Có thể kết hợp nhiều bộ lọc cùng lúc. VD: lọc Trạng thái "Đang sản xuất" + Phòng ban "Kỹ thuật" + Deadline trong tháng 5.</div>
     </div>
 </div>
 
-<!-- 4. LỊCH SỬ ĐƠN HÀNG -->
-<div class="section" id="history">
+<!-- 4 -->
+<div class="section" id="s4">
     <h2><span class="material-symbols-outlined">history</span> 4. Cách xem lịch sử đơn hàng</h2>
-    <p>Hệ thống lưu trữ toàn bộ lịch sử đơn hàng để anh/chị có thể tra cứu bất kỳ lúc nào.</p>
 
-    <div class="step">
-        <span class="step-num">1</span> Vào trang <strong>"Đơn hàng"</strong> từ thanh điều hướng.
-    </div>
-    <div class="step">
-        <span class="step-num">2</span> Bảng danh sách hiển thị tất cả đơn hàng theo thứ tự mới nhất trước. Mỗi dòng gồm: Mã đơn, Tiêu đề, Người yêu cầu, Phòng ban, Trạng thái, Chi phí, Ngày đặt, Hạn chót.
-    </div>
-    <div class="step">
-        <span class="step-num">3</span> <strong>Nhấn vào một dòng</strong> để xem chi tiết đơn hàng trong cửa sổ popup.
-    </div>
-    <div class="step">
-        <span class="step-num">4</span> Sử dụng <strong>phân trang</strong> ở cuối bảng để xem các trang tiếp theo (mỗi trang hiển thị 100 đơn).
-    </div>
-    <div class="step">
-        <span class="step-num">5</span> Sử dụng <strong>bộ lọc ngày</strong> để xem đơn hàng trong khoảng thời gian cụ thể.
-    </div>
+    <div class="step"><span class="step-num">1</span> Nhấn vào menu <strong>"Đơn hàng"</strong> trên thanh điều hướng. Trang hiển thị bảng danh sách tất cả đơn hàng.</div>
+    <div class="step"><span class="step-num">2</span> Phía trên bảng có <strong>4 thẻ thống kê</strong> hiển thị nhanh: Tổng đơn hàng, Đang xử lý, Chờ duyệt, Hoàn thành — giúp anh/chị nắm tổng quan ngay.</div>
+    <div class="step"><span class="step-num">3</span> Bảng hiển thị đầy đủ thông tin: Mã đơn, Người yêu cầu, Phòng ban, Thể loại, Nội dung, Ghi chú, Ngày order, Ngày triển khai, Deadline, Trạng thái, Chi phí, Stylist, Video, Photo.</div>
+    <div class="step"><span class="step-num">4</span> Sử dụng <strong>bộ lọc ngày</strong> (Ngày order / Ngày triển khai / Deadline) để xem đơn hàng trong khoảng thời gian cụ thể.</div>
+    <div class="step"><span class="step-num">5</span> Sử dụng <strong>phân trang</strong> ở cuối bảng: nhấn các nút số trang hoặc nhập số trang rồi nhấn <strong>"Go"</strong> để nhảy nhanh.</div>
+    <div class="step"><span class="step-num">6</span> Nhấn nút <strong>"Xuất dữ liệu"</strong> (bên cạnh nút Xóa bộ lọc) để tải danh sách đơn hàng về máy dưới dạng file Excel.</div>
+</div>
+
+<!-- 5 -->
+<div class="section" id="s5">
+    <h2><span class="material-symbols-outlined">event_note</span> 5. Cách lên kế hoạch order</h2>
+
+    <h3>📌 Truy cập</h3>
+    <div class="step"><span class="step-num">1</span> Nhấn vào menu <strong>"Kế hoạch"</strong> trên thanh điều hướng. Trang hiển thị với tiêu đề <strong>"Lập kế hoạch & Báo cáo Tháng"</strong>.</div>
+
+    <h3>📌 Chọn phòng ban và tháng</h3>
+    <div class="step"><span class="step-num">2</span> Ở góc phải phía trên có 2 ô chọn: <strong>"PHÒNG BAN"</strong> (chọn phòng ban cụ thể hoặc Tất cả) và <strong>"THÁNG"</strong> (chọn tháng cần lập kế hoạch).</div>
+
+    <h3>📌 Bảng kế hoạch</h3>
+    <div class="step"><span class="step-num">3</span> Trang có 2 tab: <strong>"Bảng Kế hoạch"</strong> và <strong>"Báo cáo Thực tế vs Kế hoạch"</strong>. Tab Bảng Kế hoạch là bảng dạng ma trận với các cột:</div>
+    <ul class="fl">
+        <li><strong>Checkbox</strong> — Tích chọn dòng để xóa hàng loạt</li>
+        <li><strong>Phòng ban, Chiến dịch, Ghi chú, Loại order, Ngân sách</strong> — Các cột cố định bên trái</li>
+        <li><strong>Cột Tổng</strong> — Tổng số order trong tháng</li>
+        <li><strong>Các cột ngày 1→31</strong> — Nhập số lượng order cho từng ngày</li>
+        <li><strong>Cột Xóa</strong> — Nút xóa dòng nằm cố định bên phải</li>
+    </ul>
+
+    <h3>📌 Thêm, xóa, xuất dữ liệu</h3>
+    <div class="step"><span class="step-num">4</span> <strong>"Thêm dòng"</strong> — Nhấn nút đỏ để thêm một dòng kế hoạch mới.</div>
+    <div class="step"><span class="step-num">5</span> <strong>"Xoá đã chọn"</strong> — Tích chọn các dòng rồi nhấn nút này để xóa hàng loạt.</div>
+    <div class="step"><span class="step-num">6</span> <strong>"Import"</strong> — Nhấn để tải lên file Excel/CSV có sẵn.</div>
+    <div class="step"><span class="step-num">7</span> <strong>"Export"</strong> — Nhấn để xuất bảng kế hoạch ra file Excel.</div>
+
+    <h3>📌 Thẻ tổng hợp phía dưới</h3>
+    <div class="step"><span class="step-num">8</span> Dưới bảng có 3 thẻ: <strong>Tổng Ngân sách Kế hoạch</strong> (tổng tiền), <strong>Quy mô triển khai</strong> (số đơn + độ phủ %), và <strong>Phân bổ Loại Order</strong> (nhấn vào để xuất Excel).</div>
 
     <div class="note">
         <span class="material-symbols-outlined">info</span>
-        <div><strong>Lưu ý:</strong> Có thể nhấn vào tiêu đề cột để <strong>sắp xếp</strong> đơn hàng theo cột đó (tăng dần hoặc giảm dần).</div>
+        <div><strong>Lưu ý:</strong> Dữ liệu kế hoạch được đồng bộ <strong>trực tiếp (LIVE MODE)</strong> — mọi thay đổi sẽ được lưu tự động lên hệ thống.</div>
     </div>
 </div>
 
-<!-- 5. KẾ HOẠCH ORDER -->
-<div class="section" id="planning">
-    <h2><span class="material-symbols-outlined">event_note</span> 5. Cách lên kế hoạch order</h2>
-    <p>Trang Kế hoạch giúp anh/chị quản lý và lập kế hoạch order một cách có hệ thống.</p>
-
-    <h3>📌 Truy cập trang Kế hoạch</h3>
-    <div class="step">
-        <span class="step-num">1</span> Từ thanh điều hướng, nhấn vào <strong>"Kế hoạch"</strong>.
-    </div>
-
-    <h3>📌 Tạo kế hoạch mới</h3>
-    <div class="step">
-        <span class="step-num">2</span> Nhấn nút <strong>"+ Thêm kế hoạch"</strong> để mở form tạo mới.
-    </div>
-    <div class="step">
-        <span class="step-num">3</span> Điền các thông tin: <strong>Tiêu đề, Mô tả, Ngày bắt đầu, Ngày kết thúc, Trạng thái, Ưu tiên</strong>.
-    </div>
-    <div class="step">
-        <span class="step-num">4</span> Nhấn <strong>"Lưu"</strong> để tạo kế hoạch.
-    </div>
-
-    <h3>📌 Quản lý kế hoạch</h3>
-    <div class="step">
-        <span class="step-num">5</span> Bảng kế hoạch hiển thị tất cả các kế hoạch đã tạo. Anh/chị có thể:
-    </div>
-    <ul class="feature-list">
-        <li><strong>Chỉnh sửa</strong> — Nhấn biểu tượng ✏️ để cập nhật thông tin</li>
-        <li><strong>Xóa</strong> — Nhấn biểu tượng 🗑️ để xóa kế hoạch</li>
-        <li><strong>Xóa hàng loạt</strong> — Tích chọn nhiều kế hoạch rồi nhấn "Xóa đã chọn"</li>
-        <li><strong>Lọc & Tìm kiếm</strong> — Sử dụng các bộ lọc phía trên bảng</li>
-    </ul>
-
-    <div class="tip">
-        <span class="material-symbols-outlined">lightbulb</span>
-        <div><strong>Mẹo:</strong> Sử dụng trang kế hoạch để lên lịch trình mua hàng định kỳ, giúp chủ động nguồn nguyên vật liệu.</div>
-    </div>
-</div>
-
-<!-- 6. HỒ SƠ CÁ NHÂN -->
-<div class="section" id="profile">
+<!-- 6 -->
+<div class="section" id="s6">
     <h2><span class="material-symbols-outlined">person</span> 6. Cách xem hồ sơ cá nhân</h2>
-    <p>Trang hồ sơ cá nhân hiển thị thông tin tài khoản và các hoạt động gần đây của anh/chị.</p>
 
     <h3>📌 Truy cập hồ sơ</h3>
-    <div class="step">
-        <span class="step-num">1</span> Nhấn vào <strong>ảnh đại diện</strong> (avatar) ở góc phải trên cùng của trang.
-    </div>
-    <div class="step">
-        <span class="step-num">2</span> Trong menu thả xuống, chọn <strong>"Hồ sơ cá nhân"</strong>.
-    </div>
+    <div class="step"><span class="step-num">1</span> Nhấn vào <strong>ảnh đại diện (avatar)</strong> ở góc phải trên cùng thanh điều hướng.</div>
+    <div class="step"><span class="step-num">2</span> Trong menu thả xuống, nhấn <strong>"Hồ sơ cá nhân"</strong>.</div>
 
     <h3>📌 Thông tin hiển thị</h3>
-    <div class="step">
-        <span class="step-num">3</span> Trang hồ sơ bao gồm các thông tin:
-    </div>
-    <ul class="feature-list">
-        <li><strong>Tên hiển thị</strong> — Tên của anh/chị trên hệ thống</li>
-        <li><strong>Email</strong> — Địa chỉ email đăng nhập</li>
-        <li><strong>Vai trò</strong> — Quyền hạn trong hệ thống (Admin, Manager, User...)</li>
-        <li><strong>Phòng ban</strong> — Phòng ban trực thuộc</li>
-        <li><strong>Mã nhân viên & Số điện thoại</strong> — Thông tin liên hệ</li>
-        <li><strong>Hoạt động gần đây</strong> — Danh sách các đơn hàng anh/chị đã tạo gần đây</li>
-    </ul>
+    <div class="step"><span class="step-num">3</span> Phần đầu trang hiển thị: <strong>Ảnh đại diện, Tên, Vai trò</strong> (VD: Quản trị viên), <strong>Email, Số điện thoại, Phòng ban, Mã nhân viên</strong> (VD: EMP-0001).</div>
+    <div class="step"><span class="step-num">4</span> Phía dưới có <strong>3 thẻ thống kê</strong>: Tổng đơn đã tạo, Đang chờ xử lý, Đã hoàn thành.</div>
 
-    <div class="note">
-        <span class="material-symbols-outlined">info</span>
-        <div><strong>Lưu ý:</strong> Để thay đổi thông tin cá nhân, vui lòng liên hệ quản trị viên (Admin) qua trang Quản trị hệ thống.</div>
-    </div>
+    <h3>📌 Cài đặt tài khoản</h3>
+    <div class="step"><span class="step-num">5</span> Bên trái: Form <strong>"Cài đặt tài khoản"</strong> cho phép thay đổi Họ tên, Email, Số điện thoại, và Đổi mật khẩu (nhập mật khẩu cũ + mật khẩu mới). Nhấn <strong>"Lưu thay đổi"</strong> để cập nhật.</div>
+
+    <h3>📌 Đơn hàng của tôi</h3>
+    <div class="step"><span class="step-num">6</span> Bên phải: Mục <strong>"Đơn hàng của tôi"</strong> hiển thị danh sách các đơn hàng anh/chị đã tạo gần đây. Nhấn <strong>"Tất cả"</strong> ở góc phải để chuyển sang trang Đơn hàng xem đầy đủ.</div>
 </div>
 
-<!-- FOOTER -->
 <div class="footer-support">
     <p>Nếu cần hỗ trợ thêm, vui lòng liên hệ quản trị viên hệ thống.</p>
     <p style="margin-top:4px">© 2026 Nevo Task — Phát triển bởi Bành Đại Dũng</p>
