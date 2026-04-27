@@ -288,9 +288,9 @@
                     <span class="material-symbols-outlined text-[20px]">rule_settings</span>
                     Trạng thái Đơn
                 </button>
-                <button onclick="window.location.href='index.html#reports'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
-                    <span class="material-symbols-outlined text-[20px]">bar_chart</span>
-                    Báo cáo & Thống kê
+                <button onclick="switchTab('categories')" id="tab-categories" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">category</span>
+                    Thể loại Đơn
                 </button>
             </nav>
         </div>
@@ -486,6 +486,38 @@
             </div>
         </div>
 
+        <!-- SECTION: CATEGORIES -->
+        <div id="section-categories" class="tab-content hidden">
+            <div class="mb-8">
+                <p class="text-orange-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Phân loại</p>
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Thể loại Đơn hàng<span class="text-orange-600">.</span></h1>
+                        <p class="text-slate-500 text-sm mt-1.5">Quản lý các loại hình dịch vụ, sản phẩm</p>
+                    </div>
+                    <button onclick="openCategoryModal()" class="btn-primary !bg-orange-600">
+                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        Thêm thể loại
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50/80 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tên thể loại</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ngày tạo</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoryTableBody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- SECTION: ACTIVITIES LOG -->
         <div id="section-activities" class="tab-content hidden">
             <div class="mb-8 animate-fade-in-up">
@@ -553,6 +585,25 @@
         <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
             <button onclick="closeDeptModal()" class="btn-secondary">Hủy</button>
             <button onclick="saveDept()" class="btn-primary !bg-blue-600" id="btnSaveDept">Lưu thông tin</button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== CATEGORY MODAL ====== -->
+<div id="categoryModal" class="modal-overlay hidden">
+    <div class="modal-box !max-w-[440px]">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 id="categoryModalTitle" class="font-headline font-bold text-slate-900">Thêm thể loại</h2>
+            <button onclick="closeCategoryModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors"><span class="material-symbols-outlined text-slate-400">close</span></button>
+        </div>
+        <div class="p-6">
+            <input type="hidden" id="editCategoryId"/>
+            <label class="block text-xs font-semibold text-slate-600 mb-2">Tên thể loại <span class="text-red-500">*</span></label>
+            <input type="text" id="categoryNameInput" class="form-input" placeholder="VD: Video, Hình Ảnh..."/>
+        </div>
+        <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+            <button onclick="closeCategoryModal()" class="btn-secondary">Hủy</button>
+            <button onclick="saveCategory()" class="btn-primary !bg-orange-600" id="btnSaveCategory">Lưu thông tin</button>
         </div>
     </div>
 </div>
@@ -815,8 +866,9 @@
     let users = [];
     let departments = [];
     let orderStatuses = [];
+    let orderCategories = [];
     let deleteTargetId = null;
-    let deleteTargetType = 'user'; // 'user', 'dept', 'status'
+    let deleteTargetType = 'user'; // 'user', 'dept', 'status', 'category'
     
     // Activity Logger Utility
     window.logActivity = async function(type, title, description) {
@@ -838,6 +890,7 @@
     const USERS_COLLECTION = "users";
     const DEPTS_COLLECTION = "departments";
     const STATUS_COLLECTION = "order_statuses";
+    const CATEGORY_COLLECTION = "order_categories";
 
     const DEFAULT_DEPTS = [
         "Ban Giám Đốc", "Kế toán", "Kỹ thuật", "Logistics", "Marketing", "Nhân sự", "Sản xuất", "IT",
@@ -859,6 +912,10 @@
         { empId: 'nevo',     name: 'Nevo Sport',     password: 'nevo',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
     ];
 
+    const DEFAULT_CATEGORIES = [
+        "Video", "Hình Ảnh", "Livestream", "Giả Live"
+    ];
+
     // =============================================
     // FIREBASE SYNC (Linked to window.db)
     // =============================================
@@ -867,7 +924,7 @@
         
         // Handle initial tab from Hash
         const hash = window.location.hash.replace('#', '');
-        if (hash && ['users', 'depts', 'statuses', 'activities'].includes(hash)) {
+        if (hash && ['users', 'depts', 'statuses', 'categories', 'activities'].includes(hash)) {
             switchTab(hash);
         }
         
@@ -918,7 +975,22 @@
             renderStatuses();
         });
 
-        // --- 4. ACTIVITIES SYNC ---
+        // --- 4. CATEGORIES SYNC ---
+        const qCategory = window.fs.query(window.fs.collection(window.db, CATEGORY_COLLECTION), window.fs.orderBy("name"));
+        const snapCategory = await window.fs.getDocs(qCategory);
+        if (snapCategory.empty) {
+            console.log("Initializing default categories...");
+            for (const name of DEFAULT_CATEGORIES) {
+                await window.fs.addDoc(window.fs.collection(window.db, CATEGORY_COLLECTION), { name, createdAt: new Date().toISOString() });
+            }
+        }
+        window.fs.onSnapshot(qCategory, (snap) => {
+            orderCategories = [];
+            snap.forEach(doc => orderCategories.push({ id: doc.id, ...doc.data() }));
+            if (window.renderCategories) window.renderCategories();
+        });
+
+        // --- 5. ACTIVITIES SYNC ---
         const qActivities = window.fs.query(window.fs.collection(window.db, "activities"), window.fs.orderBy("timestamp", "desc"));
         window.fs.onSnapshot(qActivities, (snap) => {
             window.activities = [];
@@ -1048,6 +1120,27 @@
                     <div class="flex items-center gap-2 justify-end">
                         <button class="btn-icon-sm" onclick="openStatusModal('${s.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
                         <button class="btn-icon-sm text-red-500 hover:bg-red-50" onclick="openDeleteModal('${s.id}', 'status')"><span class="material-symbols-outlined text-[17px]">delete</span></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderCategories() {
+        const tbody = document.getElementById('categoryTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = orderCategories.map(c => `
+            <tr class="table-row">
+                <td class="px-6 py-4">
+                    <span class="text-sm font-bold text-slate-800">${escHtml(c.name)}</span>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-400">
+                    ${c.createdAt ? c.createdAt.slice(0, 10) : '—'}
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                        <button class="btn-icon-sm" onclick="openCategoryModal('${c.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
+                        <button class="btn-icon-sm text-red-500 hover:bg-red-50" onclick="openDeleteModal('${c.id}', 'category')"><span class="material-symbols-outlined text-[17px]">delete</span></button>
                     </div>
                 </td>
             </tr>
@@ -1188,12 +1281,13 @@
             let collectionName = USERS_COLLECTION;
             if (deleteTargetType === 'dept') collectionName = DEPTS_COLLECTION;
             if (deleteTargetType === 'status') collectionName = STATUS_COLLECTION;
+            if (deleteTargetType === 'category') collectionName = CATEGORY_COLLECTION;
 
             await window.fs.deleteDoc(window.fs.doc(window.db, collectionName, deleteTargetId));
             showToast('Đã xóa thành công!');
             
             // LOG ACTIVITY
-            const typeLabels = { 'user': 'người dùng', 'dept': 'phòng ban', 'status': 'trạng thái' };
+            const typeLabels = { 'user': 'người dùng', 'dept': 'phòng ban', 'status': 'trạng thái', 'category': 'thể loại' };
             window.logActivity('delete', `Xóa ${typeLabels[deleteTargetType]}`, `Đã xóa một ${typeLabels[deleteTargetType]} khỏi hệ thống.`);
             
             closeDeleteModal();
@@ -1296,8 +1390,58 @@
     };
 
     // =============================================
-    // DEPT & STATUS ACTIONS
+    // DEPT, STATUS & CATEGORY ACTIONS
     // =============================================
+    window.openCategoryModal = function(id = '') {
+        const c = orderCategories.find(x => x.id === id);
+        document.getElementById('categoryModalTitle').textContent = id ? 'Chỉnh sửa thể loại' : 'Thêm thể loại';
+        document.getElementById('editCategoryId').value = id;
+        document.getElementById('categoryNameInput').value = c ? c.name : '';
+        document.getElementById('categoryModal').classList.remove('hidden');
+    }
+    window.closeCategoryModal = () => document.getElementById('categoryModal').classList.add('hidden');
+
+    window.saveCategory = async function() {
+        const name = document.getElementById('categoryNameInput').value.trim();
+        const id = document.getElementById('editCategoryId').value;
+        if (!name) return showToast('Vui lòng nhập tên thể loại', 'error');
+
+        const btn = document.getElementById('btnSaveCategory');
+        btn.disabled = true;
+        try {
+            if (id) {
+                const existingCat = orderCategories.find(c => c.id === id);
+                await window.fs.updateDoc(window.fs.doc(window.db, CATEGORY_COLLECTION, id), { name });
+                
+                // Batch Update Data Consistency
+                if (existingCat && existingCat.name !== name) {
+                    const batch = window.fs.writeBatch(window.db);
+                    let batchCount = 0;
+                    
+                    const qOrders = window.fs.query(window.fs.collection(window.db, "orders"), window.fs.where("category", "==", existingCat.name));
+                    const snapOrders = await window.fs.getDocs(qOrders);
+                    snapOrders.forEach(docSnap => {
+                        batch.update(docSnap.ref, { category: name });
+                        batchCount++;
+                    });
+                    
+                    if (batchCount > 0) {
+                        await batch.commit();
+                        console.log(`Tiến hành đồng bộ (Batch Update) đổi tên thể loại trên ${batchCount} bản ghi.`);
+                    }
+                }
+            } else {
+                await window.fs.addDoc(window.fs.collection(window.db, CATEGORY_COLLECTION), { name, createdAt: new Date().toISOString() });
+                window.logActivity('create', 'Thêm thể loại đơn', `Đã tạo thể loại mới: ${name}`);
+            }
+            showToast('Lưu thể loại thành công');
+            closeCategoryModal();
+        } catch (e) {
+            console.error(e);
+            showToast('Lỗi lưu dữ liệu', 'error');
+        } finally { btn.disabled = false; }
+    }
+
     window.openDeptModal = function(id = '') {
         const d = departments.find(x => x.id === id);
         document.getElementById('deptModalTitle').textContent = id ? 'Chỉnh sửa phòng ban' : 'Thêm phòng ban';
@@ -1422,11 +1566,13 @@
         const u = users.find(x => x.id === id);
         const d = departments.find(x => x.id === id);
         const s = orderStatuses.find(x => x.id === id);
+        const c = orderCategories.find(x => x.id === id);
         
         let name = '';
         if (type === 'user') name = u ? u.name : '';
         if (type === 'dept') name = d ? d.name : '';
         if (type === 'status') name = s ? s.name : '';
+        if (type === 'category') name = c ? c.name : '';
 
         if (type === 'user' && u && u.empId === 'admin') return;
 

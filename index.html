@@ -1043,25 +1043,7 @@
                             <th class="px-2 py-3">
                                 <div class="multi-select-container">
                                     <div class="multi-select-trigger" id="trigger-category" data-label="Thể loại" onclick="toggleMultiSelect('menu-category')">Thể loại</div>
-                                    <div class="multi-select-menu" id="menu-category">
-                                        <div class="multi-select-item all-active" id="all-category" onclick="toggleColumnFilter('category', 'ALL', true)"><span>Tất cả</span></div>
-                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Video', cb.checked)">
-                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Video', this.checked)">
-                                            <span>Video</span>
-                                        </div>
-                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Hình Ảnh', cb.checked)">
-                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Hình Ảnh', this.checked)">
-                                            <span>Hình Ảnh</span>
-                                        </div>
-                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Livestream', cb.checked)">
-                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Livestream', this.checked)">
-                                            <span>Livestream</span>
-                                        </div>
-                                        <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('category', 'Giả Live', cb.checked)">
-                                            <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleColumnFilter('category', 'Giả Live', this.checked)">
-                                            <span>Giả Live</span>
-                                        </div>
-                                    </div>
+                                    <div class="multi-select-menu" id="menu-category"></div>
                                 </div>
                             </th>
                             <!-- 5. Title -->
@@ -2048,9 +2030,7 @@
                             Thể loại <span class="text-primary">*</span>
                         </label>
                         <select id="orderCategory" class="w-full bg-surface-container-highest border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer">
-                            <option value="Video">Video</option>
-                            <option value="Hình Ảnh">Hình Ảnh</option>
-                            <option value="Giả Live">Giả Live</option>
+                            <option value="">- Chọn thể loại -</option>
                         </select>
                     </div>
                     <div class="md:col-span-2 space-y-2">
@@ -2476,10 +2456,7 @@
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[18px] pointer-events-none">category</span>
                             <select id="editOrderCategory" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
-                                <option value="Video">Video</option>
-                                <option value="Hình Ảnh">Hình Ảnh</option>
-                                <option value="Livestream">Livestream</option>
-                                <option value="Giả Live">Giả Live</option>
+                                <option value="">- Chọn thể loại -</option>
                             </select>
                             <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
                         </div>
@@ -3971,6 +3948,18 @@
             populateDropdown('editOrderStatus', window.orderStatusesData);
             populateDropdown('filterStatus', window.orderStatusesData, 'Tất cả trạng thái');
             populateMultiSelect('menu-status', window.orderStatusesData, 'status');
+            if (window.allOrdersData.length > 0) window.renderOrdersTable();
+        });
+
+        // --- 2.5 ORDER CATEGORIES SYNC ---
+        const categoryRef = window.fsCollection(window.db, "order_categories");
+        const qCategory = window.fsQuery(categoryRef, window.fsOrderBy("name"));
+        window.fsOnSnapshot(qCategory, (snapshot) => {
+            window.orderCategoriesData = [];
+            snapshot.forEach(doc => window.orderCategoriesData.push({ id: doc.id, ...doc.data() }));
+            populateDropdown('orderCategory', window.orderCategoriesData, '- Chọn thể loại -');
+            populateDropdown('editOrderCategory', window.orderCategoriesData, '- Chọn thể loại -');
+            populateMultiSelect('menu-category', window.orderCategoriesData, 'category');
             if (window.allOrdersData.length > 0) window.renderOrdersTable();
         });
 
