@@ -6863,8 +6863,9 @@
         // 1. Sync Columns
         window.fsOnSnapshot(window.fsQuery(colRef, window.fsOrderBy("createdAt", "asc")), (snap) => {
             window.financeColumns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderFinancePage();
-        });
+            if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
+            if (typeof renderFinanceColumnsList === 'function') renderFinanceColumnsList();
+        }, (err) => console.error("Column Sync Error:", err));
 
         // 2. Sync Expenses
         window.fsOnSnapshot(window.fsQuery(expRef, window.fsOrderBy("date", "desc")), (snap) => {
@@ -6881,8 +6882,9 @@
                 if (data.type === 'spender') spenders.push({id: d.id, val: data.val});
             });
             window.financeConfigs = { types, spenders };
-            populateFinanceSelects();
-        });
+            if (typeof populateFinanceSelects === 'function') populateFinanceSelects();
+            if (typeof renderFinanceConfigList === 'function') renderFinanceConfigList();
+        }, (err) => console.error("Config Sync Error:", err));
 
         // 4. Sync Departments for filter
         const deptsRef = window.fsCollection(window.db, "departments");
@@ -6902,34 +6904,38 @@
     }
 
     function populateFinanceSelects() {
-        const typeSel = document.getElementById('expenseType');
-        const spendSel = document.getElementById('expenseSpender');
-        const mainCatSel = document.getElementById('expenseMainCategory');
-        const deptSel = document.getElementById('expenseDept');
-        
-        if(typeSel) {
-            const cur = typeSel.value;
-            typeSel.innerHTML = '<option value="">Chọn loại chi...</option>';
-            window.financeConfigs.types.forEach(t => typeSel.innerHTML += `<option value="${t.val}">${t.val}</option>`);
-            if(cur) typeSel.value = cur;
-        }
-        if(spendSel) {
-            const cur = spendSel.value;
-            spendSel.innerHTML = '<option value="">Chọn người chi...</option>';
-            window.financeConfigs.spenders.forEach(s => spendSel.innerHTML += `<option value="${s.val}">${s.val}</option>`);
-            if(cur) spendSel.value = cur;
-        }
-        if(mainCatSel) {
-            const cur = mainCatSel.value;
-            mainCatSel.innerHTML = '<option value="">Chọn hạng mục...</option>';
-            window.financeColumns.forEach(c => mainCatSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-            if(cur) mainCatSel.value = cur;
-        }
-        if(deptSel && window.departmentsData) {
-            const cur = deptSel.value;
-            deptSel.innerHTML = '<option value="">Chọn phòng ban...</option>';
-            window.departmentsData.forEach(d => deptSel.innerHTML += `<option value="${d.name}">${d.name}</option>`);
-            if(cur) deptSel.value = cur;
+        try {
+            const typeSel = document.getElementById('expenseType');
+            const spendSel = document.getElementById('expenseSpender');
+            const mainCatSel = document.getElementById('expenseMainCategory');
+            const deptSel = document.getElementById('expenseDept');
+            
+            if(typeSel && window.financeConfigs?.types) {
+                const cur = typeSel.value;
+                typeSel.innerHTML = '<option value="">Chọn loại chi...</option>';
+                window.financeConfigs.types.forEach(t => typeSel.innerHTML += `<option value="${t.val}">${t.val}</option>`);
+                if(cur) typeSel.value = cur;
+            }
+            if(spendSel && window.financeConfigs?.spenders) {
+                const cur = spendSel.value;
+                spendSel.innerHTML = '<option value="">Chọn người chi...</option>';
+                window.financeConfigs.spenders.forEach(s => spendSel.innerHTML += `<option value="${s.val}">${s.val}</option>`);
+                if(cur) spendSel.value = cur;
+            }
+            if(mainCatSel && window.financeColumns) {
+                const cur = mainCatSel.value;
+                mainCatSel.innerHTML = '<option value="">Chọn hạng mục...</option>';
+                window.financeColumns.forEach(c => mainCatSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+                if(cur) mainCatSel.value = cur;
+            }
+            if(deptSel && window.departmentsData) {
+                const cur = deptSel.value;
+                deptSel.innerHTML = '<option value="">Chọn phòng ban...</option>';
+                window.departmentsData.forEach(d => deptSel.innerHTML += `<option value="${d.name}">${d.name}</option>`);
+                if(cur) deptSel.value = cur;
+            }
+        } catch (e) {
+            console.error("Error in populateFinanceSelects:", e);
         }
     }
 
@@ -7203,23 +7209,28 @@
     };
 
     function renderFinanceColumnsList() {
-        const list = document.getElementById('financeColumnsList');
-        list.innerHTML = '';
-        window.financeColumns.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors';
-            div.innerHTML = `
-                <div class="flex flex-col">
-                    <span class="text-sm font-bold text-slate-800">${c.name}</span>
-                    <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">${c.code || '-'} | Plan: ${Number(c.plan || 0).toLocaleString()}</span>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="window.editFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-indigo-600"><span class="material-symbols-outlined text-sm">edit</span></button>
-                    <button onclick="window.deleteFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-red-500"><span class="material-symbols-outlined text-sm">delete</span></button>
-                </div>
-            `;
-            list.appendChild(div);
-        });
+        try {
+            const list = document.getElementById('financeColumnsList');
+            if (!list) return;
+            list.innerHTML = '';
+            (window.financeColumns || []).forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors';
+                div.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-slate-800">${c.name}</span>
+                        <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">${c.code || '-'} | Plan: ${Number(c.plan || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="window.editFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-indigo-600"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="window.deleteFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-red-500"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        } catch (e) {
+            console.error("Error in renderFinanceColumnsList:", e);
+        }
     }
 
     window.saveFinanceColumn = async function() {
@@ -7280,17 +7291,22 @@
     };
 
     function renderFinanceConfigList() {
-        const list = document.getElementById('finConfigList');
-        list.innerHTML = '';
-        const items = window.currentFinConfigType === 'expenseType' ? window.financeConfigs.types : window.financeConfigs.spenders;
-        items.forEach(item => {
-            list.innerHTML += `
-                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                    <span class="text-xs font-bold text-slate-700">${item.val}</span>
-                    <button onclick="window.deleteFinanceConfigItem('${item.id}')" class="text-red-400 hover:text-red-600"><span class="material-symbols-outlined text-sm">delete</span></button>
-                </div>
-            `;
-        });
+        try {
+            const list = document.getElementById('finConfigList');
+            if (!list) return;
+            list.innerHTML = '';
+            const items = window.currentFinConfigType === 'expenseType' ? (window.financeConfigs?.types || []) : (window.financeConfigs?.spenders || []);
+            items.forEach(item => {
+                list.innerHTML += `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                        <span class="text-xs font-bold text-slate-700">${item.val}</span>
+                        <button onclick="window.deleteFinanceConfigItem('${item.id}')" class="text-red-400 hover:text-red-600"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                `;
+            });
+        } catch (e) {
+            console.error("Error in renderFinanceConfigList:", e);
+        }
     }
 
     window.saveFinanceConfigItem = async function() {
@@ -7319,7 +7335,13 @@
         if(m) m.value = now.getMonth() + 1;
         if(y) y.value = now.getFullYear();
         
-        initFinanceSync();
+        // Wait for Firebase to be ready for Finance sync
+        const checkFBFin = setInterval(() => {
+            if(window.db && window.fsCollection) {
+                clearInterval(checkFBFin);
+                initFinanceSync();
+            }
+        }, 500);
     });
 
 </script>
