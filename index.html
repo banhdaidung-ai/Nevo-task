@@ -1687,73 +1687,88 @@
                     </div>
                 </div>
 
-                <!-- KPI Cards -->
+                <!-- KPI Cards: Phase 1 - Overview -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-8 rounded-3xl border-l-4 border-primary shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-rose-50 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
+                    <div class="bg-[#131b2e] p-8 rounded-3xl text-white shadow-xl shadow-slate-200 relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-white/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
                         <div class="relative z-10">
-                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-6">Tổng chi phí</h3>
-                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardTotal">0</div>
+                            <h3 class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black mb-6">Tổng chi phí</h3>
+                            <div class="text-3xl font-black mb-2 font-headline" id="budgetCardTotal">0</div>
                             <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-emerald-500 text-sm">trending_up</span>
-                                <span class="text-[11px] font-bold text-emerald-500" id="budgetCardTrend">+12.4% so với tháng trước</span>
+                                <span class="material-symbols-outlined text-emerald-400 text-sm">trending_up</span>
+                                <span class="text-[11px] font-bold text-emerald-400" id="budgetCardTrend">Đang cập nhật...</span>
                             </div>
                         </div>
-                        <span class="material-symbols-outlined absolute right-6 bottom-6 text-primary/10 text-5xl">payments</span>
+                        <span class="material-symbols-outlined absolute right-6 bottom-6 text-white/5 text-5xl">payments</span>
                     </div>
-                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <div class="flex justify-between items-start mb-6">
-                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Hình ảnh</h3>
-                                <span class="material-symbols-outlined text-slate-300">image</span>
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Cơ bản</h3>
+                            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                <span class="material-symbols-outlined text-[18px]">inventory_2</span>
                             </div>
-                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardPhoto">0</div>
-                            <p class="text-[11px] text-slate-400 font-bold" id="budgetCardPhotoPerc">0% tổng ngân sách</p>
                         </div>
+                        <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardBasic">0</div>
+                        <p class="text-[11px] text-slate-400 font-bold" id="budgetCardBasicPerc">Mẫu, Makeup, Studio, Di chuyển</p>
                     </div>
-                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <div class="flex justify-between items-start mb-6">
-                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Video</h3>
-                                <span class="material-symbols-outlined text-slate-300">movie</span>
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Thuê Ngoài (Outsource)</h3>
+                            <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                                <span class="material-symbols-outlined text-[18px]">groups</span>
                             </div>
-                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardVideo">0</div>
-                            <p class="text-[11px] text-slate-400 font-bold" id="budgetCardVideoPerc">0% tổng ngân sách</p>
                         </div>
+                        <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardOutsource">0</div>
+                        <p class="text-[11px] text-slate-400 font-bold" id="budgetCardOutsourcePerc">Video, Photo, Stylist, Trợ lý</p>
                     </div>
-                    <!-- CHI PHÍ GIẢ LIVE -->
-                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <div class="flex justify-between items-start mb-6">
-                                <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Giả live</h3>
-                                <span class="material-symbols-outlined text-slate-300">live_tv</span>
+                    <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black">Chi phí Khác</h3>
+                            <div class="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                                <span class="material-symbols-outlined text-[18px]">more_horiz</span>
                             </div>
-                            <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardLive">0</div>
-                            <p class="text-[11px] text-slate-400 font-bold" id="budgetCardLivePerc">0% tổng ngân sách</p>
                         </div>
+                        <div class="text-3xl font-black text-slate-800 mb-2 font-headline" id="budgetCardOther">0</div>
+                        <p class="text-[11px] text-slate-400 font-bold">Các khoản phát sinh khác</p>
                     </div>
                 </div>
 
                 <!-- Charts Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+                    <!-- Donut: Cost by Type -->
                     <div class="lg:col-span-4 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
                         <div class="w-full flex items-center gap-3 mb-8 border-l-4 border-primary pl-4">
-                            <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider">Chi phí theo Thể loại</h3>
+                            <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider">Phân bổ theo Thể loại</h3>
                         </div>
-                        <div class="relative w-full aspect-square max-w-[240px] mb-8">
+                        <div class="relative w-full aspect-square max-w-[220px] mb-8">
                             <canvas id="budgetTypeChart"></canvas>
                             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                 <span class="text-2xl font-black text-slate-800 font-headline" id="budgetTypeTotalValue">0</span>
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">VND</span>
                             </div>
                         </div>
-                        <div class="w-full space-y-4" id="budgetTypeLegend"></div>
+                        <div class="w-full space-y-3" id="budgetTypeLegend"></div>
                     </div>
-                    <div class="lg:col-span-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                        <div class="flex justify-between items-center mb-8 border-l-4 border-primary pl-4">
+
+                    <!-- Radar: Detailed Cost Breakdown -->
+                    <div class="lg:col-span-4 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+                        <div class="w-full flex items-center gap-3 mb-8 border-l-4 border-emerald-500 pl-4">
+                            <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider">Cấu trúc chi phí chi tiết</h3>
+                        </div>
+                        <div class="relative w-full aspect-square max-w-[280px] mb-4">
+                            <canvas id="budgetDetailRadarChart"></canvas>
+                        </div>
+                        <div class="w-full grid grid-cols-2 gap-2 mt-4" id="budgetDetailStats">
+                            <!-- Detailed stats injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Dept Bars -->
+                    <div class="lg:col-span-4 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <div class="flex justify-between items-center mb-8 border-l-4 border-indigo-500 pl-4">
                             <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider">Chi phí theo Phòng ban</h3>
                         </div>
-                        <div class="space-y-8" id="budgetDeptContainer"></div>
+                        <div class="space-y-6 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar" id="budgetDeptContainer"></div>
                     </div>
                 </div>
 
@@ -6159,49 +6174,60 @@
             }
         });
 
-        let total = 0, photo = 0, video = 0, live = 0;
+        let total = 0;
+        let basicTotal = 0;
+        let outsourceTotal = 0;
+        let otherTotal = 0;
+        
         const typeMap = {};
         const deptMap = {};
+        const detailMap = {
+            model: 0, makeup: 0, studio: 0, travel: 0,
+            video: 0, photo: 0, stylist: 0, assistant: 0,
+            other: 0
+        };
 
         data.forEach(o => {
             const cost = Number(o.totalCost || 0);
             total += cost;
+            
             const cat = o.category || 'Khác';
             const dept = o.department || 'Không xác định';
-            if (cat === 'Hình Ảnh') photo += cost;
-            else if (cat === 'Video') video += cost;
-            else if (cat === 'Giả Live') live += cost;
             typeMap[cat] = (typeMap[cat] || 0) + cost;
             deptMap[dept] = (deptMap[dept] || 0) + cost;
+
+            if (o.costs) {
+                detailMap.model += Number(o.costs.model || 0);
+                detailMap.makeup += Number(o.costs.makeup || 0);
+                detailMap.studio += Number(o.costs.studio || 0);
+                detailMap.travel += Number(o.costs.travel || 0);
+                detailMap.video += Number(o.costs.video || 0);
+                detailMap.photo += Number(o.costs.photo || 0);
+                detailMap.stylist += Number(o.costs.stylist || 0);
+                detailMap.assistant += Number(o.costs.assistant || 0);
+                detailMap.other += Number(o.costs.other || 0);
+            }
         });
 
+        basicTotal = detailMap.model + detailMap.makeup + detailMap.studio + detailMap.travel;
+        outsourceTotal = detailMap.video + detailMap.photo + detailMap.stylist + detailMap.assistant;
+        otherTotal = detailMap.other;
+
+        // Update KPI Cards
         const elTotal = document.getElementById('budgetCardTotal');
-        const elPhoto = document.getElementById('budgetCardPhoto');
-        const elVideo = document.getElementById('budgetCardVideo');
-        const elLive = document.getElementById('budgetCardLive');
-        if(elTotal) elTotal.textContent = total.toLocaleString() + ' VNĐ';
-        if(elPhoto) elPhoto.textContent = photo.toLocaleString() + ' VNĐ';
-        if(elVideo) elVideo.textContent = video.toLocaleString() + ' VNĐ';
-        if(elLive) elLive.textContent = live.toLocaleString() + ' VNĐ';
+        const elBasic = document.getElementById('budgetCardBasic');
+        const elOutsource = document.getElementById('budgetCardOutsource');
+        const elOther = document.getElementById('budgetCardOther');
         
-        const photoPerc = total > 0 ? Math.round((photo/total)*100) : 0;
-        const videoPerc = total > 0 ? Math.round((video/total)*100) : 0;
-        const livePerc = total > 0 ? Math.round((live/total)*100) : 0;
-        if(document.getElementById('budgetCardPhotoPerc')) document.getElementById('budgetCardPhotoPerc').textContent = `${photoPerc}% tổng ngân sách`;
-        if(document.getElementById('budgetCardVideoPerc')) document.getElementById('budgetCardVideoPerc').textContent = `${videoPerc}% tổng ngân sách`;
-        if(document.getElementById('budgetCardLivePerc')) document.getElementById('budgetCardLivePerc').textContent = `${livePerc}% tổng ngân sách`;
+        if(elTotal) elTotal.textContent = total.toLocaleString() + ' VNĐ';
+        if(elBasic) elBasic.textContent = basicTotal.toLocaleString() + ' VNĐ';
+        if(elOutsource) elOutsource.textContent = outsourceTotal.toLocaleString() + ' VNĐ';
+        if(elOther) elOther.textContent = otherTotal.toLocaleString() + ' VNĐ';
 
-        const targetQuarter = 3000000000;
-        const remaining = Math.max(0, targetQuarter - total);
-        if(document.getElementById('budgetCardRemaining')) document.getElementById('budgetCardRemaining').textContent = remaining.toLocaleString() + ' VNĐ';
-        const remPerc = Math.min(100, Math.round((total/targetQuarter)*100));
-        const remBar = document.getElementById('budgetRemainingBar');
-        if(remBar) remBar.style.width = `${100 - remPerc}%`;
-
-        // Donut Chart
-        const canvas = document.getElementById('budgetTypeChart');
-        if (canvas && typeof Chart !== 'undefined') {
-            const ctx = canvas.getContext('2d');
+        // Donut Chart: Phân bổ theo Thể loại
+        const canvasType = document.getElementById('budgetTypeChart');
+        if (canvasType && typeof Chart !== 'undefined') {
+            const ctx = canvasType.getContext('2d');
             if (window.budgetChart) window.budgetChart.destroy();
             const labels = Object.keys(typeMap);
             const values = Object.values(typeMap);
@@ -6230,16 +6256,70 @@
                     legend.innerHTML += `
                         <div class="flex items-center justify-between py-1 border-b border-slate-50 last:border-none">
                             <div class="flex items-center gap-3">
-                                <div class="w-2.5 h-2.5 rounded-full" style="background: ${window.budgetChart.data.datasets[0].backgroundColor[i]}"></div>
-                                <span class="text-[11px] font-bold text-slate-600">${l}</span>
+                                <div class="w-2 h-2 rounded-full" style="background: ${window.budgetChart.data.datasets[0].backgroundColor[i]}"></div>
+                                <span class="text-[10px] font-bold text-slate-600">${l}</span>
                             </div>
-                            <span class="text-[11px] font-black text-slate-400">${p}%</span>
+                            <span class="text-[10px] font-black text-slate-400">${p}%</span>
                         </div>
                     `;
                 });
             }
             const elTotalValue = document.getElementById('budgetTypeTotalValue');
             if(elTotalValue) elTotalValue.textContent = total >= 1000000000 ? (total/1000000000).toFixed(2) + 'B' : (total/1000000).toFixed(0) + 'M';
+        }
+
+        // Radar Chart: Detailed Cost Breakdown
+        const canvasRadar = document.getElementById('budgetDetailRadarChart');
+        if (canvasRadar && typeof Chart !== 'undefined') {
+            const ctx = canvasRadar.getContext('2d');
+            if (window.budgetRadarChart) window.budgetRadarChart.destroy();
+            
+            const labels = ['Model', 'Makeup', 'Studio', 'Travel', 'Video (Out)', 'Photo (Out)', 'Stylist', 'Assistant', 'Khác'];
+            const values = [
+                detailMap.model, detailMap.makeup, detailMap.studio, detailMap.travel,
+                detailMap.video, detailMap.photo, detailMap.stylist, detailMap.assistant,
+                detailMap.other
+            ];
+
+            window.budgetRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Chi phí',
+                        data: values,
+                        fill: true,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        pointBackgroundColor: 'rgb(16, 185, 129)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(16, 185, 129)'
+                    }]
+                },
+                options: {
+                    elements: { line: { borderWidth: 2 } },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        r: {
+                            angleLines: { display: true, color: 'rgba(0,0,0,0.05)' },
+                            suggestedMin: 0,
+                            ticks: { display: false },
+                            pointLabels: { font: { size: 9, weight: 'bold' } }
+                        }
+                    }
+                }
+            });
+
+            const detailStats = document.getElementById('budgetDetailStats');
+            if (detailStats) {
+                detailStats.innerHTML = labels.map((l, i) => `
+                    <div class="p-3 bg-slate-50 rounded-xl">
+                        <div class="text-[8px] font-black text-slate-400 uppercase mb-1">${l}</div>
+                        <div class="text-[11px] font-bold text-slate-800">${values[i].toLocaleString()}</div>
+                    </div>
+                `).join('');
+            }
         }
 
         // Dept Bars
@@ -6251,13 +6331,13 @@
             sortedDepts.forEach(([name, cost]) => {
                 const p = Math.round((cost/maxCost)*100);
                 deptContainer.innerHTML += `
-                    <div class="animate-fade-in-up">
-                        <div class="flex justify-between items-end mb-2.5">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">${name}</span>
-                            <span class="text-[12px] font-black text-[#131b2e]">${cost.toLocaleString()} <span class="text-[8px] opacity-40">VND</span></span>
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider">${name}</span>
+                            <span class="text-[11px] font-black text-[#131b2e]">${cost.toLocaleString()}</span>
                         </div>
-                        <div class="w-full bg-slate-50 rounded-full h-4 overflow-hidden border border-slate-100/50">
-                            <div class="bg-gradient-to-r from-primary to-rose-400 h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(184,0,53,0.2)]" style="width: ${p}%"></div>
+                        <div class="w-full bg-slate-50 rounded-full h-2.5 overflow-hidden border border-slate-100/50">
+                            <div class="bg-gradient-to-r from-indigo-500 to-blue-400 h-full rounded-full transition-all duration-1000" style="width: ${p}%"></div>
                         </div>
                     </div>
                 `;
@@ -6279,7 +6359,7 @@
                     </td>
                     <td class="py-5 px-6">
                         <div class="text-xs font-bold text-slate-800 mb-1 group-hover:text-primary transition-colors">${o.title || 'Không tên'}</div>
-                        <div class="text-[10px] text-slate-400 line-clamp-1 max-w-[200px] font-medium italic opacity-70">${(o.content || '').replace(/<[^>]*>/g, ' ')}</div>
+                        <div class="text-[10px] text-slate-400 line-clamp-1 max-w-[200px] font-medium opacity-70">${(o.content || '').replace(/<[^>]*>/g, ' ')}</div>
                     </td>
                     <td class="py-5 px-6">
                         <span class="bg-slate-50 text-slate-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-100">${o.department || '-'}</span>
@@ -6293,7 +6373,7 @@
                 tbody.appendChild(tr);
             });
             const pInfo = document.getElementById('budgetPaginationInfo');
-            if(pInfo) pInfo.textContent = `Hiển thị ${data.length} đơn hàng trong tổng số ${data.length} đơn có chi phí`;
+            if(pInfo) pInfo.textContent = `Hiển thị ${data.length} đơn hàng`;
         }
     };
 
