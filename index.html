@@ -3259,9 +3259,10 @@
                 }
                 if (pageId === 'budgetReport') {
                     if (typeof window.switchBudgetTab === 'function') {
+                        // Ensure we switch to a valid tab and elements exist
                         window.switchBudgetTab('production');
-                    } else if (typeof window.renderFinancePage === 'function') {
-                        window.renderFinancePage();
+                    } else if (typeof window.renderBudgetReport === 'function') {
+                        window.renderBudgetReport();
                     }
                 }
                 if (pageId === 'detailed-report') {
@@ -6481,11 +6482,14 @@
 
         const orders = window.allOrdersData || [];
         const data = orders.filter(o => {
+            // Keep filter for production budget, but maybe allow zero cost for planning visibility
+            // However, the user said "production cost data", so they expect costs.
+            // Let's allow cost >= 0.
             const cost = Number(o.totalCost || 0);
-            if (cost <= 0) return false;
             
-            const d = o.deadline ? new Date(o.deadline) : (o.orderDate ? new Date(o.orderDate) : null);
-            if (!d || isNaN(d.getTime())) return false;
+            const dStr = o.deadline || o.orderDate || o.createdAt;
+            const d = dStr ? new Date(dStr) : null;
+            if (!d || isNaN(d.getTime())) return (filterMonth === 'all' && filterYear === 'all'); // Show if no filter
 
             const matchesMonth = filterMonth === 'all' || (d.getMonth() + 1 === parseInt(filterMonth));
             const matchesYear = filterYear === 'all' || (d.getFullYear() === parseInt(filterYear));
@@ -6495,7 +6499,7 @@
             return matchesMonth && matchesYear && matchesDept && matchesCat;
         });
 
-        console.log(`Budget Report: ${data.length}/${orders.length} orders match filters`);
+        console.log(`Budget Report: Found ${data.length} orders matching filters`);
 
         let total = 0;
         let basicTotal = 0;
@@ -6701,10 +6705,10 @@
                     tr.onclick = () => window.openEditModal(encodeURIComponent(JSON.stringify(o)));
                     tr.innerHTML = `
                         <td class="py-6 px-10">
-                            <span class="text-[11px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">${o.orderCode || 'N/A'}</span>
+                            <span class="text-[11px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">${o.code || 'N/A'}</span>
                         </td>
                         <td class="py-6 px-4">
-                            <div class="text-[12px] font-bold text-slate-800">${o.customerName || 'N/A'}</div>
+                            <div class="text-[12px] font-bold text-slate-800 line-clamp-1">${o.title || 'Không tiêu đề'}</div>
                             <div class="text-[10px] text-slate-400 mt-1">${o.category || 'Khác'}</div>
                         </td>
                         <td class="py-6 px-4 text-right">
