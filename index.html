@@ -6875,7 +6875,11 @@
         // 2. Sync Expenses
         window.fsOnSnapshot(window.fsQuery(expRef, window.fsOrderBy("date", "desc")), (snap) => {
             window.financeExpenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderFinancePage();
+            console.log("Finance Expenses Synced. Count:", window.financeExpenses.length);
+            if (typeof window.renderFinancePage === 'function') {
+                console.log("Calling renderFinancePage...");
+                window.renderFinancePage();
+            }
         }, (err) => {
             console.error("Expense Sync Error:", err);
             if (err.code === 'failed-precondition') {
@@ -6971,11 +6975,17 @@
 
             // 1. Get Manual Expenses
             const manualFiltered = expenses.filter(e => {
-                const d = new Date(e.date);
-                const matchTime = d.getMonth() + 1 === month && d.getFullYear() === year;
+                if (!e.date) return false;
+                // Safer date parsing to avoid timezone shifts
+                const parts = e.date.split('-');
+                if (parts.length < 2) return false;
+                const eYear = parseInt(parts[0]);
+                const eMonth = parseInt(parts[1]);
+                
+                const matchTime = eMonth === month && eYear === year;
                 const matchDept = (dept === 'all' || e.department === dept); 
-            return matchTime && matchDept;
-        }).map(e => ({ ...e, isOrder: false }));
+                return matchTime && matchDept;
+            }).map(e => ({ ...e, isOrder: false }));
 
         // 2. Combine and Sort (Newest first) - ONLY Manual Expenses as requested
         const combined = [...manualFiltered].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -7198,7 +7208,7 @@
             btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>';
             btn.disabled = true;
 
-            const docRef = await window.fsAddDoc(window.fsCollection(window.db, "ledger"), newExpense);
+            const docRef = await window.fsAddDoc(window.fsCollection(window.db, "ledger_expenses"), newExpense);
             
             // Log activity
             if (window.logActivity) {
@@ -7207,10 +7217,18 @@
             
             showToast('Thành công', 'Đã thêm dòng chi phí mới.', 'add_task', 'text-primary');
             
-            // Optionally open the modal for the newly created row so they can edit it immediately
-            setTimeout(() => {
-                window.editExpense(docRef.id);
-            }, 500);
+            // Wait for sync to happen, then open the modal
+            let attempts = 0;
+            const checkAndEdit = () => {
+                const exp = (window.financeExpenses || []).find(e => e.id === docRef.id);
+                if (exp) {
+                    window.editExpense(docRef.id);
+                } else if (attempts < 10) {
+                    attempts++;
+                    setTimeout(checkAndEdit, 300);
+                }
+            };
+            setTimeout(checkAndEdit, 300);
 
             btn.innerHTML = originalHtml;
             btn.disabled = false;
