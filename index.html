@@ -234,6 +234,20 @@
         #orderEditor:focus {
             outline: none;
         }
+        /* Fullscreen Editor */
+        .editor-container.fullscreen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 10000; background: white; padding: 2rem;
+            display: flex; flex-direction: column;
+        }
+        .editor-container.fullscreen #orderEditor {
+            flex: 1; min-height: unset !important;
+        }
+        
+        /* List Styles for Editor */
+        #orderEditor ul { list-style-type: disc; padding-left: 2rem; margin: 1rem 0; }
+        #orderEditor ol { list-style-type: decimal; padding-left: 2rem; margin: 1rem 0; }
+        #orderEditor li { margin-bottom: 0.25rem; }
 
         /* Person Bage Styles */
         .name-badge {
@@ -2044,48 +2058,50 @@
                         <label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                             Nội dung chi tiết
                         </label>
-                        <div class="w-full bg-surface-container-high border-b border-outline-variant/30 rounded-t-lg flex flex-wrap items-center gap-1 p-2">
-                            <button onclick="editorCmd('bold')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="In đậm">
-                                <span class="material-symbols-outlined text-lg">format_bold</span>
-                            </button>
-                            <button onclick="editorCmd('italic')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="In nghiêng">
-                                <span class="material-symbols-outlined text-lg">format_italic</span>
-                            </button>
-                            <button onclick="editorCmd('underline')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Gạch chân">
-                                <span class="material-symbols-outlined text-lg">format_underlined</span>
-                            </button>
-                            <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
-                            <button onclick="editorCmd('insertUnorderedList')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Danh sách">
-                                <span class="material-symbols-outlined text-lg">format_list_bulleted</span>
-                            </button>
-                            <button onclick="editorCmd('insertOrderedList')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Danh sách số">
-                                <span class="material-symbols-outlined text-lg">format_list_numbered</span>
-                            </button>
-                            <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
-                            <button onclick="editorCmd('justifyLeft')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn trái">
-                                <span class="material-symbols-outlined text-lg">format_align_left</span>
-                            </button>
-                            <button onclick="editorCmd('justifyCenter')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn giữa">
-                                <span class="material-symbols-outlined text-lg">format_align_center</span>
-                            </button>
-                            <button onclick="editorCmd('justifyRight')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn phải">
-                                <span class="material-symbols-outlined text-lg">format_align_right</span>
-                            </button>
-                            <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
-                            <button onclick="editorInsertLink()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn liên kết">
-                                <span class="material-symbols-outlined text-lg">link</span>
-                            </button>
-                            <button onclick="editorInsertImage()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn hình ảnh">
-                                <span class="material-symbols-outlined text-lg">image</span>
-                            </button>
-                             <button onclick="editorInsertTable()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn bảng tính">
-                                <span class="material-symbols-outlined text-lg">table_view</span>
-                            </button>
-                            <button class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors ml-auto">
-                                <span class="material-symbols-outlined text-lg">fullscreen</span>
-                            </button>
+                        <div id="orderEditorContainer" class="editor-container border border-outline-variant/30 rounded-lg overflow-hidden">
+                            <div class="w-full bg-surface-container-high border-b border-outline-variant/30 flex flex-wrap items-center gap-1 p-2">
+                                <button onclick="editorCmd('bold')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="In đậm">
+                                    <span class="material-symbols-outlined text-lg">format_bold</span>
+                                </button>
+                                <button onclick="editorCmd('italic')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="In nghiêng">
+                                    <span class="material-symbols-outlined text-lg">format_italic</span>
+                                </button>
+                                <button onclick="editorCmd('underline')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Gạch chân">
+                                    <span class="material-symbols-outlined text-lg">format_underlined</span>
+                                </button>
+                                <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+                                <button onclick="editorCmd('insertUnorderedList')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Danh sách">
+                                    <span class="material-symbols-outlined text-lg">format_list_bulleted</span>
+                                </button>
+                                <button onclick="editorCmd('insertOrderedList')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Danh sách số">
+                                    <span class="material-symbols-outlined text-lg">format_list_numbered</span>
+                                </button>
+                                <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+                                <button onclick="editorCmd('justifyLeft')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn trái">
+                                    <span class="material-symbols-outlined text-lg">format_align_left</span>
+                                </button>
+                                <button onclick="editorCmd('justifyCenter')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn giữa">
+                                    <span class="material-symbols-outlined text-lg">format_align_center</span>
+                                </button>
+                                <button onclick="editorCmd('justifyRight')" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Căn phải">
+                                    <span class="material-symbols-outlined text-lg">format_align_right</span>
+                                </button>
+                                <div class="w-px h-6 bg-outline-variant/30 mx-1"></div>
+                                <button onclick="editorInsertLink()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn liên kết">
+                                    <span class="material-symbols-outlined text-lg">link</span>
+                                </button>
+                                <button onclick="editorInsertImage()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn hình ảnh">
+                                    <span class="material-symbols-outlined text-lg">image</span>
+                                </button>
+                                 <button onclick="editorInsertTable()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors" title="Chèn bảng tính">
+                                    <span class="material-symbols-outlined text-lg">table_view</span>
+                                </button>
+                                 <button onclick="toggleEditorFullscreen()" class="p-1.5 hover:bg-surface-container-highest rounded text-on-surface-variant transition-colors ml-auto" title="Toàn màn hình">
+                                     <span class="material-symbols-outlined text-lg">fullscreen</span>
+                                 </button>
+                            </div>
+                            <div id="orderEditor" contenteditable="true" class="w-full bg-surface-container-highest border-none px-4 py-4 text-sm focus:ring-0 transition-all overflow-y-auto min-h-[400px] md:min-h-[500px]" placeholder="Mô tả chi tiết các hạng mục cần thực hiện..."></div>
                         </div>
-                        <div id="orderEditor" contenteditable="true" class="w-full bg-surface-container-highest border-none rounded-b-lg px-4 py-4 text-sm focus:ring-2 focus:ring-primary transition-all overflow-y-auto min-h-[400px] md:min-h-[500px]" placeholder="Mô tả chi tiết các hạng mục cần thực hiện..."></div>
                     </div>
                     <!-- Note -->
                     <div class="md:col-span-2 p-4 rounded-lg bg-surface-container-low border border-outline-variant/10">
@@ -5099,7 +5115,20 @@
 
     // ===== Rich Text Editor Logic =====
     window.editorCmd = function(cmd, val = null) {
+        const editor = document.getElementById('orderEditor');
+        if (editor) editor.focus();
         document.execCommand(cmd, false, val);
+    };
+
+    window.toggleEditorFullscreen = function() {
+        const container = document.getElementById('orderEditorContainer');
+        if (container) {
+            container.classList.toggle('fullscreen');
+            const icon = container.querySelector('[onclick="toggleEditorFullscreen()"] span');
+            if (icon) {
+                icon.textContent = container.classList.contains('fullscreen') ? 'fullscreen_exit' : 'fullscreen';
+            }
+        }
     };
 
     window.editorInsertLink = function() {
