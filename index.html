@@ -524,6 +524,7 @@
                 <a href="#" data-page="orders" onclick="navigateTo('orders')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
                 <a href="#" data-page="planning" onclick="navigateTo('planning')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
                 <a href="#" data-page="budgetReport" onclick="navigateTo('budgetReport')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
+                <a href="#" data-page="finance" onclick="navigateTo('finance')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Ngân sách</a>
                 <a href="#" data-page="reports" onclick="navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Lịch làm việc</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-slate-500 hover:text-red-600 transition-all duration-200 hidden">Quản trị</a>
                 <a href="support.html" target="_blank" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
@@ -1829,8 +1830,164 @@
             </div>
         </div>
 
-        <!-- Page: Detailed Report -->
-        <div id="page-detailed-report" class="page">
+        <!-- Page: Finance & Budget Management -->
+        <div id="page-finance" class="page">
+            <div class="max-w-full mx-auto px-4 md:px-8 py-8 md:py-12">
+                <!-- Header & Controls -->
+                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 shadow-sm border border-orange-50">
+                            <span class="material-symbols-outlined text-[32px]">account_balance_wallet</span>
+                        </div>
+                        <div>
+                            <h1 class="text-4xl font-black text-[#131b2e] font-headline mb-1 tracking-tight">Quản lý Ngân sách</h1>
+                            <p class="text-slate-500 text-sm font-medium">Hệ thống kê khai và quản lý dòng tiền chi tiết.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-3xl shadow-sm border border-slate-100">
+                        <div class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl">
+                            <span class="material-symbols-outlined text-slate-400 text-sm">calendar_month</span>
+                            <select id="financeFilterMonth" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
+                                <option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option>
+                                <option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                                <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
+                                <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                            </select>
+                            <select id="financeFilterYear" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
+                                <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
+                            </select>
+                        </div>
+                        <div class="w-px h-8 bg-slate-100 mx-1"></div>
+                        <button onclick="window.openManageColumnsModal()" class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all">
+                            <span class="material-symbols-outlined text-sm">view_column</span>
+                            Cột chi phí
+                        </button>
+                        <button onclick="window.addNewExpenseRow()" class="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#131b2e] text-white text-xs font-bold shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all">
+                            <span class="material-symbols-outlined text-sm">add</span>
+                            Thêm dòng
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Finance KPIs -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <!-- Total Cumulative -->
+                    <div class="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 mb-6">
+                                <span class="material-symbols-outlined">history</span>
+                            </div>
+                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-2">Tổng chi tiêu tích lũy</h3>
+                            <div class="text-2xl font-black text-slate-800 font-headline" id="finKpiCumulative">0</div>
+                        </div>
+                    </div>
+                    <!-- Monthly Budget -->
+                    <div class="bg-indigo-600 p-8 rounded-[32px] text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white mb-6">
+                                <span class="material-symbols-outlined">payments</span>
+                            </div>
+                            <h3 class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black mb-2">Ngân sách dự kiến tháng</h3>
+                            <div class="text-2xl font-black font-headline" id="finKpiMonthlyBudget">0</div>
+                        </div>
+                    </div>
+                    <!-- Spent this month -->
+                    <div class="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] font-black text-orange-500 bg-orange-50 px-2 py-1 rounded-lg" id="finSpentPerc">0%</span>
+                                </div>
+                            </div>
+                            <h3 class="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-2">Đã chi tiêu tháng</h3>
+                            <div class="text-2xl font-black text-slate-800 font-headline" id="finKpiSpent">0</div>
+                            <div class="mt-4 w-full bg-slate-50 h-1.5 rounded-full overflow-hidden">
+                                <div id="finSpentBar" class="bg-orange-500 h-full transition-all duration-1000" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Remaining -->
+                    <div class="bg-emerald-500 p-8 rounded-[32px] text-white shadow-xl shadow-emerald-100 relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white mb-6">
+                                <span class="material-symbols-outlined">account_balance</span>
+                            </div>
+                            <h3 class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-black mb-2">Ngân sách còn lại</h3>
+                            <div class="text-2xl font-black font-headline" id="finKpiRemaining">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finance Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+                    <div class="lg:col-span-4 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm">
+                        <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider mb-8 border-l-4 border-indigo-500 pl-4">Phân bổ chi phí</h3>
+                        <div class="relative aspect-square max-w-[240px] mx-auto mb-8">
+                            <canvas id="finDonutChart"></canvas>
+                        </div>
+                        <div id="finDonutLegend" class="space-y-3"></div>
+                    </div>
+                    <div class="lg:col-span-8 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm">
+                        <h3 class="text-xs font-black text-[#131b2e] uppercase tracking-wider mb-8 border-l-4 border-orange-500 pl-4">Kế hoạch vs Thực tế</h3>
+                        <div class="h-[300px]">
+                            <canvas id="finBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Ledger Table -->
+                <div class="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse min-w-[1200px]">
+                            <thead>
+                                <tr class="bg-orange-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-orange-100">
+                                    <th class="py-5 px-4 text-center w-12 sticky left-0 bg-white z-20">#</th>
+                                    <th class="py-5 px-4 w-32 sticky left-12 bg-white z-20">Ngày chi</th>
+                                    <th class="py-5 px-6 min-w-[300px] sticky left-[176px] bg-white z-20">Nội dung chi</th>
+                                    <th class="py-5 px-4 text-center">
+                                        <div class="flex items-center justify-center gap-1">
+                                            Loại chi
+                                            <button onclick="window.manageFinanceDropdown('type')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
+                                        </div>
+                                    </th>
+                                    <th class="py-5 px-4 text-center">
+                                        <div class="flex items-center justify-center gap-1">
+                                            Người chi
+                                            <button onclick="window.manageFinanceDropdown('spender')" class="material-symbols-outlined text-xs hover:text-orange-500 transition-colors">settings</button>
+                                        </div>
+                                    </th>
+                                    <!-- Dynamic Category Headers will be injected here -->
+                                    <th id="finCategoryHeaderEnd" class="hidden"></th>
+                                </tr>
+                                <!-- Expense Code Row -->
+                                <tr class="bg-white text-[9px] font-bold text-blue-500 uppercase border-b border-slate-50">
+                                    <td colspan="5" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td>
+                                    <!-- Dynamic Codes injected here -->
+                                </tr>
+                                <!-- Plan Row -->
+                                <tr class="bg-orange-500 text-white text-[10px] font-black uppercase">
+                                    <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td>
+                                    <!-- Dynamic Plan values injected here -->
+                                </tr>
+                                <!-- Remaining Row -->
+                                <tr class="bg-yellow-400 text-[#131b2e] text-[10px] font-black uppercase">
+                                    <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td>
+                                    <!-- Dynamic Remaining values injected here -->
+                                </tr>
+                            </thead>
+                            <tbody id="financeTableBody" class="divide-y divide-slate-50">
+                                <!-- Data rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
             <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
@@ -2383,7 +2540,131 @@
                     </div>
                 </div>
             </section>
+    <!-- Modal: Add/Edit Expense Row -->
+    <div id="expenseModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                        <span class="material-symbols-outlined">add_card</span>
+                    </div>
+                    <div>
+                        <h2 id="expenseModalTitle" class="text-xl font-black text-[#131b2e] font-headline tracking-tight">Kê khai chi phí mới</h2>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Nhập thông tin giao dịch tài chính</p>
+                    </div>
+                </div>
+                <button onclick="window.closeExpenseModal()" class="w-10 h-10 rounded-full hover:bg-white hover:shadow-md flex items-center justify-center text-slate-400 transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form id="expenseForm" class="p-8 space-y-6">
+                <input type="hidden" id="editExpenseId">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Ngày chi</label>
+                        <input type="date" id="expenseDate" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Người chi</label>
+                        <select id="expenseSpender" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Nội dung chi</label>
+                    <textarea id="expenseContent" required placeholder="Nhập chi tiết nội dung giao dịch..." rows="3" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Loại chi phí</label>
+                        <select id="expenseType" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Hạng mục chính</label>
+                        <select id="expenseMainCategory" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                            <option value="">Chọn hạng mục...</option>
+                            <!-- Dynamic from categories -->
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Số tiền</label>
+                    <div class="relative">
+                        <input type="number" id="expenseAmount" required placeholder="0" class="w-full bg-orange-50 border-none rounded-2xl pl-5 pr-14 py-4 text-xl font-black text-orange-600 focus:ring-2 focus:ring-orange-500/20 transition-all">
+                        <span class="absolute right-5 top-1/2 -translate-y-1/2 font-black text-orange-300 text-sm">VNĐ</span>
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-4">
+                    <button type="button" onclick="window.closeExpenseModal()" class="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-600 text-sm font-black hover:bg-slate-200 transition-all">Hủy</button>
+                    <button type="submit" class="flex-[2] py-4 rounded-2xl bg-orange-600 text-white text-sm font-black shadow-xl shadow-orange-100 hover:scale-[1.02] active:scale-[0.98] transition-all">Lưu giao dịch</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
+    <!-- Modal: Manage Category Columns -->
+    <div id="financeColumnsModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                        <span class="material-symbols-outlined">view_column</span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black text-[#131b2e] font-headline tracking-tight">Cấu hình Hạng mục chi phí</h2>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Thêm/Sửa/Xóa các cột trong bảng ngân sách</p>
+                    </div>
+                </div>
+                <button onclick="window.closeFinanceColumnsModal()" class="material-symbols-outlined text-slate-400 hover:text-slate-600">close</button>
+            </div>
+            <div class="p-8 overflow-y-auto flex-1 space-y-6">
+                <!-- Form to add new column -->
+                <div class="bg-slate-50 p-6 rounded-3xl border border-dashed border-slate-200">
+                    <h4 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Thêm hạng mục mới</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="newColName" placeholder="Tên hạng mục (VD: Chi phí SX BST)" class="w-full bg-white border-none rounded-xl px-4 py-3 text-xs font-bold shadow-sm">
+                        <input type="text" id="newColCode" placeholder="Mã chi phí (VD: Y26.1043)" class="w-full bg-white border-none rounded-xl px-4 py-3 text-xs font-bold shadow-sm">
+                        <input type="number" id="newColPlan" placeholder="Plan (Ngân sách)" class="w-full bg-white border-none rounded-xl px-4 py-3 text-xs font-bold shadow-sm">
+                    </div>
+                    <button onclick="window.saveFinanceColumn()" class="mt-4 w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">Xác nhận thêm cột</button>
+                </div>
+                
+                <!-- List of existing columns -->
+                <div class="space-y-3" id="financeColumnsList">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Manage Config Lists (Type/Spender) -->
+    <div id="financeConfigModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-white">
+                        <span class="material-symbols-outlined" id="finConfigIcon">settings</span>
+                    </div>
+                    <div>
+                        <h2 id="finConfigTitle" class="text-lg font-black text-[#131b2e] font-headline tracking-tight">Quản lý danh sách</h2>
+                    </div>
+                </div>
+                <button onclick="window.closeFinanceConfigModal()" class="material-symbols-outlined text-slate-400">close</button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="flex gap-2">
+                    <input type="text" id="newConfigVal" placeholder="Nhập giá trị mới..." class="flex-1 bg-slate-50 border-none rounded-xl px-4 py-3 text-xs font-bold">
+                    <button onclick="window.saveFinanceConfigItem()" class="px-6 py-3 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-black transition-all">Thêm</button>
+                </div>
+                <div id="finConfigList" class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+    </div>
             <!-- Other & Note -->
             <section>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -2982,6 +3263,9 @@
                 }
                 if (pageId === 'budgetReport') {
                     if (typeof window.renderBudgetReport === 'function') window.renderBudgetReport();
+                }
+                if (pageId === 'finance') {
+                    if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
                 }
                 if (pageId === 'detailed-report') {
                     if (typeof window.renderDetailedReport === 'function') window.renderDetailedReport();
@@ -6508,6 +6792,440 @@
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlanningEvents);
     else initPlanningEvents();
+    // ==========================================
+    // FINANCE & BUDGET MANAGEMENT LOGIC
+    // ==========================================
+    window.financeExpenses = [];
+    window.financeColumns = [];
+    window.financeConfigs = { types: [], spenders: [] };
+
+    // Initialization: Sync from Firestore
+    function initFinanceSync() {
+        const colRef = window.fsCollection(window.db, "ledger_columns");
+        const expRef = window.fsCollection(window.db, "ledger_expenses");
+        const cfgRef = window.fsCollection(window.db, "ledger_configs");
+
+        // 1. Sync Columns
+        window.fsOnSnapshot(window.fsQuery(colRef, window.fsOrderBy("createdAt", "asc")), (snap) => {
+            window.financeColumns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            window.renderFinancePage();
+        });
+
+        // 2. Sync Expenses
+        window.fsOnSnapshot(window.fsQuery(expRef, window.fsOrderBy("date", "desc")), (snap) => {
+            window.financeExpenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            window.renderFinancePage();
+        });
+
+        // 3. Sync Configs
+        window.fsOnSnapshot(cfgRef, (snap) => {
+            const types = []; const spenders = [];
+            snap.forEach(d => {
+                const data = d.data();
+                if (data.type === 'expenseType') types.push({id: d.id, val: data.val});
+                if (data.type === 'spender') spenders.push({id: d.id, val: data.val});
+            });
+            window.financeConfigs = { types, spenders };
+            // Update modal dropdowns
+            populateFinanceSelects();
+        });
+    }
+
+    function populateFinanceSelects() {
+        const typeSel = document.getElementById('expenseType');
+        const spendSel = document.getElementById('expenseSpender');
+        const mainCatSel = document.getElementById('expenseMainCategory');
+        
+        if(typeSel) {
+            typeSel.innerHTML = '<option value="">Chọn loại chi...</option>';
+            window.financeConfigs.types.forEach(t => typeSel.innerHTML += `<option value="${t.val}">${t.val}</option>`);
+        }
+        if(spendSel) {
+            spendSel.innerHTML = '<option value="">Chọn người chi...</option>';
+            window.financeConfigs.spenders.forEach(s => spendSel.innerHTML += `<option value="${s.val}">${s.val}</option>`);
+        }
+        if(mainCatSel) {
+            mainCatSel.innerHTML = '<option value="">Chọn hạng mục...</option>';
+            window.financeColumns.forEach(c => mainCatSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+        }
+    }
+
+    window.renderFinancePage = function() {
+        const page = document.getElementById('page-finance');
+        if (!page || page.classList.contains('hidden')) return;
+
+        const month = parseInt(document.getElementById('financeFilterMonth').value);
+        const year = parseInt(document.getElementById('financeFilterYear').value);
+
+        // Filter data for current month
+        const filtered = window.financeExpenses.filter(e => {
+            const d = new Date(e.date);
+            return d.getMonth() + 1 === month && d.getFullYear() === year;
+        });
+
+        // 1. Render Table Headers (Dynamic Columns)
+        const headerRow = page.querySelector('thead tr:first-child');
+        const codeRow = page.querySelector('thead tr:nth-child(2)');
+        const planRow = page.querySelector('thead tr:nth-child(3)');
+        const remainRow = page.querySelector('thead tr:nth-child(4)');
+
+        // Clear previous dynamic headers
+        const prevDynHeaders = headerRow.querySelectorAll('.dynamic-col');
+        prevDynHeaders.forEach(h => h.remove());
+        
+        const prevDynCodes = codeRow.querySelectorAll('.dynamic-col');
+        prevDynCodes.forEach(c => c.remove());
+
+        const prevDynPlans = planRow.querySelectorAll('.dynamic-col');
+        prevDynPlans.forEach(p => p.remove());
+
+        const prevDynRemains = remainRow.querySelectorAll('.dynamic-col');
+        prevDynRemains.forEach(r => r.remove());
+
+        const colTotals = {};
+        window.financeColumns.forEach(col => {
+            colTotals[col.name] = 0;
+            // Header
+            const th = document.createElement('th');
+            th.className = 'py-5 px-4 text-right dynamic-col min-w-[150px]';
+            th.innerHTML = `
+                <div class="flex flex-col items-end">
+                    <span class="text-slate-800 text-xs font-black mb-1">${col.name}</span>
+                    <div class="flex gap-1">
+                        <button onclick="window.editFinanceColumn('${col.id}')" class="material-symbols-outlined text-[10px] hover:text-indigo-600">edit</button>
+                    </div>
+                </div>
+            `;
+            headerRow.insertBefore(th, document.getElementById('finCategoryHeaderEnd'));
+
+            // Code Row
+            const tdCode = document.createElement('td');
+            tdCode.className = 'py-2 px-4 text-right dynamic-col font-black italic opacity-50';
+            tdCode.textContent = col.code || '-';
+            codeRow.appendChild(tdCode);
+
+            // Plan Row
+            const tdPlan = document.createElement('td');
+            tdPlan.className = 'py-3 px-4 text-right dynamic-col font-black border-l border-orange-400/30';
+            tdPlan.textContent = (Number(col.plan) || 0).toLocaleString();
+            planRow.appendChild(tdPlan);
+        });
+
+        // 2. Render Table Body
+        const tbody = document.getElementById('financeTableBody');
+        tbody.innerHTML = '';
+        filtered.forEach((exp, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50 transition-colors group cursor-pointer';
+            tr.onclick = () => window.editExpense(exp.id);
+            
+            let rowHtml = `
+                <td class="py-5 px-4 text-center text-[10px] font-black text-slate-300">${filtered.length - idx}</td>
+                <td class="py-5 px-4 text-xs font-bold text-slate-600">${new Date(exp.date).toLocaleDateString('vi-VN')}</td>
+                <td class="py-5 px-6">
+                    <div class="text-[13px] font-bold text-slate-800 leading-tight">${exp.content}</div>
+                </td>
+                <td class="py-5 px-4 text-center">
+                    <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-tighter">${exp.type}</span>
+                </td>
+                <td class="py-5 px-4 text-center">
+                    <div class="text-[11px] font-black text-slate-800">${exp.spender}</div>
+                </td>
+            `;
+
+            window.financeColumns.forEach(col => {
+                const isMatch = (exp.mainCategory === col.name);
+                const val = isMatch ? Number(exp.amount || 0) : 0;
+                if(isMatch) colTotals[col.name] += val;
+                
+                rowHtml += `<td class="py-5 px-4 text-right font-black text-slate-800 text-[13px] border-l border-slate-50">
+                    ${val > 0 ? val.toLocaleString() : '<span class="text-slate-100">0</span>'}
+                </td>`;
+            });
+            
+            tr.innerHTML = rowHtml;
+            tbody.appendChild(tr);
+        });
+
+        // 3. Render Remaining Row
+        window.financeColumns.forEach(col => {
+            const plan = Number(col.plan) || 0;
+            const actual = colTotals[col.name] || 0;
+            const remain = plan - actual;
+            const tdRem = document.createElement('td');
+            tdRem.className = `py-3 px-4 text-right dynamic-col font-black border-l border-yellow-300/50 ${remain < 0 ? 'text-red-600' : ''}`;
+            tdRem.textContent = remain.toLocaleString();
+            remainRow.appendChild(tdRem);
+        });
+
+        // 4. Update Dashboard Stats
+        const totalSpentMonth = Object.values(colTotals).reduce((a,b) => a+b, 0);
+        const totalPlanMonth = window.financeColumns.reduce((a,b) => a + (Number(b.plan) || 0), 0);
+        const totalCumulative = window.financeExpenses.reduce((a,b) => a + (Number(b.amount) || 0), 0);
+
+        document.getElementById('finKpiCumulative').textContent = totalCumulative.toLocaleString();
+        document.getElementById('finKpiMonthlyBudget').textContent = totalPlanMonth.toLocaleString();
+        document.getElementById('finKpiSpent').textContent = totalSpentMonth.toLocaleString();
+        
+        const remaining = totalPlanMonth - totalSpentMonth;
+        document.getElementById('finKpiRemaining').textContent = remaining.toLocaleString();
+        
+        const perc = totalPlanMonth > 0 ? Math.min(100, Math.round((totalSpentMonth/totalPlanMonth)*100)) : 0;
+        document.getElementById('finSpentPerc').textContent = perc + '%';
+        document.getElementById('finSpentBar').style.width = perc + '%';
+
+        // 5. Update Charts
+        renderFinanceCharts(colTotals);
+    };
+
+    function renderFinanceCharts(totals) {
+        // Donut Chart
+        const donutCtx = document.getElementById('finDonutChart');
+        if (donutCtx) {
+            if (window.finDonutInstance) window.finDonutInstance.destroy();
+            const labels = Object.keys(totals).filter(k => totals[k] > 0);
+            const values = labels.map(l => totals[l]);
+            
+            window.finDonutInstance = new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f43f5e', '#14b8a6'],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Legend
+            const legendDiv = document.getElementById('finDonutLegend');
+            legendDiv.innerHTML = '';
+            labels.forEach((l, i) => {
+                const val = values[i];
+                legendDiv.innerHTML += `
+                    <div class="flex justify-between items-center text-[10px]">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full" style="background: ${window.finDonutInstance.data.datasets[0].backgroundColor[i]}"></div>
+                            <span class="font-bold text-slate-500 uppercase">${l}</span>
+                        </div>
+                        <span class="font-black text-slate-800">${val.toLocaleString()}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Bar Chart (Plan vs Actual)
+        const barCtx = document.getElementById('finBarChart');
+        if (barCtx) {
+            if (window.finBarInstance) window.finBarInstance.destroy();
+            const labels = window.financeColumns.map(c => c.name);
+            const planData = window.financeColumns.map(c => Number(c.plan) || 0);
+            const actualData = labels.map(l => totals[l] || 0);
+
+            window.finBarInstance = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Kế hoạch (PLAN)', data: planData, backgroundColor: '#f1f5f9', borderRadius: 8 },
+                        { label: 'Thực tế (ACTUAL)', data: actualData, backgroundColor: '#6366f1', borderRadius: 8 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { position: 'top', align: 'end', labels: { boxWidth: 8, font: { size: 10, weight: 'bold' } } } }
+                }
+            });
+        }
+    }
+
+    // Modal & CRUD Functions
+    window.addNewExpenseRow = function() {
+        document.getElementById('expenseForm').reset();
+        document.getElementById('editExpenseId').value = '';
+        document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('expenseModalTitle').textContent = 'Kê khai chi phí mới';
+        document.getElementById('expenseModal').classList.remove('hidden');
+        populateFinanceSelects();
+    };
+
+    window.closeExpenseModal = function() {
+        document.getElementById('expenseModal').classList.add('hidden');
+    };
+
+    window.editExpense = function(id) {
+        const exp = window.financeExpenses.find(e => e.id === id);
+        if(!exp) return;
+        document.getElementById('editExpenseId').value = id;
+        document.getElementById('expenseDate').value = exp.date;
+        document.getElementById('expenseSpender').value = exp.spender;
+        document.getElementById('expenseContent').value = exp.content;
+        document.getElementById('expenseType').value = exp.type;
+        document.getElementById('expenseMainCategory').value = exp.mainCategory || '';
+        document.getElementById('expenseAmount').value = exp.amount;
+        document.getElementById('expenseModalTitle').textContent = 'Chỉnh sửa giao dịch';
+        document.getElementById('expenseModal').classList.remove('hidden');
+    };
+
+    document.getElementById('expenseForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('editExpenseId').value;
+        const data = {
+            date: document.getElementById('expenseDate').value,
+            spender: document.getElementById('expenseSpender').value,
+            content: document.getElementById('expenseContent').value,
+            type: document.getElementById('expenseType').value,
+            mainCategory: document.getElementById('expenseMainCategory').value,
+            amount: Number(document.getElementById('expenseAmount').value),
+            updatedAt: new Date().toISOString()
+        };
+
+        try {
+            if (id) {
+                await window.fsUpdateDoc(window.fsDoc(window.db, "ledger_expenses", id), data);
+            } else {
+                data.createdAt = new Date().toISOString();
+                await window.fsAddDoc(window.fsCollection(window.db, "ledger_expenses"), data);
+            }
+            window.closeExpenseModal();
+        } catch (err) {
+            alert('Lỗi: ' + err.message);
+        }
+    };
+
+    // Column Management
+    window.openManageColumnsModal = function() {
+        renderFinanceColumnsList();
+        document.getElementById('financeColumnsModal').classList.remove('hidden');
+    };
+    window.closeFinanceColumnsModal = function() {
+        document.getElementById('financeColumnsModal').classList.add('hidden');
+    };
+
+    function renderFinanceColumnsList() {
+        const list = document.getElementById('financeColumnsList');
+        list.innerHTML = '';
+        window.financeColumns.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors';
+            div.innerHTML = `
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-slate-800">${c.name}</span>
+                    <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">${c.code || '-'} | Plan: ${Number(c.plan || 0).toLocaleString()}</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="window.editFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-indigo-600"><span class="material-symbols-outlined text-sm">edit</span></button>
+                    <button onclick="window.deleteFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-red-500"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    window.saveFinanceColumn = async function() {
+        const name = document.getElementById('newColName').value;
+        const code = document.getElementById('newColCode').value;
+        const plan = Number(document.getElementById('newColPlan').value);
+        if(!name) return alert('Vui lòng nhập tên hạng mục');
+
+        try {
+            await window.fsAddDoc(window.fsCollection(window.db, "ledger_columns"), {
+                name, code, plan, createdAt: new Date().toISOString()
+            });
+            document.getElementById('newColName').value = '';
+            document.getElementById('newColCode').value = '';
+            document.getElementById('newColPlan').value = '';
+            renderFinanceColumnsList();
+        } catch(err) { alert(err.message); }
+    };
+
+    window.deleteFinanceColumn = async function(id) {
+        if(!confirm('Xóa hạng mục này sẽ ảnh hưởng đến việc hiển thị các chi phí cũ. Bạn có chắc chắn?')) return;
+        await window.fsDeleteDoc(window.fsDoc(window.db, "ledger_columns", id));
+    };
+
+    window.editFinanceColumn = function(id) {
+        const c = window.financeColumns.find(x => x.id === id);
+        if(!c) return;
+        const newName = prompt('Tên mới cho hạng mục:', c.name);
+        if(newName === null) return;
+        const newCode = prompt('Mã chi phí mới:', c.code);
+        const newPlan = prompt('Ngân sách kế hoạch mới:', c.plan);
+        
+        window.fsUpdateDoc(window.fsDoc(window.db, "ledger_columns", id), {
+            name: newName,
+            code: newCode,
+            plan: Number(newPlan)
+        });
+    };
+
+    // Config Management
+    window.manageFinanceDropdown = function(type) {
+        window.currentFinConfigType = type === 'type' ? 'expenseType' : 'spender';
+        document.getElementById('finConfigTitle').textContent = type === 'type' ? 'Quản lý Loại chi phí' : 'Quản lý Người chi';
+        document.getElementById('finConfigIcon').textContent = type === 'type' ? 'category' : 'person';
+        renderFinanceConfigList();
+        document.getElementById('financeConfigModal').classList.remove('hidden');
+    };
+    window.closeFinanceConfigModal = function() {
+        document.getElementById('financeConfigModal').classList.add('hidden');
+    };
+
+    function renderFinanceConfigList() {
+        const list = document.getElementById('finConfigList');
+        list.innerHTML = '';
+        const items = window.currentFinConfigType === 'expenseType' ? window.financeConfigs.types : window.financeConfigs.spenders;
+        items.forEach(item => {
+            list.innerHTML += `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <span class="text-xs font-bold text-slate-700">${item.val}</span>
+                    <button onclick="window.deleteFinanceConfigItem('${item.id}')" class="text-red-400 hover:text-red-600"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>
+            `;
+        });
+    }
+
+    window.saveFinanceConfigItem = async function() {
+        const val = document.getElementById('newConfigVal').value;
+        if(!val) return;
+        await window.fsAddDoc(window.fsCollection(window.db, "ledger_configs"), {
+            type: window.currentFinConfigType,
+            val: val,
+            createdAt: new Date().toISOString()
+        });
+        document.getElementById('newConfigVal').value = '';
+        renderFinanceConfigList();
+    };
+
+    window.deleteFinanceConfigItem = async function(id) {
+        await window.fsDeleteDoc(window.fsDoc(window.db, "ledger_configs", id));
+        renderFinanceConfigList();
+    };
+
+    // Initialize listeners on load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Set default filter values
+        const now = new Date();
+        const m = document.getElementById('financeFilterMonth');
+        const y = document.getElementById('financeFilterYear');
+        if(m) m.value = now.getMonth() + 1;
+        if(y) y.value = now.getFullYear();
+        
+        initFinanceSync();
+    });
+
 </script>
 
 <!-- Premium Tooltip HTML -->
