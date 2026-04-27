@@ -6751,23 +6751,32 @@
     };
 
     window.switchBudgetTab = function(tab) {
-        const prodTab = document.getElementById('budget-tab-production');
-        const finTab = document.getElementById('budget-tab-finance');
-        const btnProd = document.getElementById('tabBtnProduction');
-        const btnFin = document.getElementById('tabBtnFinance');
+        try {
+            const prodTab = document.getElementById('budget-tab-production');
+            const finTab = document.getElementById('budget-tab-finance');
+            const btnProd = document.getElementById('tabBtnProduction');
+            const btnFin = document.getElementById('tabBtnFinance');
+            
+            if (!prodTab || !finTab || !btnProd || !btnFin) {
+                console.warn("One or more budget tab elements missing");
+                return;
+            }
 
-        if (tab === 'production') {
-            prodTab.classList.remove('hidden');
-            finTab.classList.add('hidden');
-            btnProd.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-white text-primary shadow-sm';
-            btnFin.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 text-slate-500 hover:bg-white/50';
-            window.renderBudgetReport();
-        } else {
-            prodTab.classList.add('hidden');
-            finTab.classList.remove('hidden');
-            btnProd.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 text-slate-500 hover:bg-white/50';
-            btnFin.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-white text-primary shadow-sm';
-            window.renderFinancePage();
+            if (tab === 'production') {
+                prodTab.classList.remove('hidden');
+                finTab.classList.add('hidden');
+                btnProd.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-white text-primary shadow-sm';
+                btnFin.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all text-slate-500 hover:bg-slate-50';
+                window.renderBudgetReport();
+            } else {
+                prodTab.classList.add('hidden');
+                finTab.classList.remove('hidden');
+                btnFin.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 bg-white text-primary shadow-sm';
+                btnProd.className = 'px-6 py-2.5 rounded-xl text-xs font-black transition-all text-slate-500 hover:bg-slate-50';
+                window.renderFinancePage();
+            }
+        } catch (e) {
+            console.error("Error in switchBudgetTab:", e);
         }
     };
 
@@ -6853,6 +6862,7 @@
     window.financeExpenses = [];
     window.financeColumns = [];
     window.financeConfigs = { types: [], spenders: [] };
+
 
     // Initialization: Sync from Firestore
     function initFinanceSync() {
@@ -6942,22 +6952,27 @@
 
 
     window.renderFinancePage = function() {
-        const tab = document.getElementById('page-budgetReport');
-        if (!tab || !tab.classList.contains('active')) return;
+        try {
+            const tab = document.getElementById('page-budgetReport');
+            if (!tab || !tab.classList.contains('active')) return;
 
-        const mEl = document.getElementById('financeFilterMonth');
-        const yEl = document.getElementById('financeFilterYear');
-        if(!mEl || !yEl) return;
+            const mEl = document.getElementById('financeFilterMonth');
+            const yEl = document.getElementById('financeFilterYear');
+            if(!mEl || !yEl) return;
 
-        const month = parseInt(mEl.value);
-        const year = parseInt(yEl.value);
-        const dept = document.getElementById('financeFilterDept')?.value || 'all';
+            const month = parseInt(mEl.value);
+            const year = parseInt(yEl.value);
+            const dept = document.getElementById('financeFilterDept')?.value || 'all';
 
-        // 1. Get Manual Expenses
-        const manualFiltered = window.financeExpenses.filter(e => {
-            const d = new Date(e.date);
-            const matchTime = d.getMonth() + 1 === month && d.getFullYear() === year;
-            const matchDept = (dept === 'all' || e.department === dept); // Assuming ledger_expenses has department field
+            // Safety check for initialized arrays
+            const expenses = window.financeExpenses || [];
+            const columns = window.financeColumns || [];
+
+            // 1. Get Manual Expenses
+            const manualFiltered = expenses.filter(e => {
+                const d = new Date(e.date);
+                const matchTime = d.getMonth() + 1 === month && d.getFullYear() === year;
+                const matchDept = (dept === 'all' || e.department === dept); 
             return matchTime && matchDept;
         }).map(e => ({ ...e, isOrder: false }));
 
@@ -7146,12 +7161,30 @@
 
     // Modal & CRUD Functions
     window.addNewExpenseRow = function() {
-        document.getElementById('expenseForm').reset();
-        document.getElementById('editExpenseId').value = '';
-        document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('expenseModalTitle').textContent = 'Kê khai chi phí mới';
-        document.getElementById('expenseModal').classList.remove('hidden');
-        populateFinanceSelects();
+        try {
+            console.log("addNewExpenseRow triggered");
+            const form = document.getElementById('expenseForm');
+            if (form) form.reset();
+            
+            const idInput = document.getElementById('editExpenseId');
+            if (idInput) idInput.value = '';
+            
+            const dateInput = document.getElementById('expenseDate');
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+            
+            const titleEl = document.getElementById('expenseModalTitle');
+            if (titleEl) titleEl.textContent = 'Kê khai chi phí mới';
+            
+            const modal = document.getElementById('expenseModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                populateFinanceSelects();
+            } else {
+                console.error("expenseModal element missing");
+            }
+        } catch (e) {
+            console.error("Error in addNewExpenseRow:", e);
+        }
     };
 
     window.closeExpenseModal = function() {
@@ -7280,11 +7313,29 @@
 
     // Config Management
     window.manageFinanceDropdown = function(type) {
-        window.currentFinConfigType = type === 'type' ? 'expenseType' : 'spender';
-        document.getElementById('finConfigTitle').textContent = type === 'type' ? 'Quản lý Loại chi phí' : 'Quản lý Người chi';
-        document.getElementById('finConfigIcon').textContent = type === 'type' ? 'category' : 'person';
-        renderFinanceConfigList();
-        document.getElementById('financeConfigModal').classList.remove('hidden');
+        try {
+            console.log("manageFinanceDropdown called with type:", type);
+            window.currentFinConfigType = type; // Store 'types' or 'spenders'
+            
+            const title = (type === 'types' || type === 'type') ? 'Quản lý Loại chi phí' : 'Quản lý Người chi';
+            const icon = (type === 'types' || type === 'type') ? 'category' : 'person';
+            
+            const titleEl = document.getElementById('finConfigTitle') || document.getElementById('financeConfigTitle');
+            const iconEl = document.getElementById('finConfigIcon');
+            const modal = document.getElementById('financeConfigModal');
+            
+            if (titleEl) titleEl.textContent = title;
+            if (iconEl) iconEl.textContent = icon;
+            
+            if (modal) {
+                modal.classList.remove('hidden');
+                renderFinanceConfigList();
+            } else {
+                console.error("financeConfigModal not found");
+            }
+        } catch (e) {
+            console.error("Error in manageFinanceDropdown:", e);
+        }
     };
     window.closeFinanceConfigModal = function() {
         document.getElementById('financeConfigModal').classList.add('hidden');
@@ -7295,7 +7346,9 @@
             const list = document.getElementById('finConfigList');
             if (!list) return;
             list.innerHTML = '';
-            const items = window.currentFinConfigType === 'expenseType' ? (window.financeConfigs?.types || []) : (window.financeConfigs?.spenders || []);
+            const items = (window.currentFinConfigType === 'types' || window.currentFinConfigType === 'type') 
+                ? (window.financeConfigs?.types || []) 
+                : (window.financeConfigs?.spenders || []);
             items.forEach(item => {
                 list.innerHTML += `
                     <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
@@ -7336,9 +7389,11 @@
         if(y) y.value = now.getFullYear();
         
         // Wait for Firebase to be ready for Finance sync
+        console.log("Waiting for window.db to initialize Finance sync...");
         const checkFBFin = setInterval(() => {
             if(window.db && window.fsCollection) {
                 clearInterval(checkFBFin);
+                console.log("Firebase ready, initializing Finance sync");
                 initFinanceSync();
             }
         }, 500);
