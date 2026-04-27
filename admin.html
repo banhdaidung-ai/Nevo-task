@@ -495,10 +495,16 @@
                         <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Thể loại Đơn hàng<span class="text-orange-600">.</span></h1>
                         <p class="text-slate-500 text-sm mt-1.5">Quản lý các loại hình dịch vụ, sản phẩm</p>
                     </div>
-                    <button onclick="openCategoryModal()" class="btn-primary !bg-orange-600">
-                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
-                        Thêm thể loại
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="cleanupDuplicateCategories()" class="btn-secondary !text-orange-600 !border-orange-200 hover:!bg-orange-50">
+                            <span class="material-symbols-outlined text-[18px]">cleaning_services</span>
+                            Dọn dẹp trùng lặp
+                        </button>
+                        <button onclick="openCategoryModal()" class="btn-primary !bg-orange-600">
+                            <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                            Thêm thể loại
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -994,7 +1000,7 @@
         window.fs.onSnapshot(qCategory, (snap) => {
             orderCategories = [];
             snap.forEach(doc => orderCategories.push({ id: doc.id, ...doc.data() }));
-            if (window.renderCategories) window.renderCategories();
+            if (typeof renderCategories === 'function') renderCategories();
         });
 
         // --- 5. ACTIVITIES SYNC ---
@@ -1133,7 +1139,7 @@
         `).join('');
     }
 
-    function renderCategories() {
+    window.renderCategories = function() {
         const tbody = document.getElementById('categoryTableBody');
         if (!tbody) return;
 
@@ -1469,6 +1475,37 @@
             console.error(e);
             showToast('Lỗi lưu dữ liệu', 'error');
         } finally { btn.disabled = false; }
+    }
+
+    window.cleanupDuplicateCategories = async function() {
+        if (!confirm('Hệ thống sẽ tự động tìm và xóa các thể loại bị trùng tên. Bạn có chắc chắn?')) return;
+        
+        const seen = new Set();
+        const toDelete = [];
+        
+        orderCategories.forEach(c => {
+            const lowName = (c.name || '').toLowerCase();
+            if (seen.has(lowName)) {
+                toDelete.push(c.id);
+            } else {
+                seen.add(lowName);
+            }
+        });
+        
+        if (toDelete.length === 0) {
+            return showToast('Không tìm thấy thể loại nào bị trùng.');
+        }
+        
+        try {
+            showToast(`Đang dọn dẹp ${toDelete.length} mục trùng...`, 'info');
+            for (const id of toDelete) {
+                await window.fs.deleteDoc(window.fs.doc(window.db, CATEGORY_COLLECTION, id));
+            }
+            showToast('Đã dọn dẹp xong các mục trùng lặp!');
+        } catch (e) {
+            console.error(e);
+            showToast('Lỗi khi dọn dẹp', 'error');
+        }
     }
 
     window.openDeptModal = function(id = '') {
