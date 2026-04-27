@@ -5254,6 +5254,16 @@
         window.lastFocusedEditorId = 'fsEditorContent';
     };
 
+    // Phím tắt ESC để thoát chế độ phóng to
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const overlay = document.getElementById('editorFullscreenOverlay');
+            if (overlay && window._fsContainerId) {
+                toggleEditorFullscreen(window._fsContainerId);
+            }
+        }
+    });
+
     window.editorInsertLink = function() {
         const url = prompt("Nhập URL liên kết:");
         if (url) window.editorCmd('createLink', url);
