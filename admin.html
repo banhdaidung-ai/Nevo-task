@@ -976,14 +976,21 @@
         });
 
         // --- 4. CATEGORIES SYNC ---
-        const qCategory = window.fs.query(window.fs.collection(window.db, CATEGORY_COLLECTION), window.fs.orderBy("name"));
+        const categoryRef = window.fs.collection(window.db, CATEGORY_COLLECTION);
+        const qCategory = window.fs.query(categoryRef, window.fs.orderBy("name"));
+        
+        // Cải tiến logic khởi tạo: kiểm tra từng category mặc định
         const snapCategory = await window.fs.getDocs(qCategory);
-        if (snapCategory.empty) {
-            console.log("Initializing default categories...");
-            for (const name of DEFAULT_CATEGORIES) {
-                await window.fs.addDoc(window.fs.collection(window.db, CATEGORY_COLLECTION), { name, createdAt: new Date().toISOString() });
+        const existingNames = new Set(snapCategory.docs.map(doc => doc.data().name.toLowerCase()));
+        
+        for (const name of DEFAULT_CATEGORIES) {
+            if (!existingNames.has(name.toLowerCase())) {
+                console.log(`Initializing missing category: ${name}`);
+                await window.fs.addDoc(categoryRef, { name, createdAt: new Date().toISOString() });
+                existingNames.add(name.toLowerCase()); // Tránh lặp trong cùng một lần chạy
             }
         }
+
         window.fs.onSnapshot(qCategory, (snap) => {
             orderCategories = [];
             snap.forEach(doc => orderCategories.push({ id: doc.id, ...doc.data() }));
@@ -1129,22 +1136,40 @@
     function renderCategories() {
         const tbody = document.getElementById('categoryTableBody');
         if (!tbody) return;
-        tbody.innerHTML = orderCategories.map(c => `
-            <tr class="table-row">
-                <td class="px-6 py-4">
-                    <span class="text-sm font-bold text-slate-800">${escHtml(c.name)}</span>
-                </td>
-                <td class="px-6 py-4 text-xs text-slate-400">
-                    ${c.createdAt ? c.createdAt.slice(0, 10) : '—'}
-                </td>
-                <td class="px-6 py-4 text-right">
-                    <div class="flex items-center gap-2 justify-end">
-                        <button class="btn-icon-sm" onclick="openCategoryModal('${c.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
-                        <button class="btn-icon-sm text-red-500 hover:bg-red-50" onclick="openDeleteModal('${c.id}', 'category')"><span class="material-symbols-outlined text-[17px]">delete</span></button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
+
+        const seen = new Set();
+        const duplicates = new Set();
+        orderCategories.forEach(c => {
+            const lowName = (c.name || '').toLowerCase();
+            if (seen.has(lowName)) {
+                duplicates.add(c.id);
+            } else {
+                seen.add(lowName);
+            }
+        });
+
+        tbody.innerHTML = orderCategories.map(c => {
+            const isDup = duplicates.has(c.id);
+            return `
+                <tr class="table-row ${isDup ? 'bg-red-50/40' : ''}">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold ${isDup ? 'text-red-600' : 'text-slate-800'}">${escHtml(c.name)}</span>
+                            ${isDup ? '<span class="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">Bị trùng</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-400">
+                        ${c.createdAt ? c.createdAt.slice(0, 10) : '—'}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center gap-2 justify-end">
+                            <button class="btn-icon-sm" onclick="openCategoryModal('${c.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
+                            <button class="btn-icon-sm text-red-500 hover:bg-red-50" onclick="openDeleteModal('${c.id}', 'category')"><span class="material-symbols-outlined text-[17px]">delete</span></button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function populateDeptDropdowns() {
@@ -1405,6 +1430,10 @@
         const name = document.getElementById('categoryNameInput').value.trim();
         const id = document.getElementById('editCategoryId').value;
         if (!name) return showToast('Vui lòng nhập tên thể loại', 'error');
+
+        // Kiểm tra tên trùng lặp (trừ khi đang sửa chính nó)
+        const isDuplicate = orderCategories.some(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== id);
+        if (isDuplicate) return showToast('Tên thể loại này đã tồn tại', 'error');
 
         const btn = document.getElementById('btnSaveCategory');
         btn.disabled = true;

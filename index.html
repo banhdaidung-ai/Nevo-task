@@ -3956,7 +3956,14 @@
         const qCategory = window.fsQuery(categoryRef, window.fsOrderBy("name"));
         window.fsOnSnapshot(qCategory, (snapshot) => {
             window.orderCategoriesData = [];
-            snapshot.forEach(doc => window.orderCategoriesData.push({ id: doc.id, ...doc.data() }));
+            const seenNames = new Set();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.name && !seenNames.has(data.name.toLowerCase())) {
+                    window.orderCategoriesData.push({ id: doc.id, ...data });
+                    seenNames.add(data.name.toLowerCase());
+                }
+            });
             populateDropdown('orderCategory', window.orderCategoriesData, '- Chọn thể loại -');
             populateDropdown('editOrderCategory', window.orderCategoriesData, '- Chọn thể loại -');
             populateMultiSelect('menu-category', window.orderCategoriesData, 'category');
