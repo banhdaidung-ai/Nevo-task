@@ -1850,6 +1850,7 @@
                     <!-- Finance Control Bar -->
                     <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-6">
                         <div class="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-3xl shadow-sm border border-slate-100">
+                            <!-- Time Filter -->
                             <div class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl">
                                 <span class="material-symbols-outlined text-slate-400 text-sm">calendar_month</span>
                                 <select id="financeFilterMonth" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
@@ -1858,16 +1859,23 @@
                                     <option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option>
                                     <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
                                 </select>
+                                <div class="w-px h-3 bg-slate-200 mx-1"></div>
                                 <select id="financeFilterYear" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer">
                                     <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
                                 </select>
                             </div>
-                            <div class="w-px h-8 bg-slate-100 mx-1"></div>
-                            <button onclick="window.openManageColumnsModal()" class="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all">
-                                <span class="material-symbols-outlined text-sm">view_column</span>
-                                Cột chi phí
-                            </button>
-                            <button onclick="window.addNewExpenseRow()" class="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#131b2e] text-white text-xs font-bold shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all">
+                            
+                            <!-- Dept Filter -->
+                            <div class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-2xl">
+                                <span class="material-symbols-outlined text-slate-400 text-sm">business</span>
+                                <select id="financeFilterDept" onchange="window.renderFinancePage()" class="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 cursor-pointer max-w-[150px]">
+                                    <option value="all">Tất cả phòng ban</option>
+                                </select>
+                            </div>
+
+                            <div class="w-px h-6 bg-slate-100 hidden md:block mx-2"></div>
+
+                            <button onclick="window.addNewExpenseRow()" class="flex items-center gap-2 px-6 py-2 rounded-2xl bg-[#131b2e] text-white text-[11px] font-black shadow-lg shadow-slate-200 transition-all hover:scale-105 active:scale-95">
                                 <span class="material-symbols-outlined text-sm">add</span>
                                 Thêm dòng
                             </button>
@@ -2585,6 +2593,13 @@
                             <!-- Dynamic from categories -->
                         </select>
                     </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Phòng ban</label>
+                    <select id="expenseDept" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                        <option value="">Chọn phòng ban...</option>
+                        <!-- Dynamic -->
+                    </select>
                 </div>
                 <div class="space-y-2">
                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Số tiền</label>
@@ -6668,17 +6683,26 @@
             sortedDepts.forEach(([name, cost]) => {
                 const p = Math.round((cost/maxCost)*100);
                 deptContainer.innerHTML += `
-                    <div>
+                    <div class="group/bar cursor-pointer" onclick="window.viewDeptFinance('${name}')">
                         <div class="flex justify-between items-end mb-2">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider">${name}</span>
+                            <span class="text-[9px] font-black text-slate-400 group-hover/bar:text-indigo-500 transition-colors uppercase tracking-wider">${name}</span>
                             <span class="text-[11px] font-black text-[#131b2e]">${cost.toLocaleString()}</span>
                         </div>
-                        <div class="w-full bg-slate-50 rounded-full h-2.5 overflow-hidden border border-slate-100/50">
-                            <div class="bg-gradient-to-r from-indigo-500 to-blue-400 h-full rounded-full transition-all duration-1000" style="width: ${p}%"></div>
+                        <div class="w-full bg-slate-50 rounded-full h-2.5 overflow-hidden border border-slate-100/50 group-hover/bar:border-indigo-100 transition-all">
+                            <div class="bg-gradient-to-r from-indigo-500 to-blue-400 h-full rounded-full transition-all duration-1000 group-hover/bar:from-indigo-600 group-hover/bar:to-indigo-500" style="width: ${p}%"></div>
                         </div>
                     </div>
                 `;
             });
+
+    window.viewDeptFinance = function(deptName) {
+        window.switchBudgetTab('finance');
+        const fDept = document.getElementById('financeFilterDept');
+        if(fDept) {
+            fDept.value = deptName;
+            window.renderFinancePage();
+        }
+    };
         }
 
         // Table
@@ -6817,7 +6841,21 @@
                 const data = d.data();
                 if (data.type === 'expenseType') types.push({id: d.id, val: data.val});
                 if (data.type === 'spender') spenders.push({id: d.id, val: data.val});
-            });
+                // 4. Sync Departments for filter
+        const deptsRef = window.fsCollection(window.db, "departments");
+        window.fsOnSnapshot(deptsRef, (snap) => {
+            const fDept = document.getElementById('financeFilterDept');
+            if(fDept) {
+                const currentVal = fDept.value;
+                fDept.innerHTML = '<option value="all">Tất cả phòng ban</option>';
+                snap.forEach(d => {
+                    const name = d.data().name;
+                    fDept.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+                if(currentVal) fDept.value = currentVal;
+            }
+        });
+    });
             window.financeConfigs = { types, spenders };
             // Update modal dropdowns
             populateFinanceSelects();
@@ -6840,6 +6878,11 @@
         if(mainCatSel) {
             mainCatSel.innerHTML = '<option value="">Chọn hạng mục...</option>';
             window.financeColumns.forEach(c => mainCatSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+        }
+        const deptSel = document.getElementById('expenseDept');
+        if(deptSel) {
+            deptSel.innerHTML = '<option value="">Chọn phòng ban...</option>';
+            window.departmentsData.forEach(d => deptSel.innerHTML += `<option value="${d.name}">${d.name}</option>`);
         }
     }
 
@@ -6874,41 +6917,60 @@
 
         const month = parseInt(mEl.value);
         const year = parseInt(yEl.value);
+        const dept = document.getElementById('financeFilterDept')?.value || 'all';
 
-        // Filter data for current month
-        const filtered = window.financeExpenses.filter(e => {
+        // 1. Get Manual Expenses
+        const manualFiltered = window.financeExpenses.filter(e => {
             const d = new Date(e.date);
-            return d.getMonth() + 1 === month && d.getFullYear() === year;
-        });
+            const matchTime = d.getMonth() + 1 === month && d.getFullYear() === year;
+            const matchDept = (dept === 'all' || e.department === dept); // Assuming ledger_expenses has department field
+            return matchTime && matchDept;
+        }).map(e => ({ ...e, isOrder: false }));
 
-        // 1. Render Table Headers (Dynamic Columns)
-        const headerRow = page.querySelector('thead tr:first-child');
-        const codeRow = page.querySelector('thead tr:nth-child(2)');
-        const planRow = page.querySelector('thead tr:nth-child(3)');
-        const remainRow = page.querySelector('thead tr:nth-child(4)');
+        // 2. Get Order Expenses
+        const orderFiltered = (window.allOrdersData || []).filter(o => {
+            if (!o.totalCost || o.totalCost <= 0) return false;
+            
+            const dStr = o.deployDate || o.createdAt;
+            if(!dStr) return false;
+            const d = new Date(dStr);
+            const matchTime = d.getMonth() + 1 === month && d.getFullYear() === year;
+            const matchDept = (dept === 'all' || o.department === dept);
+            return matchTime && matchDept;
+        }).map(o => ({
+            id: o.id,
+            date: o.deployDate || o.createdAt,
+            spender: o.requester || '-',
+            content: `[ĐƠN] ${o.code || o.id.substring(0,8)} - ${o.title}`,
+            type: 'Sản xuất',
+            department: o.department,
+            isOrder: true,
+            amount: o.totalCost,
+            orderCosts: o.costs || {}
+        }));
 
-        // Clear previous dynamic headers
-        const prevDynHeaders = headerRow.querySelectorAll('.dynamic-col');
-        prevDynHeaders.forEach(h => h.remove());
-        
-        const prevDynCodes = codeRow.querySelectorAll('.dynamic-col');
-        prevDynCodes.forEach(c => c.remove());
+        // 3. Combine and Sort (Newest first)
+        const combined = [...manualFiltered, ...orderFiltered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        const prevDynPlans = planRow.querySelectorAll('.dynamic-col');
-        prevDynPlans.forEach(p => p.remove());
+        // 4. Render Table Headers (Dynamic Columns)
+        const headerRow = tab.querySelector('thead tr:first-child');
+        const codeRow = tab.querySelector('thead tr:nth-child(2)');
+        const planRow = tab.querySelector('thead tr:nth-child(3)');
+        const remainRow = tab.querySelector('thead tr:nth-child(4)');
 
-        const prevDynRemains = remainRow.querySelectorAll('.dynamic-col');
-        prevDynRemains.forEach(r => r.remove());
+        headerRow.querySelectorAll('.dynamic-col').forEach(h => h.remove());
+        codeRow.querySelectorAll('.dynamic-col').forEach(c => c.remove());
+        planRow.querySelectorAll('.dynamic-col').forEach(p => p.remove());
+        remainRow.querySelectorAll('.dynamic-col').forEach(r => r.remove());
 
         const colTotals = {};
         window.financeColumns.forEach(col => {
             colTotals[col.name] = 0;
-            // Header
             const th = document.createElement('th');
             th.className = 'py-5 px-4 text-right dynamic-col min-w-[150px]';
             th.innerHTML = `
                 <div class="flex flex-col items-end">
-                    <span class="text-slate-800 text-xs font-black mb-1">${col.name}</span>
+                    <span class="text-slate-800 text-[10px] font-black mb-1 uppercase tracking-wider">${col.name}</span>
                     <div class="flex gap-1">
                         <button onclick="window.editFinanceColumn('${col.id}')" class="material-symbols-outlined text-[10px] hover:text-indigo-600">edit</button>
                     </div>
@@ -6916,7 +6978,6 @@
             `;
             headerRow.insertBefore(th, document.getElementById('finCategoryHeaderEnd'));
 
-            // Code Row
             const tdCode = document.createElement('td');
             tdCode.className = 'py-2 px-4 text-right dynamic-col font-black italic opacity-50';
             tdCode.textContent = col.code || '-';
@@ -6929,35 +6990,59 @@
             planRow.appendChild(tdPlan);
         });
 
-        // 2. Render Table Body
+        // 5. Render Table Body
         const tbody = document.getElementById('financeTableBody');
         tbody.innerHTML = '';
-        filtered.forEach((exp, idx) => {
+        
+        combined.forEach((item, idx) => {
             const tr = document.createElement('tr');
-            tr.className = 'hover:bg-slate-50 transition-colors group cursor-pointer';
-            tr.onclick = () => window.editExpense(exp.id);
-            
+            tr.className = 'hover:bg-slate-50 transition-colors group cursor-pointer border-b border-slate-50';
+            if (!item.isOrder) tr.onclick = () => window.editExpense(item.id);
+            else tr.onclick = () => window.openEditModal(encodeURIComponent(JSON.stringify(window.allOrdersData.find(o => o.id === item.id))));
+
             let rowHtml = `
-                <td class="py-5 px-4 text-center text-[10px] font-black text-slate-300">${filtered.length - idx}</td>
-                <td class="py-5 px-4 text-xs font-bold text-slate-600">${new Date(exp.date).toLocaleDateString('vi-VN')}</td>
-                <td class="py-5 px-6">
-                    <div class="text-[13px] font-bold text-slate-800 leading-tight">${exp.content}</div>
+                <td class="py-5 px-4 text-center text-[10px] font-black text-slate-300 sticky left-0 bg-white group-hover:bg-slate-50">${combined.length - idx}</td>
+                <td class="py-5 px-4 text-[11px] font-bold text-slate-600 sticky left-12 bg-white group-hover:bg-slate-50">${new Date(item.date).toLocaleDateString('vi-VN')}</td>
+                <td class="py-5 px-6 sticky left-[176px] bg-white group-hover:bg-slate-50">
+                    <div class="text-[12px] font-bold ${item.isOrder ? 'text-indigo-600' : 'text-slate-800'} leading-tight line-clamp-1">${item.content}</div>
                 </td>
                 <td class="py-5 px-4 text-center">
-                    <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-tighter">${exp.type}</span>
+                    <span class="px-2 py-0.5 rounded-lg ${item.isOrder ? 'bg-indigo-50 text-indigo-500' : 'bg-slate-100 text-slate-500'} text-[8px] font-black uppercase tracking-tighter">${item.type}</span>
                 </td>
                 <td class="py-5 px-4 text-center">
-                    <div class="text-[11px] font-black text-slate-800">${exp.spender}</div>
+                    <div class="text-[10px] font-bold text-slate-700">${item.spender}</div>
                 </td>
             `;
 
             window.financeColumns.forEach(col => {
-                const isMatch = (exp.mainCategory === col.name);
-                const val = isMatch ? Number(exp.amount || 0) : 0;
-                if(isMatch) colTotals[col.name] += val;
+                let val = 0;
+                if (!item.isOrder) {
+                    val = (item.mainCategory === col.name) ? Number(item.amount || 0) : 0;
+                } else {
+                    // Match rules: Column name contains category key
+                    const mapping = {
+                        'model': ['model', 'mẫu', 'người mẫu'],
+                        'makeup': ['makeup', 'trang điểm'],
+                        'studio': ['studio', 'phim trường'],
+                        'travel': ['travel', 'di chuyển', 'xe'],
+                        'video': ['video', 'quay phim'],
+                        'photo': ['photo', 'chụp ảnh'],
+                        'stylist': ['stylist'],
+                        'assistant': ['assistant', 'phụ quay', 'trợ lý'],
+                        'other': ['other', 'khác']
+                    };
+                    
+                    const colNameLower = col.name.toLowerCase();
+                    for (const [key, aliases] of Object.entries(mapping)) {
+                        if (aliases.some(a => colNameLower.includes(a))) {
+                            val += (Number(item.orderCosts[key]) || 0);
+                        }
+                    }
+                }
                 
-                rowHtml += `<td class="py-5 px-4 text-right font-black text-slate-800 text-[13px] border-l border-slate-50">
-                    ${val > 0 ? val.toLocaleString() : '<span class="text-slate-100">0</span>'}
+                colTotals[col.name] += val;
+                rowHtml += `<td class="py-5 px-4 text-right font-black ${val > 0 ? 'text-slate-800' : 'text-slate-100'} text-[12px] border-l border-slate-50">
+                    ${val > 0 ? val.toLocaleString() : '0'}
                 </td>`;
             });
             
@@ -6965,21 +7050,21 @@
             tbody.appendChild(tr);
         });
 
-        // 3. Render Remaining Row
+        // 6. Render Remaining Row
         window.financeColumns.forEach(col => {
             const plan = Number(col.plan) || 0;
             const actual = colTotals[col.name] || 0;
             const remain = plan - actual;
             const tdRem = document.createElement('td');
-            tdRem.className = `py-3 px-4 text-right dynamic-col font-black border-l border-yellow-300/50 ${remain < 0 ? 'text-red-600' : ''}`;
+            tdRem.className = `py-3 px-4 text-right dynamic-col font-black border-l border-yellow-300/50 ${remain < 0 ? 'text-red-600 animate-pulse' : ''}`;
             tdRem.textContent = remain.toLocaleString();
             remainRow.appendChild(tdRem);
         });
 
-        // 4. Update Dashboard Stats
+        // 7. Update Dashboard Stats
         const totalSpentMonth = Object.values(colTotals).reduce((a,b) => a+b, 0);
         const totalPlanMonth = window.financeColumns.reduce((a,b) => a + (Number(b.plan) || 0), 0);
-        const totalCumulative = window.financeExpenses.reduce((a,b) => a + (Number(b.amount) || 0), 0);
+        const totalCumulative = window.financeExpenses.reduce((a,b) => a + (Number(b.amount) || 0), 0) + (window.allOrdersData || []).reduce((a,b) => a + (Number(b.totalCost) || 0), 0);
 
         document.getElementById('finKpiCumulative').textContent = totalCumulative.toLocaleString();
         document.getElementById('finKpiMonthlyBudget').textContent = totalPlanMonth.toLocaleString();
@@ -6992,7 +7077,6 @@
         document.getElementById('finSpentPerc').textContent = perc + '%';
         document.getElementById('finSpentBar').style.width = perc + '%';
 
-        // 5. Update Charts
         renderFinanceCharts(colTotals);
     };
 
@@ -7106,6 +7190,7 @@
             content: document.getElementById('expenseContent').value,
             type: document.getElementById('expenseType').value,
             mainCategory: document.getElementById('expenseMainCategory').value,
+            department: document.getElementById('expenseDept').value,
             amount: Number(document.getElementById('expenseAmount').value),
             updatedAt: new Date().toISOString()
         };
