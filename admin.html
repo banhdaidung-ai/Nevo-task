@@ -9,10 +9,10 @@
     <!-- Auth + Admin Guard -->
     <script>
         (function() {
-            if (sessionStorage.getItem('nevo_logged_in') !== 'true') {
+            if (localStorage.getItem('nevo_logged_in') !== 'true') {
                 window.location.replace('login.html'); return;
             }
-            if (sessionStorage.getItem('nevo_role') !== 'admin') {
+            if (localStorage.getItem('nevo_role') !== 'admin') {
                 window.location.replace('index.html');
             }
         })();
@@ -879,7 +879,7 @@
     // Activity Logger Utility
     window.logActivity = async function(type, title, description) {
         try {
-            const userName = sessionStorage.getItem('nevo_user') || 'Admin';
+            const userName = localStorage.getItem('nevo_user') || 'Admin';
             await window.fs.addDoc(window.fs.collection(window.db, "activities"), {
                 type: type, // 'create', 'update', 'delete', 'login'
                 title: title,
@@ -1674,8 +1674,8 @@
     }
 
     window.handleLogout = function() {
-        Object.keys(sessionStorage).forEach(key => {
-            if (key.startsWith('nevo_')) sessionStorage.removeItem(key);
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('nevo_')) localStorage.removeItem(key);
         });
         window.location.replace('login.html');
     }
@@ -1751,8 +1751,8 @@
             }
         });
 
-        const navName = sessionStorage.getItem('nevo_user') || 'Admin';
-        const role = sessionStorage.getItem('nevo_role') || 'user';
+        const navName = localStorage.getItem('nevo_user') || 'Admin';
+        const role = localStorage.getItem('nevo_role') || 'user';
         
         document.getElementById('navInit').textContent = navName.substring(0,2).toUpperCase();
         document.getElementById('navName').textContent = navName;

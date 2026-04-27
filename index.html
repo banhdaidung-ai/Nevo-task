@@ -8,7 +8,7 @@
     <!-- Auth Guard -->
     <script>
         (function() {
-            if (sessionStorage.getItem('nevo_logged_in') !== 'true') {
+            if (localStorage.getItem('nevo_logged_in') !== 'true') {
                 window.location.replace('login.html');
             }
         })();
@@ -2630,7 +2630,7 @@
             const snap = await window.fsGetDoc(orderRef);
             if (!snap.exists()) return;
             const oldData = snap.data();
-            const userName = sessionStorage.getItem('nevo_user_name') || sessionStorage.getItem('nevo_user') || 'Hệ thống';
+            const userName = localStorage.getItem('nevo_user_name') || localStorage.getItem('nevo_user') || 'Hệ thống';
             const changes = {};
             const skipFields = ['updatedAt', 'lastUpdatedBy'];
             const fieldLabels = {
@@ -2830,7 +2830,7 @@
             await window.fsUpdateDoc(window.fsDoc(window.db, "orders", orderId), restoreData);
 
             // 4. Tạo bản ghi lịch sử mới ghi nhận hành động khôi phục
-            const userName = sessionStorage.getItem('nevo_user') || 'Hệ thống';
+            const userName = localStorage.getItem('nevo_user') || 'Hệ thống';
             const restoreChanges = {};
             Object.keys(changes).forEach(key => {
                 restoreChanges[key] = {
@@ -2888,7 +2888,7 @@
 <script>
     // ===== RBAC HELPERS =====
     function checkPermission(field) {
-        const role = sessionStorage.getItem('nevo_role') || 'user';
+        const role = localStorage.getItem('nevo_role') || 'user';
         if (role === 'admin' || role === 'manager') return true;
         
         // Fields that regular users CANNOT edit
@@ -2978,9 +2978,9 @@
 
             // SPECIAL LOGIC FOR PAGES
             if (pageId === 'create-order') {
-                const role = sessionStorage.getItem('nevo_role') || 'user';
-                const userName = sessionStorage.getItem('nevo_user') || '';
-                const userDept = sessionStorage.getItem('nevo_dept') || '';
+                const role = localStorage.getItem('nevo_role') || 'user';
+                const userName = localStorage.getItem('nevo_user') || '';
+                const userDept = localStorage.getItem('nevo_dept') || '';
                 
                 const reqEl = document.getElementById('requester');
                 const deptEl = document.getElementById('department');
@@ -3693,7 +3693,7 @@
             };
 
             
-            const isAdmin = (sessionStorage.getItem('nevo_role') === 'admin');
+            const isAdmin = (localStorage.getItem('nevo_role') === 'admin');
             
             // Function to get row background color based on status
             const getRowBgClass = (status) => {
@@ -3887,7 +3887,7 @@
     window.logActivity = async function(type, title, description, orderId = null, orderCode = null) {
         if (!window.db || !window.fsAddDoc || !window.fsCollection) return;
         try {
-            const user = sessionStorage.getItem('nevo_user') || 'Hệ thống';
+            const user = localStorage.getItem('nevo_user') || 'Hệ thống';
             await window.fsAddDoc(window.fsCollection(window.db, "activities"), {
                 type: type, // 'create', 'update', 'delete', 'system'
                 title: title,
@@ -4123,7 +4123,7 @@
 
     window.openEditModal = function(dataStr) {
         const data = JSON.parse(decodeURIComponent(dataStr));
-        const role = sessionStorage.getItem('nevo_role') || 'user';
+        const role = localStorage.getItem('nevo_role') || 'user';
         
         document.getElementById('editOrderId').value = data.id;
         document.getElementById('editOrderCode').value = data.code || '';
@@ -4481,12 +4481,12 @@
 
     // ===== Profile Page Logic =====
     window.updateProfilePage = async function() {
-        const userName = sessionStorage.getItem('nevo_user') || 'Admin';
-        const userRole = sessionStorage.getItem('nevo_role') || 'user';
-        const userDept = sessionStorage.getItem('nevo_dept') || 'N/A';
-        const userEmpId = sessionStorage.getItem('nevo_empId') || 'N/A';
-        const userEmail = sessionStorage.getItem('nevo_email') || '';
-        const userPhone = sessionStorage.getItem('nevo_phone') || '';
+        const userName = localStorage.getItem('nevo_user') || 'Admin';
+        const userRole = localStorage.getItem('nevo_role') || 'user';
+        const userDept = localStorage.getItem('nevo_dept') || 'N/A';
+        const userEmpId = localStorage.getItem('nevo_empId') || 'N/A';
+        const userEmail = localStorage.getItem('nevo_email') || '';
+        const userPhone = localStorage.getItem('nevo_phone') || '';
         
         document.getElementById('profileName').textContent = userName;
         document.getElementById('profileInitial').textContent = userName.substring(0, 2).toUpperCase();
@@ -5100,7 +5100,7 @@
         const phone = document.getElementById('editProfilePhone').value;
         const oldPass = document.getElementById('oldPassword').value;
         const newPass = document.getElementById('newPassword').value;
-        const empId = sessionStorage.getItem('nevo_empId');
+        const empId = localStorage.getItem('nevo_empId');
 
         if (!empId || empId === 'N/A') {
             showToast('Lỗi!', 'Không tìm thấy mã nhân viên trong phiên làm việc.', 'error', 'text-error');
@@ -5134,9 +5134,9 @@
             await window.fsUpdateDoc(userRef, updateData);
             
             // Update session
-            sessionStorage.setItem('nevo_user', name);
-            sessionStorage.setItem('nevo_email', email);
-            sessionStorage.setItem('nevo_phone', phone);
+            localStorage.setItem('nevo_user', name);
+            localStorage.setItem('nevo_email', email);
+            localStorage.setItem('nevo_phone', phone);
             
             // Refresh UI
             document.getElementById('navUserName').textContent = name;
@@ -5492,8 +5492,8 @@
 <script>
     // ===== DISPLAY LOGGED-IN USER =====
     (function() {
-        const user = sessionStorage.getItem('nevo_user') || 'Admin';
-        const role = sessionStorage.getItem('nevo_role') || 'user';
+        const user = localStorage.getItem('nevo_user') || 'Admin';
+        const role = localStorage.getItem('nevo_role') || 'user';
         const initial = user.substring(0, 2).toUpperCase();
         
         const el = document.getElementById('navUserInitial');
@@ -5531,8 +5531,8 @@
 
     // ===== LOGOUT =====
     function handleLogout() {
-        Object.keys(sessionStorage).forEach(key => {
-            if (key.startsWith('nevo_')) sessionStorage.removeItem(key);
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('nevo_')) localStorage.removeItem(key);
         });
         window.location.href = 'login.html';
     }
@@ -5779,7 +5779,7 @@
             return;
         }
         
-        const sessionDept = sessionStorage.getItem('nevo_dept');
+        const sessionDept = localStorage.getItem('nevo_dept');
         const filterDept = document.getElementById('planningDepartmentFilter')?.value;
         const monthFilter = document.getElementById('planningMonthFilter');
         

@@ -435,7 +435,7 @@
                         type="text"
                         id="empId"
                         name="empId"
-                        placeholder="VD: EMP-1024"
+                        placeholder="VD: YD0085"
                         autocomplete="username"
                         spellcheck="false"
                     />
@@ -447,7 +447,6 @@
             <div class="form-group">
                 <div class="form-label-row">
                     <label for="password">Mật khẩu</label>
-                    <a href="#" class="forgot-link" onclick="return false;">Quên mật khẩu?</a>
                 </div>
                 <div class="input-wrapper" id="passwordWrapper">
                     <input
@@ -609,13 +608,13 @@
                     if (userData.status === 'inactive') {
                         showError('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.');
                     } else {
-                        sessionStorage.setItem('nevo_logged_in', 'true');
-                        sessionStorage.setItem('nevo_user', userData.name || empId);
-                        sessionStorage.setItem('nevo_role', userData.role || 'user');
-                        sessionStorage.setItem('nevo_dept', userData.dept || '');
-                        sessionStorage.setItem('nevo_empId', userData.empId || empId);
-                        sessionStorage.setItem('nevo_email', userData.email || '');
-                        sessionStorage.setItem('nevo_phone', userData.phone || '');
+                        localStorage.setItem('nevo_logged_in', 'true');
+                        localStorage.setItem('nevo_user', userData.name || empId);
+                        localStorage.setItem('nevo_role', userData.role || 'user');
+                        localStorage.setItem('nevo_dept', userData.dept || '');
+                        localStorage.setItem('nevo_empId', userData.empId || empId);
+                        localStorage.setItem('nevo_email', userData.email || '');
+                        localStorage.setItem('nevo_phone', userData.phone || '');
 
                         btn.innerHTML = `
                             <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 600;font-size:20px;">check_circle</span>
@@ -639,7 +638,7 @@
             console.error("Login error:", error);
             showError('Lỗi kết nối máy chủ. Vui lòng thử lại sau.');
         } finally {
-            if (sessionStorage.getItem('nevo_logged_in') !== 'true') {
+            if (localStorage.getItem('nevo_logged_in') !== 'true') {
                 btn.classList.remove('loading');
                 btn.disabled = false;
             }
@@ -662,7 +661,7 @@
         });
     });
 
-    if (sessionStorage.getItem('nevo_logged_in') === 'true') {
+    if (localStorage.getItem('nevo_logged_in') === 'true') {
         window.location.href = 'index.html';
     }
 </script>
