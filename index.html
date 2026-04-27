@@ -234,30 +234,44 @@
         #orderEditor:focus {
             outline: none;
         }
-        .editor-container.fullscreen {
+        /* Fullscreen Editor Overlay - appended to body for Chrome compatibility */
+        #editorFullscreenOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 10000; background: #f8fafc; padding: 1.5rem;
-            display: flex; flex-direction: column; gap: 0;
+            z-index: 99999; background: #f1f5f9;
+            display: flex; flex-direction: column;
+            padding: 1.5rem;
         }
-        .editor-container.fullscreen > div:first-child {
-            position: relative; /* Fix z-index for Chrome */
-            border-radius: 12px 12px 0 0 !important;
-            background: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
-            padding: 0.75rem 1.5rem !important;
-            z-index: 20;
+        #editorFullscreenOverlay .fs-toolbar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+            background: #ffffff; padding: 0.75rem 1rem;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: relative; z-index: 10;
         }
-        .editor-container.fullscreen [contenteditable="true"] {
-            flex: 1; min-height: unset !important;
-            background: white !important;
-            border-radius: 0 0 12px 12px !important;
-            padding: 2rem !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+        #editorFullscreenOverlay .fs-toolbar button {
+            padding: 6px; border-radius: 8px; border: none; cursor: pointer;
+            background: transparent; color: #475569; transition: background 0.15s;
         }
-        .editor-container.fullscreen .ml-auto {
-            background: #fee2e2 !important; /* Màu nền nhạt để làm nổi bật nút thu nhỏ */
-            color: #b80035 !important;
+        #editorFullscreenOverlay .fs-toolbar button:hover {
+            background: #e2e8f0;
+        }
+        #editorFullscreenOverlay .fs-close-btn {
+            background: #fee2e2 !important; color: #b80035 !important;
             border: 1px solid #fecaca !important;
+            font-weight: 700; font-size: 13px;
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px !important; border-radius: 8px !important;
+            margin-left: auto;
+        }
+        #editorFullscreenOverlay .fs-close-btn:hover {
+            background: #fecaca !important;
+        }
+        #editorFullscreenOverlay .fs-editor {
+            flex: 1; background: white; overflow-y: auto;
+            padding: 2rem; font-size: 15px; line-height: 1.8;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            outline: none;
         }
         
         /* List Styles for Editor - Universal fix for Create and Edit */
@@ -5164,19 +5178,80 @@
         document.execCommand(cmd, false, val);
     };
 
+    window._fsOriginalEditor = null;
+    window._fsContainerId = null;
+
     window.toggleEditorFullscreen = function(containerId) {
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.classList.toggle('fullscreen');
-            // Cập nhật icon trên tất cả các nút fullscreen trong container này
-            const icons = container.querySelectorAll('[onclick*="toggleEditorFullscreen"] span');
-            icons.forEach(icon => {
-                icon.textContent = container.classList.contains('fullscreen') ? 'fullscreen_exit' : 'fullscreen';
-            });
-            
-            // Khóa cuộn trang khi ở chế độ toàn màn hình
-            document.body.style.overflow = container.classList.contains('fullscreen') ? 'hidden' : '';
+        const existing = document.getElementById('editorFullscreenOverlay');
+        if (existing) {
+            // === THU NHỎ: trả editor về vị trí cũ ===
+            const editorInOverlay = existing.querySelector('.fs-editor');
+            if (window._fsOriginalEditor && editorInOverlay) {
+                window._fsOriginalEditor.innerHTML = editorInOverlay.innerHTML;
+            }
+            existing.remove();
+            document.body.style.overflow = '';
+            window._fsOriginalEditor = null;
+            window._fsContainerId = null;
+            return;
         }
+
+        // === PHÓNG TO: tạo overlay mới trên body ===
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        const editor = container.querySelector('[contenteditable="true"]');
+        if (!editor) return;
+
+        window._fsOriginalEditor = editor;
+        window._fsContainerId = containerId;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'editorFullscreenOverlay';
+
+        // Toolbar
+        const toolbar = document.createElement('div');
+        toolbar.className = 'fs-toolbar';
+        toolbar.innerHTML = `
+            <button onclick="editorCmd('bold')" title="In đậm"><span class="material-symbols-outlined">format_bold</span></button>
+            <button onclick="editorCmd('italic')" title="In nghiêng"><span class="material-symbols-outlined">format_italic</span></button>
+            <button onclick="editorCmd('underline')" title="Gạch chân"><span class="material-symbols-outlined">format_underlined</span></button>
+            <div style="width:1px;height:20px;background:#cbd5e1;margin:0 6px"></div>
+            <button onclick="editorCmd('insertUnorderedList')" title="Danh sách"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+            <button onclick="editorCmd('insertOrderedList')" title="Số thứ tự"><span class="material-symbols-outlined">format_list_numbered</span></button>
+            <div style="width:1px;height:20px;background:#cbd5e1;margin:0 6px"></div>
+            <button onclick="editorCmd('justifyLeft')" title="Căn trái"><span class="material-symbols-outlined">format_align_left</span></button>
+            <button onclick="editorCmd('justifyCenter')" title="Căn giữa"><span class="material-symbols-outlined">format_align_center</span></button>
+            <button onclick="editorCmd('justifyRight')" title="Căn phải"><span class="material-symbols-outlined">format_align_right</span></button>
+            <div style="width:1px;height:20px;background:#cbd5e1;margin:0 6px"></div>
+            <button onclick="editorInsertLink()" title="Chèn link"><span class="material-symbols-outlined">link</span></button>
+            <button onclick="editorInsertImage()" title="Chèn ảnh"><span class="material-symbols-outlined">image</span></button>
+            <button onclick="editorInsertTable()" title="Chèn bảng"><span class="material-symbols-outlined">table_view</span></button>
+            <button class="fs-close-btn" onclick="toggleEditorFullscreen('${containerId}')">
+                <span class="material-symbols-outlined">fullscreen_exit</span>
+                Thu nhỏ
+            </button>
+        `;
+
+        // Editor area
+        const fsEditor = document.createElement('div');
+        fsEditor.className = 'fs-editor';
+        fsEditor.contentEditable = 'true';
+        fsEditor.innerHTML = editor.innerHTML;
+        fsEditor.id = 'fsEditorContent';
+
+        // Khi gõ trong fullscreen, theo dõi focus
+        fsEditor.addEventListener('focusin', () => {
+            window.lastFocusedEditorId = 'fsEditorContent';
+        });
+
+        overlay.appendChild(toolbar);
+        overlay.appendChild(fsEditor);
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        // Focus vào editor
+        fsEditor.focus();
+        window.lastFocusedEditorId = 'fsEditorContent';
     };
 
     window.editorInsertLink = function() {
