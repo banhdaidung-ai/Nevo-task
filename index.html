@@ -7164,30 +7164,59 @@
     }
 
     // Modal & CRUD Functions
-    window.addNewExpenseRow = function() {
+    window.addNewExpenseRow = async function() {
+        if (!window.db || !window.fsAddDoc || !window.fsCollection) return;
+        
+        const mEl = document.getElementById('financeFilterMonth');
+        const yEl = document.getElementById('financeFilterYear');
+        const dEl = document.getElementById('financeFilterDept');
+        
+        const month = mEl ? mEl.value : (new Date().getMonth() + 1);
+        const year = yEl ? yEl.value : new Date().getFullYear();
+        const dept = (dEl && dEl.value !== 'all') ? dEl.value : '';
+        
+        // Use current date but adjust to the filtered month/year if they are different from now
+        let defaultDate = new Date();
+        if (defaultDate.getMonth() + 1 !== parseInt(month) || defaultDate.getFullYear() !== parseInt(year)) {
+            defaultDate = new Date(year, month - 1, 1);
+        }
+        
+        const newExpense = {
+            date: defaultDate.toISOString().split('T')[0],
+            content: 'Nội dung chi phí mới',
+            amount: 0,
+            type: '',
+            spender: localStorage.getItem('nevo_user_name') || '',
+            department: dept,
+            mainCategory: '',
+            createdAt: window.fsServerTimestamp ? window.fsServerTimestamp() : new Date().toISOString()
+        };
+
         try {
-            console.log("addNewExpenseRow triggered");
-            const form = document.getElementById('expenseForm');
-            if (form) form.reset();
+            const btn = document.querySelector('button[onclick="window.addNewExpenseRow()"]');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>';
+            btn.disabled = true;
+
+            const docRef = await window.fsAddDoc(window.fsCollection(window.db, "ledger"), newExpense);
             
-            const idInput = document.getElementById('editExpenseId');
-            if (idInput) idInput.value = '';
-            
-            const dateInput = document.getElementById('expenseDate');
-            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-            
-            const titleEl = document.getElementById('expenseModalTitle');
-            if (titleEl) titleEl.textContent = 'Kê khai chi phí mới';
-            
-            const modal = document.getElementById('expenseModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-                populateFinanceSelects();
-            } else {
-                console.error("expenseModal element missing");
+            // Log activity
+            if (window.logActivity) {
+                await window.logActivity('create', 'Thêm chi phí mới', `Đã tạo dòng chi phí: ${newExpense.content}`, docRef.id);
             }
+            
+            showToast('Thành công', 'Đã thêm dòng chi phí mới.', 'add_task', 'text-primary');
+            
+            // Optionally open the modal for the newly created row so they can edit it immediately
+            setTimeout(() => {
+                window.editExpense(docRef.id);
+            }, 500);
+
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
         } catch (e) {
-            console.error("Error in addNewExpenseRow:", e);
+            console.error("Error adding new expense:", e);
+            showToast('Lỗi', 'Không thể thêm dòng mới.', 'error', 'text-error');
         }
     };
 
