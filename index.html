@@ -1329,9 +1329,10 @@
                             </th>
                             <th class="py-4 px-6 bg-[#f8fafc] sticky left-[50px] z-30 min-w-[160px] border-r border-slate-100 border-b">PHÒNG BAN</th>
                             <th class="py-4 px-6 bg-[#f8fafc] sticky left-[210px] z-30 min-w-[200px] border-r border-slate-100 border-b">CHIẾN DỊCH</th>
-                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[410px] z-30 min-w-[250px] border-r border-slate-100 border-b">GHI CHÚ</th>
-                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[660px] z-30 min-w-[120px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
-                            <th class="py-4 px-1 bg-[#f8fafc] sticky left-[780px] z-30 min-w-[36px] text-right border-r-2 border-slate-200 border-b"><div class="text-[8px] leading-tight">NGÂN<br>SÁCH</div></th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[410px] z-30 min-w-[120px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[530px] z-30 min-w-[200px] border-r border-slate-100 border-b">OUTCOME</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] sticky left-[730px] z-30 min-w-[250px] border-r border-slate-100 border-b">GHI CHÚ</th>
+                            <th class="py-4 px-1 bg-[#f8fafc] sticky left-[980px] z-30 min-w-[120px] text-right border-r-2 border-slate-200 border-b">NGÂN SÁCH</th>
                             <th class="py-4 px-6 bg-[#f8fafc] font-black text-rose-600 text-center border-r border-slate-100 border-b min-w-[80px]">TỔNG</th>
                             <!-- Dynamic Day Columns will be injected here -->
                             <th class="py-4 px-4 bg-[#f8fafc] sticky right-0 z-30 min-w-[80px] text-center border-l border-slate-100 border-b">XÓA</th>
@@ -1342,8 +1343,8 @@
                     </tbody>
                     <tfoot class="bg-[#f8fafc] font-bold text-[#1e293b] sticky bottom-0 z-20">
                         <tr id="planningTableFooterRow">
-                            <td colspan="5" class="py-4 px-6 text-rose-600 uppercase tracking-widest sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right font-black">TỔNG CỘNG</td>
-                            <td id="planningTotalBudget" class="py-4 px-6 text-right sticky left-[780px] z-20 bg-[#f8fafc] border-r-2 border-slate-200 text-rose-600 font-black">0</td>
+                            <td colspan="6" class="py-4 px-6 text-rose-600 uppercase tracking-widest sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right font-black">TỔNG CỘNG</td>
+                            <td id="planningTotalBudget" class="py-4 px-6 text-right sticky left-[980px] z-20 bg-[#f8fafc] border-r-2 border-slate-200 text-rose-600 font-black">0</td>
                             <td id="planningGrandTotalOrders" class="py-4 px-6 text-center bg-rose-50 text-rose-700 font-black text-sm border-r border-slate-200">0</td>
                             <!-- Daily totals will be injected here -->
                             <td class="py-4 px-4 text-center sticky right-0 z-20 bg-[#f8fafc] border-l border-slate-100 text-slate-400">--</td>
@@ -6271,6 +6272,7 @@
         const newRow = {
             dept: finalDept,
             campaign: data.campaign || '',
+            outcome: data.outcome || '',
             note: data.note || '',
             type: data.type || '',
             budget: data.budget || '',
@@ -6415,15 +6417,18 @@
                     <td class="py-3 px-6 sticky left-[210px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[200px] align-top">
                         <textarea rows="2" onblur="window.updateRowField('${row.id}', 'campaign', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-bold text-[#1e293b] outline-none resize-none">${row.campaign || ''}</textarea>
                     </td>
-                    <td class="py-3 px-6 sticky left-[410px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[250px] align-top">
-                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'note', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 outline-none resize-none leading-relaxed">${row.note || ''}</textarea>
-                    </td>
-                    <td class="py-3 px-6 sticky left-[660px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 text-center min-w-[120px] align-top">
+                    <td class="py-3 px-6 sticky left-[410px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 text-center min-w-[120px] align-top">
                         <select onchange="window.updateRowField('${row.id}', 'type', this.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 outline-none">
                             ${typeOptions}
                         </select>
                     </td>
-                    <td class="py-3 px-1 sticky left-[780px] z-10 bg-white group-hover:bg-blue-50/30 border-r-2 border-b border-slate-200 min-w-[36px] align-top">
+                    <td class="py-3 px-6 sticky left-[530px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[200px] align-top">
+                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'outcome', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-bold text-[#1e293b] outline-none resize-none">${row.outcome || ''}</textarea>
+                    </td>
+                    <td class="py-3 px-6 sticky left-[730px] z-10 bg-white group-hover:bg-blue-50/30 border-r border-b border-slate-100 min-w-[250px] align-top">
+                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'note', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 outline-none resize-none leading-relaxed">${row.note || ''}</textarea>
+                    </td>
+                    <td class="py-3 px-1 sticky left-[980px] z-10 bg-white group-hover:bg-blue-50/30 border-r-2 border-b border-slate-200 min-w-[120px] align-top">
                         <input type="text" onblur="window.updateRowBudget('${row.id}', this.value)" class="w-full border border-slate-200 rounded px-1 py-2 text-right text-[10px] font-bold text-rose-600 outline-none" placeholder="0" value="${row.budget || ''}">
                     </td>
                     <td class="py-3 px-6 border-r border-b border-slate-100 bg-rose-50/20 text-center align-middle font-black text-rose-600 text-sm">
@@ -6447,8 +6452,8 @@
                 subtotalDaysHtml += `<td class="py-4 px-3 text-center border-r border-b border-rose-100/50 text-xs">${deptDailyTotals[i]}</td>`;
             }
             subtotalTr.innerHTML = `
-                <td colspan="5" class="py-4 px-6 text-right text-[10px] uppercase tracking-widest text-slate-400 border-b border-rose-100/50">TỔNG NHÓM (${deptName})</td>
-                <td class="py-4 px-1 text-right text-[11px] text-rose-600 border-r-2 border-b border-rose-100/50">${deptBudgetTotal.toLocaleString()}</td>
+                <td colspan="6" class="py-4 px-6 text-right text-[10px] uppercase tracking-widest text-slate-400 border-b border-rose-100/50 sticky left-0 z-10 bg-rose-50/30">TỔNG NHÓM (${deptName})</td>
+                <td class="py-4 px-1 text-right text-[11px] text-rose-600 border-r-2 border-b border-rose-100/50 sticky left-[980px] z-10 bg-rose-50/30">${deptBudgetTotal.toLocaleString()}</td>
                 <td class="py-4 px-6 text-center text-sm border-r border-b border-rose-100/50 bg-rose-100/40">${deptGrandTotal}</td>
                 ${subtotalDaysHtml}
                 <td class="bg-white border-b border-slate-100"></td>
@@ -6483,7 +6488,7 @@
         
         // LOG ACTIVITY
         if (window.logActivity) {
-            const labels = { 'campaign': 'chiến dịch', 'dept': 'phòng ban', 'type': 'phân loại', 'note': 'ghi chú' };
+            const labels = { 'campaign': 'chiến dịch', 'dept': 'phòng ban', 'type': 'phân loại', 'note': 'ghi chú', 'outcome': 'kết quả' };
             const label = labels[field] || field;
             window.logActivity('update', `Cập nhật ${label}`, `Trường ${label} kế hoạch đã được thay đổi.`);
         }
