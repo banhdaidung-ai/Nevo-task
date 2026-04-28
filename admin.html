@@ -292,6 +292,10 @@
                     <span class="material-symbols-outlined text-[20px]">category</span>
                     Thể loại Đơn
                 </button>
+                <button onclick="switchTab('roles')" id="tab-roles" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">security</span>
+                    Quản trị Quyền
+                </button>
             </nav>
         </div>
 
@@ -523,6 +527,38 @@
                 </div>
             </div>
         </div>
+        <!-- SECTION: ROLES -->
+        <div id="section-roles" class="tab-content hidden">
+            <div class="mb-8">
+                <p class="text-indigo-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Phân quyền</p>
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Nhóm quyền Hệ thống<span class="text-indigo-600">.</span></h1>
+                        <p class="text-slate-500 text-sm mt-1.5">Định nghĩa chi tiết quyền hạn cho từng vị trí, phòng ban</p>
+                    </div>
+                    <button onclick="openRoleModal()" class="btn-primary !bg-indigo-600">
+                        <span class="material-symbols-outlined text-[18px]">add_moderator</span>
+                        Thêm nhóm quyền
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50/80 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tên nhóm quyền</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mô tả</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Số quyền</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roleTableBody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <!-- SECTION: ACTIVITIES LOG -->
         <div id="section-activities" class="tab-content hidden">
@@ -647,6 +683,110 @@
         <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
             <button onclick="closeStatusModal()" class="btn-secondary">Hủy</button>
             <button onclick="saveStatus()" class="btn-primary !bg-emerald-600" id="btnSaveStatus">Lưu trạng thái</button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== ROLE MODAL ====== -->
+<div id="roleModal" class="modal-overlay hidden">
+    <div class="modal-box !max-w-[600px]">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 id="roleModalTitle" class="font-headline font-bold text-slate-900">Thiết lập nhóm quyền</h2>
+            <button onclick="closeRoleModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors"><span class="material-symbols-outlined text-slate-400">close</span></button>
+        </div>
+        <div class="p-6 space-y-6">
+            <input type="hidden" id="editRoleId"/>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Tên nhóm quyền <span class="text-red-500">*</span></label>
+                    <input type="text" id="roleNameInput" class="form-input" placeholder="VD: Quản lý chi phí"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-2">Mã (Slug) <span class="text-red-500">*</span></label>
+                    <input type="text" id="roleSlugInput" class="form-input" placeholder="VD: finance_manager"/>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-2">Mô tả ngắn</label>
+                <input type="text" id="roleDescInput" class="form-input" placeholder="VD: Được quyền xem và duyệt các khoản chi"/>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">settings_accessibility</span> DANH SÁCH QUYỀN HẠN
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3" id="rolePermsGrid">
+                    <!-- Orders -->
+                    <div class="space-y-2 col-span-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">📦 Quản lý Đơn hàng</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="perm-checkbox">
+                                <input type="checkbox" data-perm="orders_view">
+                                <span class="text-xs font-semibold">Xem danh sách</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" data-perm="orders_create">
+                                <span class="text-xs font-semibold">Tạo mới đơn</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" data-perm="orders_edit_info">
+                                <span class="text-xs font-semibold">Sửa thông tin cơ bản</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" data-perm="orders_edit_status">
+                                <span class="text-xs font-semibold">Sửa trạng thái</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" data-perm="orders_edit_costs">
+                                <span class="text-xs font-semibold">Sửa chi phí</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" data-perm="orders_delete">
+                                <span class="text-xs font-semibold">Xóa đơn hàng</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Planning & Finance -->
+                    <div class="space-y-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">📅 Kế hoạch & Tài chính</p>
+                        <div class="space-y-2">
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="planning_view">
+                                <span class="text-xs font-semibold">Xem kế hoạch</span>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="planning_edit">
+                                <span class="text-xs font-semibold">Sửa kế hoạch/Ngân sách</span>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="finance_view">
+                                <span class="text-xs font-semibold">Xem bảng tài chính</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- System -->
+                    <div class="space-y-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">⚙️ Hệ thống</p>
+                        <div class="space-y-2">
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="reports_view">
+                                <span class="text-xs font-semibold">Xem báo cáo/Lịch làm</span>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="admin_access">
+                                <span class="text-xs font-semibold">Truy cập Trang Quản trị</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+            <button onclick="closeRoleModal()" class="btn-secondary">Hủy</button>
+            <button onclick="saveRole()" class="btn-primary !bg-indigo-600" id="btnSaveRole">Lưu nhóm quyền</button>
         </div>
     </div>
 </div>
@@ -873,8 +1013,9 @@
     let departments = [];
     let orderStatuses = [];
     let orderCategories = [];
+    let systemRoles = [];
     let deleteTargetId = null;
-    let deleteTargetType = 'user'; // 'user', 'dept', 'status', 'category'
+    let deleteTargetType = 'user'; // 'user', 'dept', 'status', 'category', 'role'
     
     // Activity Logger Utility
     window.logActivity = async function(type, title, description) {
@@ -897,6 +1038,7 @@
     const DEPTS_COLLECTION = "departments";
     const STATUS_COLLECTION = "order_statuses";
     const CATEGORY_COLLECTION = "order_categories";
+    const ROLES_COLLECTION = "system_roles";
 
     const DEFAULT_DEPTS = [
         "Ban Giám Đốc", "Kế toán", "Kỹ thuật", "Logistics", "Marketing", "Nhân sự", "Sản xuất", "IT",
@@ -916,6 +1058,13 @@
         { empId: 'EMP-1024', name: 'Nguyễn Văn Lam', password: '1234',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
         { empId: 'EMP-2001', name: 'Phạm Thu Thảo',  password: 'nevo2024', email: 'thao.pt@nevosport.vn', dept: 'Kế toán',       role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-04-02' },
         { empId: 'nevo',     name: 'Nevo Sport',     password: 'nevo',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
+    ];
+
+    const DEFAULT_ROLES = [
+        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_edit_info:true, orders_edit_status:true, orders_edit_costs:true, orders_delete:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, admin_access:true } },
+        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_edit_info:true, orders_edit_status:true, orders_edit_costs:false, orders_delete:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, admin_access:false } },
+        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_edit_info:true, orders_edit_status:false, orders_edit_costs:false, orders_delete:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, admin_access:false } },
+        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_edit_info:false, orders_edit_status:false, orders_edit_costs:false, orders_delete:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, admin_access:false } }
     ];
 
     const DEFAULT_CATEGORIES = [
@@ -1003,7 +1152,23 @@
             if (typeof renderCategories === 'function') renderCategories();
         });
 
-        // --- 5. ACTIVITIES SYNC ---
+        // --- 5. ROLES SYNC ---
+        const qRoles = window.fs.query(window.fs.collection(window.db, ROLES_COLLECTION));
+        const snapRoles = await window.fs.getDocs(qRoles);
+        if (snapRoles.empty) {
+            console.log("Initializing default roles...");
+            for (const r of DEFAULT_ROLES) {
+                await window.fs.setDoc(window.fs.doc(window.db, ROLES_COLLECTION, r.slug), r);
+            }
+        }
+        window.fs.onSnapshot(qRoles, (snap) => {
+            systemRoles = [];
+            snap.forEach(doc => systemRoles.push({ id: doc.id, ...doc.data() }));
+            renderRoles();
+            updateRoleOptions();
+        });
+
+        // --- 6. ACTIVITIES SYNC ---
         const qActivities = window.fs.query(window.fs.collection(window.db, "activities"), window.fs.orderBy("timestamp", "desc"));
         window.fs.onSnapshot(qActivities, (snap) => {
             window.activities = [];
@@ -1178,6 +1343,42 @@
         }).join('');
     }
 
+    function renderRoles() {
+        const tbody = document.getElementById('roleTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = (systemRoles || []).map(r => `
+            <tr class="table-row">
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-indigo-500 text-sm">shield</span>
+                        <span class="text-sm font-bold text-slate-800">${escHtml(r.name)}</span>
+                        <code class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">${r.slug}</code>
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-xs text-slate-500">${escHtml(r.description || '—')}</td>
+                <td class="px-6 py-4">
+                    <span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold">
+                        ${Object.values(r.permissions || {}).filter(v => v === true).length} QUYỀN
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                        <button class="btn-icon-sm btn-edit" onclick="openRoleModal('${r.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
+                        <button class="btn-icon-sm btn-delete" onclick="openDeleteModal('${r.id}', 'role')" ${['admin','user','viewer','manager'].includes(r.slug) ? 'disabled style="opacity:0.3"' : ''}><span class="material-symbols-outlined text-[17px]">delete</span></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updateRoleOptions() {
+        const select = document.getElementById('fieldRole');
+        if (!select) return;
+        const current = select.value;
+        select.innerHTML = (systemRoles || []).map(r => `<option value="${r.slug}">${r.name} — ${r.slug}</option>`).join('');
+        if (current) select.value = current;
+    }
+
     function populateDeptDropdowns() {
         const select = document.getElementById('fieldDept');
         if (!select) return;
@@ -1292,13 +1493,87 @@
         }
     }
 
-    window.openDeleteModal = function(id) {
-        const u = users.find(x => x.id === id);
-        if (!u || u.empId === 'admin') return;
+    window.openDeleteModal = function(id, type = 'user') {
+        let name = '', sub = '';
         deleteTargetId = id;
-        document.getElementById('deleteUserName').textContent  = u.name;
-        document.getElementById('deleteUserEmpId').textContent = u.empId;
+        deleteTargetType = type;
+
+        if (type === 'user') {
+            const u = users.find(x => x.id === id);
+            name = u.name; sub = u.empId;
+        } else if (type === 'dept') {
+            const d = departments.find(x => x.id === id);
+            name = d.name; sub = 'Phòng ban';
+        } else if (type === 'status') {
+            const s = orderStatuses.find(x => x.id === id);
+            name = s.name; sub = 'Trạng thái đơn';
+        } else if (type === 'category') {
+            const c = orderCategories.find(x => x.id === id);
+            name = c.name; sub = 'Thể loại đơn';
+        } else if (type === 'role') {
+            const r = systemRoles.find(x => x.id === id);
+            name = r.name; sub = 'Nhóm quyền';
+        }
+
+        document.getElementById('deleteUserName').textContent = name;
+        document.getElementById('deleteUserEmpId').textContent = sub;
         document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    // --- Role Management ---
+    window.openRoleModal = function(id = null) {
+        document.getElementById('roleModalTitle').textContent = id ? 'Chỉnh sửa nhóm quyền' : 'Thêm nhóm quyền mới';
+        document.getElementById('editRoleId').value = id || '';
+        const r = id ? systemRoles.find(x => x.id === id) : { name:'', slug:'', description:'', permissions:{} };
+        
+        document.getElementById('roleNameInput').value = r.name;
+        document.getElementById('roleSlugInput').value = r.slug;
+        document.getElementById('roleSlugInput').disabled = !!id;
+        document.getElementById('roleDescInput').value = r.description || '';
+        
+        // Reset checkboxes
+        document.querySelectorAll('#rolePermsGrid input[type="checkbox"]').forEach(cb => {
+            const p = cb.getAttribute('data-perm');
+            cb.checked = !!(r.permissions && r.permissions[p]);
+        });
+        
+        document.getElementById('roleModal').classList.remove('hidden');
+    }
+
+    window.closeRoleModal = function() {
+        document.getElementById('roleModal').classList.add('hidden');
+    }
+
+    window.saveRole = async function() {
+        const id   = document.getElementById('editRoleId').value;
+        const name = document.getElementById('roleNameInput').value.trim();
+        const slug = document.getElementById('roleSlugInput').value.trim();
+        const desc = document.getElementById('roleDescInput').value.trim();
+        
+        if (!name || !slug) return showToast('Vui lòng điền đủ tên và mã!', 'error');
+        
+        const perms = {};
+        document.querySelectorAll('#rolePermsGrid input[type="checkbox"]').forEach(cb => {
+            perms[cb.getAttribute('data-perm')] = cb.checked;
+        });
+
+        const btn = document.getElementById('btnSaveRole');
+        btn.disabled = true;
+        
+        try {
+            await window.fs.setDoc(window.fs.doc(window.db, ROLES_COLLECTION, slug), {
+                name, slug, description: desc, permissions: perms
+            }, { merge: true });
+            
+            showToast('Đã lưu nhóm quyền!');
+            window.logActivity(id ? 'update' : 'create', 'Quản trị quyền', `Đã cập nhật nhóm quyền ${name}`);
+            closeRoleModal();
+        } catch (e) {
+            console.error(e);
+            showToast('Lỗi khi lưu nhóm quyền', 'error');
+        } finally {
+            btn.disabled = false;
+        }
     }
 
     window.closeDeleteModal = function() {
@@ -1313,13 +1588,14 @@
             if (deleteTargetType === 'dept') collectionName = DEPTS_COLLECTION;
             if (deleteTargetType === 'status') collectionName = STATUS_COLLECTION;
             if (deleteTargetType === 'category') collectionName = CATEGORY_COLLECTION;
+            if (deleteTargetType === 'role') collectionName = ROLES_COLLECTION;
 
             await window.fs.deleteDoc(window.fs.doc(window.db, collectionName, deleteTargetId));
             showToast('Đã xóa thành công!');
             
             // LOG ACTIVITY
-            const typeLabels = { 'user': 'người dùng', 'dept': 'phòng ban', 'status': 'trạng thái', 'category': 'thể loại' };
-            window.logActivity('delete', `Xóa ${typeLabels[deleteTargetType]}`, `Đã xóa một ${typeLabels[deleteTargetType]} khỏi hệ thống.`);
+            const typeLabels = { 'user': 'người dùng', 'dept': 'phòng ban', 'status': 'trạng thái', 'category': 'thể loại', 'role': 'nhóm quyền' };
+            window.logActivity('delete', `Xóa ${typeLabels[deleteTargetType] || 'đối tượng'}`, `Đã xóa ${typeLabels[deleteTargetType] || 'một đối tượng'} khỏi hệ thống.`);
             
             closeDeleteModal();
         } catch (e) {
@@ -1334,7 +1610,7 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById('section-' + tabId).classList.remove('hidden');
 
-        ['users', 'depts', 'statuses', 'activities'].forEach(id => {
+        ['users', 'depts', 'statuses', 'categories', 'roles', 'activities'].forEach(id => {
             const btn = document.getElementById('tab-' + id);
             if (!btn) return;
             const icon = btn.querySelector('.material-symbols-outlined');

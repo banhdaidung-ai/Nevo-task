@@ -2987,6 +2987,21 @@
     window.fsGetDoc = getDoc;
     window.fsWhere = where;
 
+    // Load and Sync Roles for Permission Management
+    window.appRoles = {};
+    const qRoles = query(collection(db, "system_roles"));
+    onSnapshot(qRoles, (snap) => {
+        const roles = {};
+        snap.forEach(doc => {
+            roles[doc.id] = doc.data();
+        });
+        window.appRoles = roles;
+        console.log("Permissions system updated:", Object.keys(roles).length, "roles loaded");
+        
+        // Refresh UI elements that depend on permissions
+        if (typeof refreshPermissionUI === 'function') refreshPermissionUI();
+    });
+
     // Middleware: Cập nhật đơn hàng kèm lưu lịch sử thay đổi (order_history)
     window.updateOrderWithHistory = async function(orderId, updateData) {
         if (!window.db || !window.fsUpdateDoc || !window.fsGetDoc) return;
@@ -3253,19 +3268,64 @@
 <script>
     // ===== RBAC HELPERS =====
     function checkPermission(field) {
-        const role = localStorage.getItem('nevo_role') || 'user';
+        const userRoleSlug = localStorage.getItem('nevo_role') || 'user';
         
-        // Cost editing is strictly for administrators as requested
-        if (field === 'costs') {
-            return role === 'admin';
+        // Super-admin always has permission (slug 'admin' is reserved)
+        if (userRoleSlug === 'admin') return true;
+
+        // Map old field names to new granular permission keys
+        const permissionMap = {
+            'costs': 'orders_edit_costs',
+            'status': 'orders_edit_status',
+            'orderCode': 'orders_edit_info',
+            'customer': 'orders_edit_info',
+            'product': 'orders_edit_info',
+            'quantity': 'orders_edit_info',
+            'orderDate': 'orders_edit_info',
+            'deadline': 'orders_edit_info',
+            'deploymentDate': 'orders_edit_info',
+            'category': 'orders_edit_info',
+            'dept': 'orders_edit_info',
+            'note': 'orders_edit_info',
+            'stylist': 'orders_edit_info',
+            'assignedVideo': 'orders_edit_info',
+            'assignedPhoto': 'orders_edit_info',
+            'requester': 'orders_edit_info',
+            'department': 'orders_edit_info',
+            'deployDate': 'orders_edit_info'
+        };
+
+        const permKey = permissionMap[field] || field;
+
+        // If roles data isn't loaded yet, use hardcoded fallback
+        if (!window.appRoles || !window.appRoles[userRoleSlug]) {
+            if (field === 'costs') return userRoleSlug === 'admin';
+            if (userRoleSlug === 'manager') return true;
+            const restrictedFields = ['status', 'deployDate', 'stylist', 'assignedVideo', 'assignedPhoto', 'note', 'department', 'requester'];
+            return !restrictedFields.includes(field);
         }
-        
-        if (role === 'admin' || role === 'manager') return true;
-        
-        // Fields that regular users CANNOT edit
-        const restrictedFields = ['status', 'deployDate', 'stylist', 'assignedVideo', 'assignedPhoto', 'note', 'department', 'requester'];
-        return !restrictedFields.includes(field);
+
+        const roleData = window.appRoles[userRoleSlug];
+        if (!roleData || !roleData.permissions) return false;
+
+        // Return the specific permission if it exists, otherwise deny by default
+        return !!roleData.permissions[permKey];
     }
+
+    // Refresh UI elements when permissions load
+    window.refreshPermissionUI = function() {
+        const role = localStorage.getItem('nevo_role') || 'user';
+        const adminLink = document.getElementById('navAdminLink');
+        
+        // Check admin_access permission
+        if (adminLink) {
+            if (checkPermission('admin_access')) {
+                adminLink.classList.remove('hidden');
+            } else {
+                adminLink.classList.add('hidden');
+            }
+        }
+    };
 
     // ===== Page Navigation =====
     let currentPage = 'dashboard';
@@ -5913,9 +5973,13 @@
         if (nameEl) nameEl.textContent = user;
         if (dropName) dropName.textContent = user;
 
-        // Show admin link if role is admin
-        if (role === 'admin' && adminLink) {
-            adminLink.classList.remove('hidden');
+        // Show admin link based on permissions
+        if (adminLink) {
+            if (checkPermission('admin_access')) {
+                adminLink.classList.remove('hidden');
+            } else {
+                adminLink.classList.add('hidden');
+            }
         }
 
         // Update role label in dropdown if it exists
