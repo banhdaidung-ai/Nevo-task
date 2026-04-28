@@ -1332,8 +1332,8 @@
                             <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[330px] z-30 min-w-[110px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
                             <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[440px] z-30 min-w-[160px] border-r border-slate-100 border-b">OUTCOME</th>
                             <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[600px] z-30 min-w-[180px] border-r border-slate-100 border-b">GHI CHÚ</th>
-                            <th class="py-4 px-1 bg-[#f8fafc] xl:sticky left-[780px] z-30 min-w-[70px] text-right border-r border-slate-100 border-b">NGÂN SÁCH</th>
-                            <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[850px] z-30 min-w-[70px] font-black text-rose-600 text-center border-r-2 border-slate-200 border-b">TỔNG</th>
+                            <th class="py-4 px-1 bg-[#f8fafc] xl:sticky left-[780px] z-30 min-w-[40px] text-right border-r border-slate-100 border-b">NGÂN SÁCH</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[820px] z-30 min-w-[70px] font-black text-rose-600 text-center border-r-2 border-slate-200 border-b">TỔNG</th>
                             <!-- Dynamic Day Columns will be injected here -->
                             <th class="py-4 px-4 bg-[#f8fafc] xl:sticky right-0 z-30 min-w-[80px] text-center border-l border-slate-100 border-b">XÓA</th>
                         </tr>
@@ -1345,7 +1345,7 @@
                         <tr id="planningTableFooterRow">
                             <td colspan="6" class="py-4 px-6 text-rose-600 uppercase tracking-widest xl:sticky left-0 z-20 bg-[#f8fafc] border-r border-slate-100 text-right font-black">TỔNG CỘNG</td>
                             <td id="planningTotalBudget" class="py-4 px-6 text-right xl:sticky left-[780px] z-20 bg-[#f8fafc] border-r border-slate-100 text-rose-600 font-black">0</td>
-                            <td id="planningGrandTotalOrders" class="py-4 px-6 text-center xl:sticky left-[850px] z-20 bg-rose-50 text-rose-700 font-black text-sm border-r-2 border-slate-200">0</td>
+                            <td id="planningGrandTotalOrders" class="py-4 px-6 text-center xl:sticky left-[820px] z-20 bg-rose-50 text-rose-700 font-black text-sm border-r-2 border-slate-200">0</td>
                             <!-- Daily totals will be injected here -->
                             <td class="py-4 px-4 text-center xl:sticky right-0 z-20 bg-[#f8fafc] border-l border-slate-100 text-slate-400">--</td>
                         </tr>
@@ -6454,7 +6454,7 @@
                     const displayVal = val === 0 ? '-' : val;
                     
                     daysHtml += `<td class="planning-col-${i} py-5 px-3 text-center border-r border-b border-slate-100 transition-colors ${isSat || isSun ? 'bg-slate-50/50' : ''}" onmouseenter="window.highlightPlanningColumn(${i})" onmouseleave="window.removeHighlightPlanningColumn(${i})">
-                        <input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isSun ? 'font-extrabold text-rose-500' : isSat ? 'font-bold text-blue-500' : 'font-bold text-slate-700'}" value="${displayVal}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
+                        <input type="text" onfocus="if(this.value==='-') this.value='';" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isSun ? 'font-extrabold text-rose-500' : isSat ? 'font-bold text-blue-500' : 'font-bold text-slate-700'}" value="${displayVal}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
                     </td>`;
                 }
                 
@@ -6487,15 +6487,15 @@
                         </select>
                     </td>
                     <td class="py-3 px-6 xl:sticky left-[440px] z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[160px] align-top">
-                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'outcome', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-bold text-[#1e293b] outline-none resize-none bg-transparent">${row.outcome || ''}</textarea>
+                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'outcome', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-sm text-[#1e293b] outline-none resize-none bg-transparent">${row.outcome || ''}</textarea>
                     </td>
                     <td class="py-3 px-6 xl:sticky left-[600px] z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[180px] align-top">
                         <textarea rows="2" onblur="window.updateRowField('${row.id}', 'note', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 outline-none resize-none leading-relaxed bg-transparent">${row.note || ''}</textarea>
                     </td>
-                    <td class="py-3 px-1 xl:sticky left-[780px] z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[70px] align-top">
-                        <input type="text" onblur="window.updateRowBudget('${row.id}', this.value)" class="w-full border border-slate-200 rounded px-1 py-2 text-right text-[10px] font-bold text-rose-600 outline-none bg-transparent" placeholder="0" value="${row.budget || ''}">
+                    <td class="py-3 px-1 xl:sticky left-[780px] z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[40px] align-top">
+                        <input type="text" onblur="window.updateRowBudget('${row.id}', this.value); this.value = this.value ? Number(this.value.replace(/\\D/g, '')).toLocaleString() : ''" class="w-full border border-slate-200 rounded px-1 py-2 text-right text-[10px] font-bold text-rose-600 outline-none bg-transparent" placeholder="0" value="${row.budget ? Number(row.budget.toString().replace(/\\D/g, '')).toLocaleString() : ''}">
                     </td>
-                    <td class="py-3 px-6 xl:sticky left-[850px] z-10 border-r-2 border-b border-slate-200 bg-rose-50 group-hover:bg-rose-100 text-center align-middle font-black text-rose-600 text-sm min-w-[70px]">
+                    <td class="py-3 px-6 xl:sticky left-[820px] z-10 border-r-2 border-b border-slate-200 bg-rose-50 group-hover:bg-rose-100 text-center align-middle font-black text-rose-600 text-sm min-w-[70px]">
                         ${rowTotal}
                     </td>
                     ${daysHtml}
@@ -6519,7 +6519,7 @@
             subtotalTr.innerHTML = `
                 <td colspan="6" class="py-4 px-6 text-right text-[10px] uppercase tracking-widest text-slate-400 border-b border-rose-100/50 xl:sticky left-0 z-10 bg-rose-50">TỔNG NHÓM (${deptName})</td>
                 <td class="py-4 px-1 text-right text-[11px] text-rose-600 border-r border-b border-rose-100/50 xl:sticky left-[780px] z-10 bg-rose-50">${deptBudgetTotal.toLocaleString()}</td>
-                <td class="py-4 px-6 text-center text-sm border-r-2 border-b border-rose-100/50 bg-rose-100 xl:sticky left-[850px] z-10">${deptGrandTotal}</td>
+                <td class="py-4 px-6 text-center text-sm border-r-2 border-b border-rose-100/50 bg-rose-100 xl:sticky left-[820px] z-10">${deptGrandTotal}</td>
                 ${subtotalDaysHtml}
                 <td class="bg-white border-b border-slate-100"></td>
             `;
@@ -6542,7 +6542,8 @@
     };
 
     window.updateRowBudget = function(rowId, value) {
-        window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { budget: value });
+        const cleanValue = value ? value.toString().replace(/\D/g, '') : '';
+        window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { budget: cleanValue });
         
         // LOG ACTIVITY
         if (window.logActivity) {
