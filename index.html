@@ -832,10 +832,10 @@
                         <thead>
                             <tr class="border-b border-slate-100">
                                 <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Mã đơn</th>
-                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Khách hàng</th>
-                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Loại</th>
-                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Giá trị</th>
-                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Trạng thái</th>
+                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Người yêu cầu</th>
+                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Thể loại</th>
+                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Nội dung</th>
+                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant text-right">Trạng thái</th>
                             </tr>
                         </thead>
                         <tbody id="dashboardOrdersTableBody" class="divide-y divide-slate-50">
@@ -4325,7 +4325,7 @@
             const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt).getTime();
             const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt).getTime();
             return dateB - dateA;
-        }).slice(0, 5);
+        }).slice(0, 10);
 
         latestOrders.forEach((data) => {
             const currentStatus = (window.orderStatusesData || []).find(s => s.name === data.status);
@@ -4336,6 +4336,7 @@
                 <tr class="hover:bg-surface-container-low transition-colors cursor-pointer" onclick="navigateTo('orders')">
                     <td class="py-4 font-mono font-semibold text-primary text-sm hover:underline cursor-pointer" onclick="event.stopPropagation(); window.openHistoryDrawer('${data.id}', '${data.code}')">${data.code || '-'}</td>
                     <td class="py-4 font-medium text-sm text-slate-700">${data.requester || '-'}</td>
+                    <td class="py-4 text-sm text-slate-600">${data.category || '-'}</td>
                     <td class="py-4 text-on-surface-variant text-[13px] font-bold truncate max-w-[200px]">${data.title || '-'}</td>
                     <td class="py-4 text-right">${statusBadgeDash}</td>
                 </tr>`;
