@@ -1856,6 +1856,10 @@
                             <span class="material-symbols-outlined text-sm">add</span>
                             Thêm dòng
                         </button>
+                        <button id="btnBulkDeleteFinance" onclick="window.bulkDeleteFinance()" class="hidden flex items-center gap-2 px-6 py-2 rounded-2xl bg-red-50 text-red-600 text-[11px] font-black border border-red-100 transition-all hover:bg-red-100">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                            Xoá (<span id="selectedFinanceCount">0</span>)
+                        </button>
                         <button onclick="window.openManageColumnsModal()" class="flex items-center gap-2 px-6 py-2 rounded-2xl bg-white border border-slate-200 text-slate-600 text-[11px] font-black transition-all hover:bg-slate-50">
                             <span class="material-symbols-outlined text-sm">view_column</span>
                             Cột chi phí
@@ -1946,9 +1950,12 @@
                             <table class="w-full text-left border-collapse min-w-[1200px]">
                                 <thead>
                                     <tr class="bg-orange-50/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-orange-100">
-                                        <th class="py-5 px-4 text-center w-12 sticky left-0 bg-white z-20">#</th>
-                                        <th class="py-5 px-4 w-32 sticky left-12 bg-white z-20">Ngày chi</th>
-                                        <th class="py-5 px-6 min-w-[300px] sticky left-[176px] bg-white z-20">Nội dung chi</th>
+                                        <th class="py-5 px-4 text-center w-10 sticky left-0 bg-white z-30 border-r border-slate-100">
+                                            <input type="checkbox" id="selectAllFinance" onchange="window.toggleAllFinanceRows(this.checked)" class="rounded border-slate-300 text-orange-600 focus:ring-orange-500">
+                                        </th>
+                                        <th class="py-5 px-4 text-center w-12 sticky left-10 bg-white z-20">#</th>
+                                        <th class="py-5 px-4 w-32 sticky left-[88px] bg-white z-20">Ngày chi</th>
+                                        <th class="py-5 px-6 min-w-[300px] sticky left-[216px] bg-white z-20">Nội dung chi</th>
                                         <th class="py-5 px-4 text-center">
                                             <div class="flex items-center justify-center gap-1">
                                                 Loại chi
@@ -1966,13 +1973,13 @@
                                          <th class="py-5 px-6 text-center w-24 border-l border-slate-100">Xóa</th>
                                     </tr>
                                     <tr class="bg-white text-[9px] font-bold text-blue-500 uppercase border-b border-slate-50">
-                                        <td colspan="5" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td><td id="finTableTotalCode" class="py-2 px-6 text-right border-l border-slate-50 font-black"></td><td class="bg-slate-50"></td>
+                                        <td colspan="6" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td><td id="finTableTotalCode" class="py-2 px-6 text-right border-l border-slate-50 font-black"></td><td class="bg-slate-50"></td>
                                     </tr>
                                     <tr class="bg-orange-500 text-white text-[10px] font-black uppercase">
-                                        <td id="finTablePlanLabel" colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td><td id="finTableTotalPlan" class="py-3 px-6 text-right border-l border-orange-400 font-black"></td><td class="bg-orange-600"></td>
+                                        <td id="finTablePlanLabel" colspan="6" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td><td id="finTableTotalPlan" class="py-3 px-6 text-right border-l border-orange-400 font-black"></td><td class="bg-orange-600"></td>
                                     </tr>
                                     <tr class="bg-yellow-400 text-[#131b2e] text-[10px] font-black uppercase">
-                                        <td id="finTableRemainLabel" colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td><td id="finTableTotalRemain" class="py-3 px-6 text-right border-l border-yellow-500 font-black"></td><td class="bg-yellow-500"></td>
+                                        <td id="finTableRemainLabel" colspan="6" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td><td id="finTableTotalRemain" class="py-3 px-6 text-right border-l border-yellow-500 font-black"></td><td class="bg-yellow-500"></td>
                                     </tr>
                                 </thead>
                                 <tbody id="financeTableBody" class="divide-y divide-slate-50"></tbody>
@@ -7115,12 +7122,20 @@
         combined.forEach((item, idx) => {
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-slate-50 transition-colors group cursor-pointer border-b border-slate-50';
-            tr.onclick = () => window.editExpense(item.id);
+            
+            // Handle row click vs checkbox click
+            tr.onclick = (e) => {
+                if (e.target.type === 'checkbox') return;
+                window.editExpense(item.id);
+            };
 
             let rowHtml = `
-                <td class="py-5 px-4 text-center text-[10px] font-black text-slate-300 sticky left-0 bg-white group-hover:bg-slate-50">${combined.length - idx}</td>
-                <td class="py-5 px-4 text-[11px] font-bold text-slate-600 sticky left-12 bg-white group-hover:bg-slate-50">${new Date(item.date).toLocaleDateString('vi-VN')}</td>
-                <td class="py-5 px-6 sticky left-[176px] bg-white group-hover:bg-slate-50">
+                <td class="py-5 px-4 text-center sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-50">
+                    <input type="checkbox" value="${item.id}" onchange="window.updateFinanceSelection()" class="finance-row-checkbox rounded border-slate-300 text-orange-600 focus:ring-orange-500">
+                </td>
+                <td class="py-5 px-4 text-center text-[10px] font-black text-slate-300 sticky left-10 bg-white group-hover:bg-slate-50 z-10">${combined.length - idx}</td>
+                <td class="py-5 px-4 text-[11px] font-bold text-slate-600 sticky left-[88px] bg-white group-hover:bg-slate-50 z-10">${new Date(item.date).toLocaleDateString('vi-VN')}</td>
+                <td class="py-5 px-6 sticky left-[216px] bg-white group-hover:bg-slate-50 z-10">
                     <div class="text-[12px] font-bold text-slate-800 leading-tight line-clamp-1">${item.content}</div>
                 </td>
                 <td class="py-5 px-4 text-center">
@@ -7138,10 +7153,23 @@
                     ${val > 0 ? val.toLocaleString() : '0'}
                 </td>`;
             });
+
+            // Trailing columns: Total and Delete
+            rowHtml += `
+                <td class="py-5 px-6 text-right font-black text-slate-800 text-[12px] border-l border-slate-100 bg-slate-50/30">
+                    ${(Number(item.amount) || 0).toLocaleString()}
+                </td>
+                <td class="py-5 px-4 text-center border-l border-slate-50">
+                    <button onclick="event.stopPropagation(); window.deleteFinanceRow('${item.id}')" class="p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-xl transition-all">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </td>
+            `;
             
             tr.innerHTML = rowHtml;
             tbody.appendChild(tr);
         });
+
 
         // 6. Update Remaining Row Values
         window.financeColumns.forEach(col => {
@@ -7257,6 +7285,74 @@
     }
 
     // Modal & CRUD Functions
+    window.toggleAllFinanceRows = function(checked) {
+        const checkboxes = document.querySelectorAll('.finance-row-checkbox');
+        checkboxes.forEach(cb => cb.checked = checked);
+        window.updateFinanceSelection();
+    };
+
+    window.updateFinanceSelection = function() {
+        const checkboxes = document.querySelectorAll('.finance-row-checkbox:checked');
+        const count = checkboxes.length;
+        const btn = document.getElementById('btnBulkDeleteFinance');
+        const countEl = document.getElementById('selectedFinanceCount');
+        
+        if (count > 0) {
+            btn.classList.remove('hidden');
+            countEl.textContent = count;
+        } else {
+            btn.classList.add('hidden');
+        }
+
+        const selectAll = document.getElementById('selectAllFinance');
+        const total = document.querySelectorAll('.finance-row-checkbox').length;
+        if (selectAll) {
+            selectAll.checked = count === total && total > 0;
+            selectAll.indeterminate = count > 0 && count < total;
+        }
+    };
+
+    window.deleteFinanceRow = async function(id) {
+        if (!confirm("Bạn có chắc chắn muốn xoá dòng này không?")) return;
+        try {
+            await window.fsDeleteDoc(window.fsDoc(window.db, "ledger_expenses", id));
+            // Snapshot will trigger re-render
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert("Có lỗi xảy ra khi xoá.");
+        }
+    };
+
+    window.bulkDeleteFinance = async function() {
+        const checkboxes = document.querySelectorAll('.finance-row-checkbox:checked');
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        if (ids.length === 0) return;
+        
+        if (!confirm(`Bạn có chắc chắn muốn xoá ${ids.length} dòng đã chọn không?`)) return;
+
+        const btn = document.getElementById('btnBulkDeleteFinance');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-sm">sync</span> Đang xoá...';
+
+        try {
+            const batch = window.fsWriteBatch(window.db);
+            ids.forEach(id => {
+                batch.delete(window.fsDoc(window.db, "ledger_expenses", id));
+            });
+            await batch.commit();
+            
+            document.getElementById('selectAllFinance').checked = false;
+            window.updateFinanceSelection();
+        } catch (err) {
+            console.error("Bulk delete error:", err);
+            alert("Có lỗi xảy ra khi xoá hàng loạt.");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    };
+
     window.addNewExpenseRow = async function() {
         if (!window.db || !window.fsAddDoc || !window.fsCollection) return;
         
