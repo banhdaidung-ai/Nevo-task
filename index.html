@@ -3622,7 +3622,7 @@
                     }
                     // Cập nhật lại số đếm mới
                     transaction.set(counterRef, { count: newCount }, { merge: true });
-                    return 'NEVO-' + newCount.toString().padStart(4, '0');
+                    return 'NV-' + newCount.toString().padStart(4, '0');
                 });
 
                 // Lưu dữ liệu vào mảng orders với mã vừa tạo
@@ -7932,3 +7932,70 @@
 
 </body>
 </html>
+<script>
+window.migrateNevoToNv = async function() {
+    try {
+        console.log("Starting migration orders...");
+        const { collection, getDocs, updateDoc, doc } = window;
+        const ordersSnapshot = await window.fsGetDocs(window.fsCollection(window.db, "orders"));
+        let count = 0;
+        for (const docSnap of ordersSnapshot.docs) {
+            const data = docSnap.data();
+            if (data.code && data.code.startsWith("NEVO-")) {
+                const newCode = data.code.replace("NEVO-", "NV-");
+                await window.fsUpdateDoc(docSnap.ref, { code: newCode });
+                count++;
+            }
+        }
+        console.log("Migrated", count, "orders");
+
+        console.log("Starting migration order_history...");
+        const historySnapshot = await window.fsGetDocs(window.fsCollection(window.db, "order_history"));
+        count = 0;
+        for (const docSnap of historySnapshot.docs) {
+            const data = docSnap.data();
+            if (data.orderCode && data.orderCode.startsWith("NEVO-")) {
+                const newCode = data.orderCode.replace("NEVO-", "NV-");
+                await window.fsUpdateDoc(docSnap.ref, { orderCode: newCode });
+                count++;
+            }
+        }
+        console.log("Migrated", count, "history");
+
+        console.log("Starting migration activities...");
+        const activitySnapshot = await window.fsGetDocs(window.fsCollection(window.db, "activities"));
+        count = 0;
+        for (const docSnap of activitySnapshot.docs) {
+            const data = docSnap.data();
+            let changed = false;
+            let updates = {};
+            if (data.title && data.title.includes("NEVO-")) {
+                updates.title = data.title.replace(/NEVO-/g, "NV-");
+                changed = true;
+            }
+            if (data.description && data.description.includes("NEVO-")) {
+                updates.description = data.description.replace(/NEVO-/g, "NV-");
+                changed = true;
+            }
+            if (data.details && data.details.includes("NEVO-")) {
+                updates.details = data.details.replace(/NEVO-/g, "NV-");
+                changed = true;
+            }
+            if (changed) {
+                await window.fsUpdateDoc(docSnap.ref, updates);
+                count++;
+            }
+        }
+        console.log("Migrated", count, "activities");
+        console.log("Migration complete! NV- codes updated.");
+        return "SUCCESS";
+    } catch(e) {
+        console.error("Migration failed:", e);
+        return "ERROR: " + e.message;
+    }
+};
+</script>
+<button id="tempMigrateBtn" onclick="window.migrateNevoToNv().then(() => { alert('Đồng bộ thành công!'); document.getElementById('tempMigrateBtn').remove(); location.reload(); })" style="position:fixed;bottom:20px;right:20px;z-index:9999" class="bg-rose-500 hover:bg-rose-600 text-white p-4 rounded-xl font-bold shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined">sync</span>
+    Đồng bộ mã NEVO sang NV
+</button>
