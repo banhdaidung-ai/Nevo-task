@@ -6141,6 +6141,18 @@
         return html;
     };
 
+    window.highlightPlanningColumn = function(dayIndex) {
+        document.querySelectorAll(`.planning-col-${dayIndex}`).forEach(el => {
+            el.classList.add('!bg-blue-100/60');
+        });
+    };
+    
+    window.removeHighlightPlanningColumn = function(dayIndex) {
+        document.querySelectorAll(`.planning-col-${dayIndex}`).forEach(el => {
+            el.classList.remove('!bg-blue-100/60');
+        });
+    };
+
     window.renderPlanningCalendarHeaders = function() {
         const monthFilter = document.getElementById('planningMonthFilter');
         if(!monthFilter) return;
@@ -6165,13 +6177,17 @@
                 const isSat = date.getDay() === 6;
 
                 const th = document.createElement('th');
-                th.className = `py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc] min-w-[50px]`;
+                th.className = `planning-col-${i} py-3 px-3 text-center border-b border-r border-slate-100 bg-[#f8fafc] min-w-[50px] transition-colors`;
                 th.innerHTML = `<div class="text-[9px] ${isSun ? 'text-rose-500' : isSat ? 'text-blue-500' : ''} mb-1">${dayName}</div><div class="text-xs text-slate-700">${i}</div>`;
+                th.setAttribute('onmouseenter', `window.highlightPlanningColumn(${i})`);
+                th.setAttribute('onmouseleave', `window.removeHighlightPlanningColumn(${i})`);
                 headerRow.insertBefore(th, lastHeader);
 
                 const td = document.createElement('td');
-                td.className = `py-4 px-3 text-center border-r border-slate-100 text-slate-400 text-xs font-bold day-total-${i}`;
-                td.textContent = '0';
+                td.className = `planning-col-${i} py-4 px-3 text-center border-r border-slate-100 text-slate-400 text-xs font-bold day-total-${i} transition-colors`;
+                td.textContent = '-';
+                td.setAttribute('onmouseenter', `window.highlightPlanningColumn(${i})`);
+                td.setAttribute('onmouseleave', `window.removeHighlightPlanningColumn(${i})`);
                 footerRow.insertBefore(td, lastFooter);
             }
         }
@@ -6435,8 +6451,10 @@
                     rowTotal += val;
                     deptDailyTotals[i] += val;
                     
-                    daysHtml += `<td class="py-5 px-3 text-center border-r border-b border-slate-100 ${isSat || isSun ? 'bg-slate-50/50' : ''}">
-                        <input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isSun ? 'font-extrabold text-rose-500' : isSat ? 'font-bold text-blue-500' : 'font-bold text-slate-700'}" value="${val}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
+                    const displayVal = val === 0 ? '-' : val;
+                    
+                    daysHtml += `<td class="planning-col-${i} py-5 px-3 text-center border-r border-b border-slate-100 transition-colors ${isSat || isSun ? 'bg-slate-50/50' : ''}" onmouseenter="window.highlightPlanningColumn(${i})" onmouseleave="window.removeHighlightPlanningColumn(${i})">
+                        <input type="text" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isSun ? 'font-extrabold text-rose-500' : isSat ? 'font-bold text-blue-500' : 'font-bold text-slate-700'}" value="${displayVal}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
                     </td>`;
                 }
                 
@@ -6495,7 +6513,8 @@
             subtotalTr.className = "bg-rose-50/30 font-black text-[#1e293b]";
             let subtotalDaysHtml = '';
             for(let i=1; i<=daysInMonth; i++) {
-                subtotalDaysHtml += `<td class="py-4 px-3 text-center border-r border-b border-rose-100/50 text-xs">${deptDailyTotals[i]}</td>`;
+                const sTotal = deptDailyTotals[i];
+                subtotalDaysHtml += `<td class="planning-col-${i} py-4 px-3 text-center border-r border-b border-rose-100/50 text-xs transition-colors" onmouseenter="window.highlightPlanningColumn(${i})" onmouseleave="window.removeHighlightPlanningColumn(${i})">${sTotal === 0 ? '-' : sTotal}</td>`;
             }
             subtotalTr.innerHTML = `
                 <td colspan="6" class="py-4 px-6 text-right text-[10px] uppercase tracking-widest text-slate-400 border-b border-rose-100/50 xl:sticky left-0 z-10 bg-rose-50">TỔNG NHÓM (${deptName})</td>
@@ -6510,8 +6529,10 @@
     };
 
     window.updateRowData = function(rowId, day, value) {
+        const numVal = parseInt(value);
+        const finalVal = isNaN(numVal) || numVal <= 0 ? 0 : numVal;
         const updates = {};
-        updates[`days.d${day}`] = value;
+        updates[`days.d${day}`] = finalVal;
         window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), updates);
         
         // LOG ACTIVITY
@@ -6650,7 +6671,7 @@
             let total = 0;
             filteredData.forEach(row => total += (parseInt(row.days[`d${i}`]) || 0));
             const cell = document.querySelector(`.day-total-${i}`);
-            if(cell) cell.textContent = total.toLocaleString();
+            if(cell) cell.textContent = total === 0 ? '-' : total.toLocaleString();
         }
     };
     
