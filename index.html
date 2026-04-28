@@ -1962,15 +1962,17 @@
                                             </div>
                                         </th>
                                         <th id="finCategoryHeaderEnd" class="hidden"></th>
+                                         <th class="py-5 px-6 text-right w-32 border-l border-slate-100 bg-slate-100/50">Tổng chi</th>
+                                         <th class="py-5 px-6 text-center w-24 border-l border-slate-100">Xóa</th>
                                     </tr>
                                     <tr class="bg-white text-[9px] font-bold text-blue-500 uppercase border-b border-slate-50">
-                                        <td colspan="5" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td>
+                                        <td colspan="5" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td><td id="finTableTotalCode" class="py-2 px-6 text-right border-l border-slate-50 font-black"></td><td class="bg-slate-50"></td>
                                     </tr>
                                     <tr class="bg-orange-500 text-white text-[10px] font-black uppercase">
-                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td>
+                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td><td id="finTableTotalPlan" class="py-3 px-6 text-right border-l border-orange-400 font-black"></td><td class="bg-orange-600"></td>
                                     </tr>
                                     <tr class="bg-yellow-400 text-[#131b2e] text-[10px] font-black uppercase">
-                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td>
+                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td><td id="finTableTotalRemain" class="py-3 px-6 text-right border-l border-yellow-500 font-black"></td><td class="bg-yellow-500"></td>
                                     </tr>
                                 </thead>
                                 <tbody id="financeTableBody" class="divide-y divide-slate-50"></tbody>
@@ -2608,37 +2610,50 @@
         </div>
     </div>
 
-    <!-- Modal: Manage Category Columns -->
+    <!-- Modal: Manage Category Columns (Refined UI) -->
     <div id="financeColumnsModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="p-8 border-b border-slate-100 flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-                        <span class="material-symbols-outlined">view_column</span>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-black text-[#131b2e] font-headline tracking-tight">Cấu hình Hạng mục chi phí</h2>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Thêm/Sửa/Xóa các cột trong bảng ngân sách</p>
-                    </div>
-                </div>
-                <button onclick="window.closeFinanceColumnsModal()" class="material-symbols-outlined text-slate-400 hover:text-slate-600">close</button>
+        <div class="bg-[#f8fafc] w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="p-8 flex justify-between items-center bg-white border-b border-slate-100">
+                <h2 class="text-lg font-black text-[#131b2e] font-headline tracking-tight">Quản lý Cột (Nhóm chi phí)</h2>
+                <button onclick="window.closeFinanceColumnsModal()" class="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-all">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
             </div>
-            <div class="p-8 overflow-y-auto flex-1 space-y-6">
-                <!-- Form to add new column -->
-                <div class="bg-slate-50 p-6 rounded-3xl border border-dashed border-slate-200">
-                    <h4 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Thêm hạng mục mới</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <input type="text" id="newColName" placeholder="Tên hạng mục (VD: Chi phí SX BST)" class="w-full bg-white border-none rounded-xl px-4 py-3 text-xs font-bold shadow-sm">
-                        <input type="text" id="newColCode" placeholder="Mã chi phí (VD: Y26.1043)" class="w-full bg-white border-none rounded-xl px-4 py-3 text-xs font-bold shadow-sm">
-                        <input type="number" id="newColPlan" placeholder="Plan (Ngân sách)" class="w-full bg-white border-none rounded-xl px-4 py-3 text-xs font-bold shadow-sm">
+
+            <!-- Modal Content -->
+            <div class="p-8 overflow-y-auto flex-1 space-y-8">
+                <!-- Add New Column Card -->
+                <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 space-y-4">
+                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block px-1">Tên nhóm chi phí mới</label>
+                    <div class="flex gap-3">
+                        <input type="text" id="newColName" placeholder="VD: Chi phí Marketing..." 
+                               class="flex-1 bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                        <button onclick="window.saveFinanceColumn()" 
+                                class="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-sm font-black flex items-center gap-2 shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-[0.95] transition-all">
+                            <span class="material-symbols-outlined text-lg">add</span> Thêm
+                        </button>
                     </div>
-                    <button onclick="window.saveFinanceColumn()" class="mt-4 w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">Xác nhận thêm cột</button>
+                    <!-- Hidden inputs for code/plan if needed later, but focusing on user's image -->
+                    <input type="hidden" id="newColCode" value="">
+                    <input type="hidden" id="newColPlan" value="0">
                 </div>
-                
-                <!-- List of existing columns -->
-                <div class="space-y-3" id="financeColumnsList">
-                    <!-- Dynamic -->
+
+                <!-- Column List Section -->
+                <div class="space-y-4">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Danh sách cột hiện có</h3>
+                    <div id="financeColumnsList" class="space-y-3">
+                        <!-- Dynamic -->
+                    </div>
                 </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-8 bg-white border-t border-slate-100 flex gap-4">
+                <button onclick="window.closeFinanceColumnsModal()" 
+                        class="flex-1 py-4 rounded-2xl bg-white border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-50 transition-all">Hủy bỏ</button>
+                <button onclick="window.closeFinanceColumnsModal()" 
+                        class="flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-sm font-black shadow-xl shadow-indigo-100 hover:scale-[1.02] active:scale-[0.95] transition-all">Lưu thay đổi</button>
             </div>
         </div>
     </div>
@@ -7032,30 +7047,34 @@
         window.financeColumns.forEach(col => {
             colTotals[col.name] = 0;
             const th = document.createElement('th');
-            th.className = 'py-5 px-4 text-right dynamic-col min-w-[150px]';
+            th.className = 'py-5 px-4 text-right dynamic-col min-w-[150px] border-l border-slate-100';
             th.innerHTML = `
                 <div class="flex flex-col items-end">
                     <span class="text-slate-800 text-[10px] font-black mb-1 uppercase tracking-wider">${col.name}</span>
-                    <div class="flex gap-1">
-                        <button onclick="window.editFinanceColumn('${col.id}')" class="material-symbols-outlined text-[10px] hover:text-indigo-600">edit</button>
-                    </div>
                 </div>
             `;
             headerRow.insertBefore(th, document.getElementById('finCategoryHeaderEnd'));
 
             const tdCode = document.createElement('td');
-            tdCode.className = 'py-1 px-4 text-right dynamic-col';
+            tdCode.className = 'py-1 px-4 text-right dynamic-col border-l border-slate-50';
             tdCode.innerHTML = `<input type="text" value="${col.code || ''}" 
                 placeholder="..." 
                 onblur="window.updateColumnCode('${col.id}', this.value)"
                 class="bg-blue-50/50 border-none rounded-lg w-full text-[10px] font-black italic text-blue-600 text-right focus:ring-1 focus:ring-blue-400 py-1 transition-all">`;
-            codeRow.appendChild(tdCode);
+            codeRow.insertBefore(tdCode, document.getElementById('finTableTotalCode'));
 
             // Plan Row
             const tdPlan = document.createElement('td');
             tdPlan.className = 'py-3 px-4 text-right dynamic-col font-black border-l border-orange-400/30';
             tdPlan.textContent = (Number(col.plan) || 0).toLocaleString();
-            planRow.appendChild(tdPlan);
+            planRow.insertBefore(tdPlan, document.getElementById('finTableTotalPlan'));
+
+            // Remaining Row
+            const tdRem = document.createElement('td');
+            tdRem.className = 'py-3 px-4 text-right dynamic-col font-black border-l border-yellow-500/30';
+            tdRem.id = `rem-${col.name}`;
+            tdRem.textContent = '0';
+            remainRow.insertBefore(tdRem, document.getElementById('finTableTotalRemain'));
         });
 
         // 5. Render Table Body
@@ -7325,16 +7344,17 @@
             list.innerHTML = '';
             (window.financeColumns || []).forEach(c => {
                 const div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors';
+                div.className = 'flex items-center justify-between p-6 bg-white rounded-3xl border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all group';
                 div.innerHTML = `
-                    <div class="flex flex-col">
-                        <span class="text-sm font-bold text-slate-800">${c.name}</span>
-                        <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">${c.code || '-'} | Plan: ${Number(c.plan || 0).toLocaleString()}</span>
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-400 opacity-50">
+                            <span class="material-symbols-outlined text-lg">drag_indicator</span>
+                        </div>
+                        <span class="text-sm font-bold text-slate-700">${c.name}</span>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="window.editFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-indigo-600"><span class="material-symbols-outlined text-sm">edit</span></button>
-                        <button onclick="window.deleteFinanceColumn('${c.id}')" class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-red-500"><span class="material-symbols-outlined text-sm">delete</span></button>
-                    </div>
+                    <button onclick="window.deleteFinanceColumn('${c.id}')" class="w-10 h-10 rounded-xl hover:bg-red-50 flex items-center justify-center text-slate-300 hover:text-red-500 transition-all">
+                        <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
                 `;
                 list.appendChild(div);
             });
@@ -7386,6 +7406,33 @@
                 code: newCode
             });
         } catch(err) { console.error(err); }
+    };
+
+    window.updateExpenseColumnValue = async function(expenseId, colName, value) {
+        try {
+            const exp = window.financeExpenses.find(e => e.id === expenseId);
+            if (!exp) return;
+            
+            const categoryAmounts = exp.categoryAmounts || {};
+            categoryAmounts[colName] = Number(value) || 0;
+            
+            // Recalculate total amount
+            const newTotal = Object.values(categoryAmounts).reduce((sum, val) => sum + val, 0);
+            
+            await window.fsUpdateDoc(window.fsDoc(window.db, "ledger_expenses", expenseId), {
+                categoryAmounts: categoryAmounts,
+                amount: newTotal,
+                updatedAt: new Date().toISOString()
+            });
+            
+            // Local update for immediate feedback
+            exp.categoryAmounts = categoryAmounts;
+            exp.amount = newTotal;
+            if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
+            
+        } catch (e) {
+            console.error("Error updating expense column:", e);
+        }
     };
 
     // Config Management
