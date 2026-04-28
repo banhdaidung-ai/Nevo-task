@@ -679,9 +679,9 @@
                         <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Nhật ký Hoạt động<span class="text-indigo-600">.</span></h1>
                         <p class="text-slate-500 text-sm mt-1.5">Toàn bộ lịch sử hành động trên hệ thống để phục vụ đối soát</p>
                     </div>
-                    <button onclick="clearOldLogs()" class="btn-secondary !text-slate-400 cursor-not-allowed" title="Tính năng đang phát triển">
+                    <button onclick="clearOldLogs()" class="btn-secondary text-slate-600 hover:text-red-600" title="Dọn dẹp nhật ký trên trang hiện tại">
                         <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
-                        Dọn dẹp nhật ký
+                        Dọn dẹp trang này
                     </button>
                 </div>
             </div>
@@ -701,6 +701,7 @@
                     <table class="w-full text-left min-w-[900px]">
                         <thead class="bg-slate-50/80 border-b border-slate-100">
                             <tr>
+                                <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-16 text-center">STT</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thời gian</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Người thực hiện</th>
                                 <th class="px-5 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hành động</th>
@@ -711,6 +712,7 @@
                         <tbody id="activityTableBody" class="divide-y divide-slate-50"></tbody>
                     </table>
                 </div>
+                <div id="activityPaginationContainer" class="px-5 py-3 border-t border-slate-100 bg-white flex items-center justify-between"></div>
             </div>
         </div>
 
@@ -1849,10 +1851,15 @@
         }
     }
 
+    window.activityCurrentPage = 1;
+    const ACTIVITY_ITEMS_PER_PAGE = 100;
+
     // --- Activity Log Rendering ---
-    window.renderActivitiesTable = function() {
+    window.renderActivitiesTable = function(page = window.activityCurrentPage) {
+        window.activityCurrentPage = page;
         const tbody = document.getElementById('activityTableBody');
         const countEl = document.getElementById('activityCount');
+        const pagContainer = document.getElementById('activityPaginationContainer');
         if (!tbody) return;
 
         try {
@@ -1870,11 +1877,22 @@
             if (countEl) countEl.textContent = `Hiển thị ${filtered.length} hoạt động`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400">Không tìm thấy hoạt động nào phù hợp hoặc đang tải dữ liệu...</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-slate-400">Không tìm thấy hoạt động nào phù hợp hoặc đang tải dữ liệu...</td></tr>`;
+                if(pagContainer) pagContainer.innerHTML = '';
                 return;
             }
 
-            tbody.innerHTML = filtered.map(a => {
+            const totalPages = Math.ceil(filtered.length / ACTIVITY_ITEMS_PER_PAGE);
+            if (window.activityCurrentPage > totalPages) window.activityCurrentPage = totalPages;
+            if (window.activityCurrentPage < 1) window.activityCurrentPage = 1;
+
+            const startIndex = (window.activityCurrentPage - 1) * ACTIVITY_ITEMS_PER_PAGE;
+            const endIndex = startIndex + ACTIVITY_ITEMS_PER_PAGE;
+            const currentItems = filtered.slice(startIndex, endIndex);
+            window.currentActivityItems = currentItems; // Store for deletion
+
+            tbody.innerHTML = currentItems.map((a, idx) => {
+                const stt = startIndex + idx + 1;
                 let dateStr = 'N/A';
                 try {
                     const dateVal = a.createdAt || a.timestamp;
@@ -1891,6 +1909,7 @@
 
                 return `
                     <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="py-4 px-6 text-xs text-slate-500 font-medium text-center">${stt}</td>
                         <td class="py-4 px-6 text-xs text-slate-400 font-medium">${dateStr}</td>
                         <td class="py-4 px-6">
                             <div class="flex items-center gap-2.5">
@@ -1910,9 +1929,41 @@
                     </tr>
                 `;
             }).join('');
+
+            // Render pagination
+            if (pagContainer) {
+                let btnHtml = '';
+                btnHtml += `<button onclick="renderActivitiesTable(${window.activityCurrentPage - 1})" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 text-xs font-medium" ${window.activityCurrentPage === 1 ? 'disabled' : ''}>Trước</button>`;
+                btnHtml += `<span class="text-xs text-slate-500 font-medium mx-3">Trang ${window.activityCurrentPage} / ${totalPages}</span>`;
+                btnHtml += `<button onclick="renderActivitiesTable(${window.activityCurrentPage + 1})" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 text-xs font-medium" ${window.activityCurrentPage === totalPages ? 'disabled' : ''}>Sau</button>`;
+                pagContainer.innerHTML = `
+                    <div class="text-xs text-slate-500">Hiển thị từ ${startIndex + 1} đến ${Math.min(endIndex, filtered.length)}</div>
+                    <div class="flex items-center gap-1">${btnHtml}</div>
+                `;
+            }
+
         } catch (err) {
             console.error("Critical error in renderActivitiesTable:", err);
-            tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-rose-500">Lỗi hiển thị nhật ký: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-rose-500">Lỗi hiển thị nhật ký: ${err.message}</td></tr>`;
+        }
+    };
+
+    window.clearOldLogs = async function() {
+        if (!window.currentActivityItems || window.currentActivityItems.length === 0) {
+            showToast('Không có nhật ký nào trên trang hiện tại để dọn dẹp', 'warning');
+            return;
+        }
+        if (!confirm(`Bạn có chắc chắn muốn dọn dẹp ${window.currentActivityItems.length} nhật ký trên trang hiện tại không? Hành động này không thể hoàn tác.`)) return;
+        
+        try {
+            showToast(`Đang dọn dẹp ${window.currentActivityItems.length} nhật ký...`, 'info');
+            for (const item of window.currentActivityItems) {
+                await window.fs.deleteDoc(window.fs.doc(window.db, "activities", item.id));
+            }
+            showToast('Đã dọn dẹp xong nhật ký trên trang này!');
+        } catch (err) {
+            console.error("Error clearing logs:", err);
+            showToast('Lỗi khi dọn dẹp nhật ký', 'error');
         }
     };
 
