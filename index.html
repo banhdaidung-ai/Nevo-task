@@ -642,7 +642,7 @@
         <a href="#" onclick="navigateTo('orders'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">shopping_cart</span> Đơn hàng
         </a>
-        <a href="#" onclick="navigateTo('reports'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+        <a href="#" id="mobileScheduleLink" onclick="navigateTo('reports'); closeMobileMenu()" class="items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold hidden">
             <span class="material-symbols-outlined text-primary">bar_chart</span> Báo cáo
         </a>
         <a href="#" onclick="navigateTo('create-order'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
@@ -3318,6 +3318,7 @@
         const role = localStorage.getItem('nevo_role') || 'user';
         const adminLink = document.getElementById('navAdminLink');
         const scheduleLink = document.getElementById('navScheduleLink');
+        const mobileScheduleLink = document.getElementById('mobileScheduleLink');
         
         // Check admin_access permission
         if (adminLink) {
@@ -3334,6 +3335,17 @@
                 scheduleLink.classList.add('hidden');
             } else {
                 scheduleLink.classList.remove('hidden');
+            }
+        }
+        
+        // Check mobile schedule access
+        if (mobileScheduleLink) {
+            if (role === 'user' || role === 'viewer') {
+                mobileScheduleLink.classList.add('hidden');
+                mobileScheduleLink.classList.remove('flex');
+            } else {
+                mobileScheduleLink.classList.remove('hidden');
+                mobileScheduleLink.classList.add('flex');
             }
         }
     };
@@ -3413,12 +3425,14 @@
             // Update nav links
             document.querySelectorAll('.nav-link').forEach(link => {
                 const linkPage = link.getAttribute('data-page');
+                const isHidden = link.classList.contains('hidden');
                 if (linkPage === pageId) {
-                    link.className = 'nav-link text-rose-600 border-b-2 border-rose-600 pb-1 transition-all duration-200';
+                    link.className = 'nav-link text-rose-600 border-b-2 border-rose-600 pb-1 transition-all duration-200' + (isHidden ? ' hidden' : '');
                 } else {
-                    link.className = 'nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200';
+                    link.className = 'nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200' + (isHidden ? ' hidden' : '');
                 }
             });
+            if (window.refreshPermissionUI) window.refreshPermissionUI();
 
             currentPage = pageId;
             window.location.hash = pageId;
@@ -5980,6 +5994,7 @@
         const dropName = document.getElementById('dropUserName');
         const adminLink = document.getElementById('navAdminLink');
         const scheduleLink = document.getElementById('navScheduleLink');
+        const mobileScheduleLink = document.getElementById('mobileScheduleLink');
 
         if (el) el.textContent = initial;
         if (nameEl) nameEl.textContent = user;
@@ -6000,6 +6015,17 @@
                 scheduleLink.classList.add('hidden');
             } else {
                 scheduleLink.classList.remove('hidden');
+            }
+        }
+        
+        // Hide mobile schedule link for user role
+        if (mobileScheduleLink) {
+            if (role === 'user' || role === 'viewer') {
+                mobileScheduleLink.classList.add('hidden');
+                mobileScheduleLink.classList.remove('flex');
+            } else {
+                mobileScheduleLink.classList.remove('hidden');
+                mobileScheduleLink.classList.add('flex');
             }
         }
 
