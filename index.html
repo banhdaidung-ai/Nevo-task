@@ -2919,6 +2919,24 @@
                             <textarea id="editOrderNote" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow h-32 resize-none" placeholder="Ghi chú nội bộ..."></textarea>
                         </div>
                     </div>
+
+                    <!-- Chi phí chi tiết -->
+                    <div class="mt-8 pt-8 border-t border-slate-100">
+                        <h3 class="text-[10px] font-black text-[#b80035] uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px]">payments</span> CHI PHÍ ĐƠN HÀNG
+                        </h3>
+                        <div id="editOrderTotalCostDisplay" class="bg-emerald-50 border border-emerald-100 rounded-[16px] p-5 cursor-pointer hover:bg-emerald-100 transition-all flex items-center justify-between group">
+                            <div>
+                                <div class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Tổng chi phí hiện tại</div>
+                                <div id="editOrderTotalCostValue" class="text-2xl font-black text-emerald-700">0 đ</div>
+                            </div>
+                            <div class="flex items-center gap-2 text-emerald-600 font-bold text-xs bg-white/50 px-4 py-2 rounded-xl group-hover:bg-white transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-sm">edit_note</span>
+                                Điều chỉnh
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
@@ -3236,6 +3254,12 @@
     // ===== RBAC HELPERS =====
     function checkPermission(field) {
         const role = localStorage.getItem('nevo_role') || 'user';
+        
+        // Cost editing is strictly for administrators as requested
+        if (field === 'costs') {
+            return role === 'admin';
+        }
+        
         if (role === 'admin' || role === 'manager') return true;
         
         // Fields that regular users CANNOT edit
@@ -4103,7 +4127,7 @@
                         <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'status')">
                             <div class="display-val">${statusBadgeFull}</div>
                         </td>
-                        <td class="text-[12px] font-bold text-emerald-600 cursor-pointer hover:bg-slate-100/50 transition-all text-right pr-4" onclick="openCostModal('${dataStr}')">
+                        <td class="${checkPermission('costs') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} text-[12px] font-bold text-emerald-600 transition-all text-right pr-4" onclick="${checkPermission('costs') ? `openCostModal('${dataStr}')` : ''}">
                             <span class="display-val">${formatCurrency(data.totalCost || 0)}</span>
                         </td>
                         <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
@@ -4498,6 +4522,32 @@
         document.getElementById('editOrderContent').innerHTML = data.content || '';
         document.getElementById('editOrderNote').value = data.note || '';
         document.getElementById('editOrderDepartment').value = data.department || 'Công nghệ Thông tin';
+
+        // Load Total Cost Display
+        const totalCost = data.totalCost || 0;
+        const totalCostValueEl = document.getElementById('editOrderTotalCostValue');
+        if (totalCostValueEl) {
+            totalCostValueEl.textContent = window.formatCurrency(totalCost);
+        }
+        
+        // Setup click handler to open the existing Cost Modal (Admin Only)
+        const costDisplayEl = document.getElementById('editOrderTotalCostDisplay');
+        const canEditCosts = checkPermission('costs');
+        if (costDisplayEl) {
+            const adjustBtn = costDisplayEl.querySelector('.flex.items-center.gap-2');
+            if (canEditCosts) {
+                const dataStrEncoded = encodeURIComponent(JSON.stringify(data));
+                costDisplayEl.onclick = () => window.openCostModal(dataStrEncoded);
+                costDisplayEl.classList.add('cursor-pointer', 'hover:bg-emerald-100');
+                costDisplayEl.classList.remove('cursor-default');
+                if (adjustBtn) adjustBtn.classList.remove('hidden');
+            } else {
+                costDisplayEl.onclick = null;
+                costDisplayEl.classList.remove('cursor-pointer', 'hover:bg-emerald-100');
+                costDisplayEl.classList.add('cursor-default');
+                if (adjustBtn) adjustBtn.classList.add('hidden');
+            }
+        }
         
         // RBAC: Disable fields if not permitted
         const fieldsToProtect = [
@@ -4645,7 +4695,7 @@
         const department = document.getElementById('editOrderDepartment').value;
         const note = document.getElementById('editOrderNote').value;
         const content = document.getElementById('editOrderContent').innerHTML;
-        
+
         if (!title || !requester || !deadline) {
             showToast('Lỗi!', 'Vui lòng điền đủ các trường bắt buộc.', 'error', 'text-error');
             return;
