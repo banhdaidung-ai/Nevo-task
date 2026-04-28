@@ -19,6 +19,8 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script>
         tailwind.config = {
@@ -276,8 +278,12 @@
         <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Hệ thống</p>
             <nav class="space-y-1">
-                <button onclick="switchTab('users')" id="tab-users" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all bg-red-50 text-red-700 shadow-sm border border-red-100/50">
-                    <span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 1">group</span>
+                <button onclick="switchTab('overview')" id="tab-overview" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    Tổng quan
+                </button>
+                <button onclick="switchTab('users')" id="tab-users" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
                     Người dùng
                 </button>
                 <button onclick="switchTab('depts')" id="tab-depts" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
@@ -327,6 +333,110 @@
 
     <!-- Main Content Area -->
     <main class="flex-grow p-4 md:p-8 bg-slate-50/50 overflow-hidden">
+        <!-- SECTION: OVERVIEW -->
+        <div id="section-overview" class="tab-content hidden animate-fade-in">
+            <div class="mb-8">
+                <p class="text-primary font-bold tracking-widest text-[11px] uppercase mb-1.5">Trang chủ quản trị</p>
+                <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Tổng quan Hệ thống<span class="text-primary">.</span></h1>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div class="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[28px]">shopping_cart</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng đơn hàng</p>
+                            <h3 class="text-2xl font-black text-slate-900" id="stat-total-orders">0</h3>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                        <span class="text-emerald-500 flex items-center"><span class="material-symbols-outlined text-sm">trending_up</span> 100%</span>
+                        Dữ liệu toàn thời gian
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[28px]">pending_actions</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đang xử lý</p>
+                            <h3 class="text-2xl font-black text-slate-900" id="stat-pending-orders">0</h3>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                        <span id="stat-pending-percent" class="text-amber-500 font-black">0%</span>
+                        Số lượng đơn chờ xử lý
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[28px]">check_circle</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hoàn thành</p>
+                            <h3 class="text-2xl font-black text-slate-900" id="stat-completed-orders">0</h3>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                        <span id="stat-completed-percent" class="text-emerald-500 font-black">0%</span>
+                        Tỷ lệ hoàn thành đơn
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[28px]">payments</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng Ngân sách</p>
+                            <h3 class="text-xl font-black text-slate-900" id="stat-total-budget">0đ</h3>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                        <span class="material-symbols-outlined text-sm text-slate-300">info</span>
+                        Ước tính từ các đơn hàng
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                <div class="bg-white p-8 rounded-[32px] border border-slate-200/60 shadow-sm">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 class="font-headline font-bold text-slate-900">Phân bổ Trạng thái</h3>
+                            <p class="text-xs text-slate-400">Thống kê theo từng bước quy trình</p>
+                        </div>
+                        <span class="material-symbols-outlined text-slate-300">pie_chart</span>
+                    </div>
+                    <div class="h-[300px] flex items-center justify-center">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-[32px] border border-slate-200/60 shadow-sm">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 class="font-headline font-bold text-slate-900">Đơn hàng theo Phòng ban</h3>
+                            <p class="text-xs text-slate-400">Hiệu suất hoạt động của các bộ phận</p>
+                        </div>
+                        <span class="material-symbols-outlined text-slate-300">bar_chart</span>
+                    </div>
+                    <div class="h-[300px] flex items-center justify-center">
+                        <canvas id="deptChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- SECTION: USERS -->
         <div id="section-users" class="tab-content">
             <!-- Page Header -->
@@ -1014,6 +1124,9 @@
     let orderStatuses = [];
     let orderCategories = [];
     let systemRoles = [];
+    let orders = [];
+    let statusChart = null;
+    let deptChart = null;
     let deleteTargetId = null;
     let deleteTargetType = 'user'; // 'user', 'dept', 'status', 'category', 'role'
     
@@ -1175,11 +1288,106 @@
             snap.forEach(doc => window.activities.push({ id: doc.id, ...doc.data() }));
             window.renderActivitiesTable();
         });
+
+        // --- 7. ORDERS SYNC (FOR DASHBOARD) ---
+        const qOrders = window.fs.query(window.fs.collection(window.db, "orders"));
+        window.fs.onSnapshot(qOrders, (snap) => {
+            orders = [];
+            snap.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
+            renderDashboard();
+        });
     }
 
     // =============================================
     // UI CORE FUNCTIONS
     // =============================================
+    // =============================================
+    // DASHBOARD LOGIC
+    // =============================================
+    function renderDashboard() {
+        if (!orders.length) return;
+
+        // 1. Calculate Stats
+        const total = orders.length;
+        const pending = orders.filter(o => !['Hoàn thành', 'Đã hủy'].includes(o.status)).length;
+        const completed = orders.filter(o => o.status === 'Hoàn thành').length;
+        
+        let totalBudget = 0;
+        orders.forEach(o => {
+            if (o.budget) {
+                const val = parseFloat(o.budget.toString().replace(/,/g, '')) || 0;
+                totalBudget += val;
+            }
+        });
+
+        document.getElementById('stat-total-orders').textContent = total;
+        document.getElementById('stat-pending-orders').textContent = pending;
+        document.getElementById('stat-completed-orders').textContent = completed;
+        document.getElementById('stat-total-budget').textContent = totalBudget.toLocaleString('vi-VN') + 'đ';
+
+        document.getElementById('stat-pending-percent').textContent = Math.round((pending/total)*100) + '%';
+        document.getElementById('stat-completed-percent').textContent = Math.round((completed/total)*100) + '%';
+
+        // 2. Status Chart
+        const statusMap = {};
+        orders.forEach(o => statusMap[o.status] = (statusMap[o.status] || 0) + 1);
+        
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        if (statusChart) statusChart.destroy();
+        statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusMap),
+                datasets: [{
+                    data: Object.values(statusMap),
+                    backgroundColor: ['#C62828', '#1976D2', '#FBC02D', '#388E3C', '#7B1FA2', '#455A64'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 11, weight: 'bold' } } } },
+                cutout: '70%'
+            }
+        });
+
+        // 3. Dept Chart
+        const deptMap = {};
+        orders.forEach(o => {
+            const d = o.department || 'Khác';
+            deptMap[d] = (deptMap[d] || 0) + 1;
+        });
+
+        const deptCtx = document.getElementById('deptChart').getContext('2d');
+        if (deptChart) deptChart.destroy();
+        deptChart = new Chart(deptCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(deptMap),
+                datasets: [{
+                    label: 'Số lượng đơn',
+                    data: Object.values(deptMap),
+                    backgroundColor: 'rgba(198, 40, 40, 0.1)',
+                    borderColor: '#C62828',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barThickness: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }
+                }
+            }
+        });
+    }
+
     function updateStats() {
         document.getElementById('statTotal').textContent    = users.length;
         document.getElementById('statAdmin').textContent    = users.filter(u => u.role === 'admin').length;
@@ -1187,7 +1395,11 @@
         document.getElementById('statInactive').textContent = users.filter(u => u.status === 'inactive').length;
     }
 
-    const ROLE_LABELS = { admin:'Admin', manager:'Manager', user:'User', viewer:'Viewer' };
+    function getRoleLabel(slug) {
+        const r = systemRoles.find(x => x.slug === slug);
+        return r ? r.name : (slug.charAt(0).toUpperCase() + slug.slice(1));
+    }
+
     const ROLE_BADGE  = { admin:'badge-admin', manager:'badge-manager', user:'badge-user', viewer:'badge-viewer' };
     const STATUS_BADGE = { active:'badge-active', inactive:'badge-inactive' };
     const STATUS_LABEL = { active:'Hoạt động', inactive:'Bị khóa' };
@@ -1231,7 +1443,7 @@
                 <td class="px-5 py-3.5 text-sm text-slate-500">${escHtml(u.email||'—')}</td>
                 <td class="px-5 py-3.5 text-sm text-slate-500 font-medium">${escHtml(u.phone||'—')}</td>
                 <td class="px-5 py-3.5 text-xs font-medium text-slate-500">${escHtml(u.dept||'—')}</td>
-                <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${ROLE_LABELS[u.role]||u.role}</span></td>
+                <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${getRoleLabel(u.role)}</span></td>
                 <td class="px-5 py-3.5"><span class="badge ${STATUS_BADGE[u.status]}">${STATUS_LABEL[u.status]||u.status}</span></td>
                 <td class="px-5 py-3.5">
                     <div class="flex items-center gap-2 justify-end">
@@ -1373,10 +1585,20 @@
 
     function updateRoleOptions() {
         const select = document.getElementById('fieldRole');
+        const filter = document.getElementById('roleFilter');
         if (!select) return;
-        const current = select.value;
-        select.innerHTML = (systemRoles || []).map(r => `<option value="${r.slug}">${r.name} — ${r.slug}</option>`).join('');
-        if (current) select.value = current;
+        
+        const currentVal = select.value;
+        const currentFilter = filter ? filter.value : '';
+
+        const optionsHtml = (systemRoles || []).map(r => `<option value="${r.slug}">${r.name}</option>`).join('');
+        select.innerHTML = optionsHtml;
+        if (currentVal) select.value = currentVal;
+
+        if (filter) {
+            filter.innerHTML = '<option value="">Tất cả vai trò</option>' + optionsHtml;
+            filter.value = currentFilter;
+        }
     }
 
     function populateDeptDropdowns() {
@@ -1610,7 +1832,7 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById('section-' + tabId).classList.remove('hidden');
 
-        ['users', 'depts', 'statuses', 'categories', 'roles', 'activities'].forEach(id => {
+        ['overview', 'users', 'depts', 'statuses', 'categories', 'roles', 'activities'].forEach(id => {
             const btn = document.getElementById('tab-' + id);
             if (!btn) return;
             const icon = btn.querySelector('.material-symbols-outlined');
@@ -2042,6 +2264,9 @@
 
         // Try sync if db ready
         if (window.db) window.startSync();
+        
+        // Default tab
+        if (window.switchTab) window.switchTab('overview');
     });
 </script>
 </body>
