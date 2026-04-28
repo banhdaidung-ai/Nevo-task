@@ -832,6 +832,7 @@
                         <thead>
                             <tr class="border-b border-slate-100">
                                 <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Mã đơn</th>
+                                <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Ngày tạo</th>
                                 <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Người yêu cầu</th>
                                 <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Thể loại</th>
                                 <th class="pb-4 font-bold text-xs uppercase tracking-wider text-on-surface-variant">Nội dung</th>
@@ -4332,9 +4333,12 @@
             const badgeClasses = currentStatus ? currentStatus.color : 'bg-surface-container-highest text-on-secondary-container';
             const statusBadgeDash = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${data.status || 'Chờ duyệt'}</span>`;
             
+            const orderDateStr = data.createdAt ? (data.createdAt.seconds ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('vi-VN') : new Date(data.createdAt).toLocaleDateString('vi-VN')) : '-';
+
             dashHtml += `
                 <tr class="hover:bg-surface-container-low transition-colors cursor-pointer" onclick="navigateTo('orders')">
                     <td class="py-4 font-mono font-semibold text-primary text-sm hover:underline cursor-pointer" onclick="event.stopPropagation(); window.openHistoryDrawer('${data.id}', '${data.code}')">${data.code || '-'}</td>
+                    <td class="py-4 text-xs font-medium text-slate-500">${orderDateStr}</td>
                     <td class="py-4 font-medium text-sm text-slate-700">${data.requester || '-'}</td>
                     <td class="py-4 text-sm text-slate-600">${data.category || '-'}</td>
                     <td class="py-4 text-on-surface-variant text-[13px] font-bold truncate max-w-[200px]">${data.title || '-'}</td>
