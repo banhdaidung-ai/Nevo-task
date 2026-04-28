@@ -524,7 +524,7 @@
                 <a href="#" data-page="orders" onclick="navigateTo('orders')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
                 <a href="#" data-page="planning" onclick="navigateTo('planning')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
                 <a href="#" data-page="budgetReport" onclick="navigateTo('budgetReport')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
-                <a href="#" data-page="reports" onclick="navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Lịch làm việc</a>
+                <a href="#" id="navScheduleLink" data-page="reports" onclick="navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200 hidden">Lịch làm việc</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-slate-500 hover:text-red-600 transition-all duration-200 hidden">Quản trị</a>
                 <a href="support.html" target="_blank" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
             </div>
@@ -3317,6 +3317,7 @@
     window.refreshPermissionUI = function() {
         const role = localStorage.getItem('nevo_role') || 'user';
         const adminLink = document.getElementById('navAdminLink');
+        const scheduleLink = document.getElementById('navScheduleLink');
         
         // Check admin_access permission
         if (adminLink) {
@@ -3324,6 +3325,15 @@
                 adminLink.classList.remove('hidden');
             } else {
                 adminLink.classList.add('hidden');
+            }
+        }
+
+        // Check schedule access
+        if (scheduleLink) {
+            if (role === 'user' || role === 'viewer') {
+                scheduleLink.classList.add('hidden');
+            } else {
+                scheduleLink.classList.remove('hidden');
             }
         }
     };
@@ -5969,6 +5979,7 @@
         const nameEl = document.getElementById('navUserName');
         const dropName = document.getElementById('dropUserName');
         const adminLink = document.getElementById('navAdminLink');
+        const scheduleLink = document.getElementById('navScheduleLink');
 
         if (el) el.textContent = initial;
         if (nameEl) nameEl.textContent = user;
@@ -5980,6 +5991,15 @@
                 adminLink.classList.remove('hidden');
             } else {
                 adminLink.classList.add('hidden');
+            }
+        }
+
+        // Hide schedule link for user role
+        if (scheduleLink) {
+            if (role === 'user' || role === 'viewer') {
+                scheduleLink.classList.add('hidden');
+            } else {
+                scheduleLink.classList.remove('hidden');
             }
         }
 
