@@ -1969,10 +1969,10 @@
                                         <td colspan="5" class="py-2 px-6 text-right font-black italic opacity-50 sticky left-0 bg-white z-10">Mã dòng tiền:</td><td id="finTableTotalCode" class="py-2 px-6 text-right border-l border-slate-50 font-black"></td><td class="bg-slate-50"></td>
                                     </tr>
                                     <tr class="bg-orange-500 text-white text-[10px] font-black uppercase">
-                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td><td id="finTableTotalPlan" class="py-3 px-6 text-right border-l border-orange-400 font-black"></td><td class="bg-orange-600"></td>
+                                        <td id="finTablePlanLabel" colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-orange-500 z-10">PLAN THÁNG:</td><td id="finTableTotalPlan" class="py-3 px-6 text-right border-l border-orange-400 font-black"></td><td class="bg-orange-600"></td>
                                     </tr>
                                     <tr class="bg-yellow-400 text-[#131b2e] text-[10px] font-black uppercase">
-                                        <td colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td><td id="finTableTotalRemain" class="py-3 px-6 text-right border-l border-yellow-500 font-black"></td><td class="bg-yellow-500"></td>
+                                        <td id="finTableRemainLabel" colspan="5" class="py-3 px-6 text-right tracking-widest sticky left-0 bg-yellow-400 z-10">CÒN LẠI:</td><td id="finTableTotalRemain" class="py-3 px-6 text-right border-l border-yellow-500 font-black"></td><td class="bg-yellow-500"></td>
                                     </tr>
                                 </thead>
                                 <tbody id="financeTableBody" class="divide-y divide-slate-50"></tbody>
@@ -2497,19 +2497,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="cost-input-group">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">person</span> MODEL / MẪU</div>
-                        <input type="number" id="cost-model" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-model" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                     <div class="cost-input-group">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">palette</span> MAKE UP</div>
-                        <input type="number" id="cost-makeup" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-makeup" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                     <div class="cost-input-group">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">location_on</span> ĐỊA ĐIỂM / STUDIO</div>
-                        <input type="number" id="cost-studio" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-studio" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                     <div class="cost-input-group">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">local_shipping</span> DI CHUYỂN / ĐI LẠI</div>
-                        <input type="number" id="cost-travel" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-travel" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                 </div>
             </section>
@@ -2522,167 +2522,22 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="cost-input-group !bg-white">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">payments</span> THUÊ VIDEO</div>
-                        <input type="number" id="cost-video" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-video" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                     <div class="cost-input-group !bg-white">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">photo_camera</span> THUÊ PHOTO</div>
-                        <input type="number" id="cost-photo" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-photo" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                     <div class="cost-input-group !bg-white">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">content_cut</span> THUÊ STYLIST</div>
-                        <input type="number" id="cost-stylist" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-stylist" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                     <div class="cost-input-group !bg-white">
                         <div class="cost-label"><span class="material-symbols-outlined text-[16px]">person_add</span> THUÊ TRỢ LÝ</div>
-                        <input type="number" id="cost-assistant" class="cost-input" value="0" oninput="calculateTotalCost()">
+                        <input type="number" id="cost-assistant" class="cost-input" value="0" onfocus="if(this.value==='0') this.value=''" oninput="calculateTotalCost()">
                     </div>
                 </div>
             </section>
-    <!-- Modal: Add/Edit Expense Row -->
-    <div id="expenseModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
-                        <span class="material-symbols-outlined">add_card</span>
-                    </div>
-                    <div>
-                        <h2 id="expenseModalTitle" class="text-xl font-black text-[#131b2e] font-headline tracking-tight">Kê khai chi phí mới</h2>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Nhập thông tin giao dịch tài chính</p>
-                    </div>
-                </div>
-                <button onclick="window.closeExpenseModal()" class="w-10 h-10 rounded-full hover:bg-white hover:shadow-md flex items-center justify-center text-slate-400 transition-all">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-            <form id="expenseForm" class="p-8 space-y-6">
-                <input type="hidden" id="editExpenseId">
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Ngày chi</label>
-                        <input type="date" id="expenseDate" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Người chi</label>
-                        <select id="expenseSpender" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
-                            <!-- Dynamic -->
-                        </select>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Nội dung chi</label>
-                    <textarea id="expenseContent" required placeholder="Nhập chi tiết nội dung giao dịch..." rows="3" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"></textarea>
-                </div>
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Loại chi phí</label>
-                        <select id="expenseType" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
-                            <!-- Dynamic -->
-                        </select>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Hạng mục chính</label>
-                        <select id="expenseMainCategory" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
-                            <option value="">Chọn hạng mục...</option>
-                            <!-- Dynamic from categories -->
-                        </select>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Phòng ban</label>
-                    <select id="expenseDept" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
-                        <option value="">Chọn phòng ban...</option>
-                        <!-- Dynamic -->
-                    </select>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Số tiền</label>
-                    <div class="relative">
-                        <input type="number" id="expenseAmount" required placeholder="0" class="w-full bg-orange-50 border-none rounded-2xl pl-5 pr-14 py-4 text-xl font-black text-orange-600 focus:ring-2 focus:ring-orange-500/20 transition-all">
-                        <span class="absolute right-5 top-1/2 -translate-y-1/2 font-black text-orange-300 text-sm">VNĐ</span>
-                    </div>
-                </div>
-                <div class="pt-4 flex gap-4">
-                    <button type="button" onclick="window.closeExpenseModal()" class="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-600 text-sm font-black hover:bg-slate-200 transition-all">Hủy</button>
-                    <button type="submit" class="flex-[2] py-4 rounded-2xl bg-orange-600 text-white text-sm font-black shadow-xl shadow-orange-100 hover:scale-[1.02] active:scale-[0.98] transition-all">Lưu giao dịch</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: Manage Category Columns (Refined UI) -->
-    <div id="financeColumnsModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-[#f8fafc] w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <!-- Modal Header -->
-            <div class="p-8 flex justify-between items-center bg-white border-b border-slate-100">
-                <h2 class="text-lg font-black text-[#131b2e] font-headline tracking-tight">Quản lý Cột (Nhóm chi phí)</h2>
-                <button onclick="window.closeFinanceColumnsModal()" class="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-all">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-
-            <!-- Modal Content -->
-            <div class="p-8 overflow-y-auto flex-1 space-y-8">
-                <!-- Add New Column Card -->
-                <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 space-y-4">
-                    <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block px-1">Tên nhóm chi phí mới</label>
-                    <div class="flex gap-3">
-                        <input type="text" id="newColName" placeholder="VD: Chi phí Marketing..." 
-                               class="flex-1 bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all">
-                        <button onclick="window.saveFinanceColumn()" 
-                                class="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-sm font-black flex items-center gap-2 shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-[0.95] transition-all">
-                            <span class="material-symbols-outlined text-lg">add</span> Thêm
-                        </button>
-                    </div>
-                    <!-- Hidden inputs for code/plan if needed later, but focusing on user's image -->
-                    <input type="hidden" id="newColCode" value="">
-                    <input type="hidden" id="newColPlan" value="0">
-                </div>
-
-                <!-- Column List Section -->
-                <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Danh sách cột hiện có</h3>
-                    <div id="financeColumnsList" class="space-y-3">
-                        <!-- Dynamic -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="p-8 bg-white border-t border-slate-100 flex gap-4">
-                <button onclick="window.closeFinanceColumnsModal()" 
-                        class="flex-1 py-4 rounded-2xl bg-white border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-50 transition-all">Hủy bỏ</button>
-                <button onclick="window.closeFinanceColumnsModal()" 
-                        class="flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-sm font-black shadow-xl shadow-indigo-100 hover:scale-[1.02] active:scale-[0.95] transition-all">Lưu thay đổi</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Manage Config Lists (Type/Spender) -->
-    <div id="financeConfigModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden">
-            <div class="p-8 border-b border-slate-100 flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-white">
-                        <span class="material-symbols-outlined" id="finConfigIcon">settings</span>
-                    </div>
-                    <div>
-                        <h2 id="finConfigTitle" class="text-lg font-black text-[#131b2e] font-headline tracking-tight">Quản lý danh sách</h2>
-                    </div>
-                </div>
-                <button onclick="window.closeFinanceConfigModal()" class="material-symbols-outlined text-slate-400">close</button>
-            </div>
-            <div class="p-8 space-y-6">
-                <div class="flex gap-2">
-                    <input type="text" id="newConfigVal" placeholder="Nhập giá trị mới..." class="flex-1 bg-slate-50 border-none rounded-xl px-4 py-3 text-xs font-bold">
-                    <button onclick="window.saveFinanceConfigItem()" class="px-6 py-3 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-black transition-all">Thêm</button>
-                </div>
-                <div id="finConfigList" class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    <!-- Dynamic -->
-                </div>
-            </div>
-        </div>
-    </div>
             <!-- Other & Note -->
             <section>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -2716,6 +2571,153 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Add/Edit Expense Row -->
+<div id="expenseModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                    <span class="material-symbols-outlined">add_card</span>
+                </div>
+                <div>
+                    <h2 id="expenseModalTitle" class="text-xl font-black text-[#131b2e] font-headline tracking-tight">Kê khai chi phí mới</h2>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Nhập thông tin giao dịch tài chính</p>
+                </div>
+            </div>
+            <button onclick="window.closeExpenseModal()" class="w-10 h-10 rounded-full hover:bg-white hover:shadow-md flex items-center justify-center text-slate-400 transition-all">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="expenseForm" class="p-8 space-y-6">
+            <input type="hidden" id="editExpenseId">
+            <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Ngày chi</label>
+                    <input type="date" id="expenseDate" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Người chi</label>
+                    <select id="expenseSpender" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                        <!-- Dynamic -->
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Nội dung chi</label>
+                <textarea id="expenseContent" required placeholder="Nhập chi tiết nội dung giao dịch..." rows="3" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all resize-none"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Loại chi phí</label>
+                    <select id="expenseType" required class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                        <!-- Dynamic -->
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Hạng mục chính</label>
+                    <select id="expenseMainCategory" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                        <option value="">Chọn hạng mục...</option>
+                        <!-- Dynamic from categories -->
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Phòng ban</label>
+                <select id="expenseDept" class="w-full bg-slate-50 border-none rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer">
+                    <option value="">Chọn phòng ban...</option>
+                    <!-- Dynamic -->
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Số tiền</label>
+                <div class="relative">
+                    <input type="number" id="expenseAmount" required placeholder="0" onfocus="if(this.value==='0') this.value=''" class="w-full bg-orange-50 border-none rounded-2xl pl-5 pr-14 py-4 text-xl font-black text-orange-600 focus:ring-2 focus:ring-orange-500/20 transition-all">
+                    <span class="absolute right-5 top-1/2 -translate-y-1/2 font-black text-orange-300 text-sm">VNĐ</span>
+                </div>
+            </div>
+            <div class="pt-4 flex gap-4">
+                <button type="button" onclick="window.closeExpenseModal()" class="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-600 text-sm font-black hover:bg-slate-200 transition-all">Hủy</button>
+                <button type="submit" class="flex-[2] py-4 rounded-2xl bg-orange-600 text-white text-sm font-black shadow-xl shadow-orange-100 hover:scale-[1.02] active:scale-[0.98] transition-all">Lưu giao dịch</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Manage Category Columns (Refined UI) -->
+<div id="financeColumnsModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-[#f8fafc] w-full max-w-lg rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <!-- Modal Header -->
+        <div class="p-8 flex justify-between items-center bg-white border-b border-slate-100">
+            <h2 class="text-lg font-black text-[#131b2e] font-headline tracking-tight">Quản lý Cột (Nhóm chi phí)</h2>
+            <button onclick="window.closeFinanceColumnsModal()" class="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-all">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <!-- Modal Content -->
+        <div class="p-8 overflow-y-auto flex-1 space-y-8">
+            <!-- Add New Column Card -->
+            <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 space-y-4">
+                <label class="text-[10px] font-black text-indigo-400 uppercase tracking-widest block px-1">Tên nhóm chi phí mới</label>
+                <div class="flex gap-3">
+                    <input type="text" id="newColName" placeholder="VD: Chi phí Marketing..." 
+                           class="flex-1 bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                    <button onclick="window.saveFinanceColumn()" 
+                            class="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-sm font-black flex items-center gap-2 shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-[0.95] transition-all">
+                        <span class="material-symbols-outlined text-lg">add</span> Thêm
+                    </button>
+                </div>
+                <!-- Hidden inputs for code/plan if needed later -->
+                <input type="hidden" id="newColCode" value="">
+                <input type="hidden" id="newColPlan" value="0">
+            </div>
+
+            <!-- Column List Section -->
+            <div class="space-y-4">
+                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-1">Danh sách cột hiện có</h3>
+                <div id="financeColumnsList" class="space-y-3">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-8 bg-white border-t border-slate-100 flex gap-4">
+            <button onclick="window.closeFinanceColumnsModal()" 
+                    class="flex-1 py-4 rounded-2xl bg-white border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-50 transition-all">Hủy bỏ</button>
+            <button onclick="window.closeFinanceColumnsModal()" 
+                    class="flex-1 py-4 rounded-2xl bg-indigo-600 text-white text-sm font-black shadow-xl shadow-indigo-100 hover:scale-[1.02] active:scale-[0.95] transition-all">Lưu thay đổi</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Manage Config Lists (Type/Spender) -->
+<div id="financeConfigModal" class="fixed inset-0 bg-[#131b2e]/60 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-[40px] shadow-2xl overflow-hidden">
+        <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined" id="finConfigIcon">settings</span>
+                </div>
+                <div>
+                    <h2 id="finConfigTitle" class="text-lg font-black text-[#131b2e] font-headline tracking-tight">Quản lý danh sách</h2>
+                </div>
+            </div>
+            <button onclick="window.closeFinanceConfigModal()" class="material-symbols-outlined text-slate-400">close</button>
+        </div>
+        <div class="p-8 space-y-6">
+            <div class="flex gap-2">
+                <input type="text" id="newConfigVal" placeholder="Nhập giá trị mới..." class="flex-1 bg-slate-50 border-none rounded-xl px-4 py-3 text-xs font-bold">
+                <button onclick="window.saveFinanceConfigItem()" class="px-6 py-3 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-black transition-all">Thêm</button>
+            </div>
+            <div id="finConfigList" class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                <!-- Dynamic -->
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- ====== EDIT ORDER MODAL ====== -->
 <div id="editOrderModal" class="fixed inset-0 z-50 hidden items-center justify-center">
@@ -6738,13 +6740,17 @@
                             <div class="text-[10px] text-slate-400 mt-1">${o.category || 'Khác'}</div>
                         </td>
                         <td class="py-6 px-4 text-right">
-                            <span class="text-[13px] font-black text-slate-700">${Number(o.totalCost || 0).toLocaleString()}</span>
+                            <button onclick="window.viewOrderCostDetails('${o.id}'); event.stopPropagation();" class="text-[13px] font-black text-indigo-600 hover:text-indigo-800 hover:underline transition-all">
+                                ${Number(o.totalCost || 0).toLocaleString()}
+                            </button>
                         </td>
                         <td class="py-6 px-4 text-center">
-                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter bg-slate-100 text-slate-500">${o.status || 'Mới'}</span>
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter bg-slate-100 text-slate-500">
+                                ${o.status || 'Mới'}
+                            </span>
                         </td>
                         <td class="py-6 px-10 text-right">
-                            <button class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                            <button onclick="window.viewOrderDetails('${o.id}'); event.stopPropagation();" class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
                                 <span class="material-symbols-outlined text-sm">visibility</span>
                             </button>
                         </td>
@@ -6874,6 +6880,14 @@
             window.openCostModal(encodeURIComponent(JSON.stringify(order)));
         }, 100);
     };
+
+    window.viewOrderCostDetails = function(orderId) {
+        const order = (window.allOrdersData || []).find(o => o.id === orderId);
+        if(order) {
+            window.openCostModal(encodeURIComponent(JSON.stringify(order)));
+        }
+    };
+
 
     function initPlanningEvents() {
         const monthFilter = document.getElementById('planningMonthFilter');
@@ -7043,8 +7057,15 @@
         planRow.querySelectorAll('.dynamic-col').forEach(p => p.remove());
         remainRow.querySelectorAll('.dynamic-col').forEach(r => r.remove());
 
+        // Update Plan Label
+        const planLabel = document.getElementById('finTablePlanLabel');
+        if(planLabel) {
+            planLabel.textContent = `PLAN THÁNG ${month}:`;
+        }
+
+        const periodKey = `${year}-${String(month).padStart(2, '0')}`;
         const colTotals = {};
-        window.financeColumns.forEach(col => {
+        window.financeColumns.forEach((col, idx) => {
             colTotals[col.name] = 0;
             const th = document.createElement('th');
             th.className = 'py-5 px-4 text-right dynamic-col min-w-[150px] border-l border-slate-100';
@@ -7063,10 +7084,17 @@
                 class="bg-blue-50/50 border-none rounded-lg w-full text-[10px] font-black italic text-blue-600 text-right focus:ring-1 focus:ring-blue-400 py-1 transition-all">`;
             codeRow.insertBefore(tdCode, document.getElementById('finTableTotalCode'));
 
-            // Plan Row
+            // Plan Row (Month-specific)
+            const monthlyPlans = col.monthlyPlans || {};
+            const planVal = Number(monthlyPlans[periodKey] !== undefined ? monthlyPlans[periodKey] : (col.plan || 0));
             const tdPlan = document.createElement('td');
-            tdPlan.className = 'py-3 px-4 text-right dynamic-col font-black border-l border-orange-400/30';
-            tdPlan.textContent = (Number(col.plan) || 0).toLocaleString();
+            tdPlan.className = 'py-1 px-4 text-right dynamic-col font-black border-l border-orange-400/30';
+            tdPlan.innerHTML = `<input type="text" value="${planVal.toLocaleString('en-US')}" 
+                onfocus="if(this.value==='0') this.value=''"
+                oninput="window.formatCurrencyInput(this)"
+                onblur="window.updateColumnPlan('${col.id}', window.unformatCurrencyValue(this.value), '${periodKey}')"
+                onkeydown="if(event.key==='Enter') window.focusNextPlanInput(this)"
+                class="bg-white/20 border-none rounded-lg w-full text-[10px] font-black text-white text-right focus:ring-1 focus:ring-white/50 py-1 transition-all">`;
             planRow.insertBefore(tdPlan, document.getElementById('finTableTotalPlan'));
 
             // Remaining Row
@@ -7076,6 +7104,9 @@
             tdRem.textContent = '0';
             remainRow.insertBefore(tdRem, document.getElementById('finTableTotalRemain'));
         });
+
+
+
 
         // 5. Render Table Body
         const tbody = document.getElementById('financeTableBody');
@@ -7112,20 +7143,26 @@
             tbody.appendChild(tr);
         });
 
-        // 6. Render Remaining Row
+        // 6. Update Remaining Row Values
         window.financeColumns.forEach(col => {
-            const plan = Number(col.plan) || 0;
+            const monthlyPlans = col.monthlyPlans || {};
+            const plan = Number(monthlyPlans[periodKey] !== undefined ? monthlyPlans[periodKey] : (col.plan || 0));
             const actual = colTotals[col.name] || 0;
             const remain = plan - actual;
-            const tdRem = document.createElement('td');
-            tdRem.className = `py-3 px-4 text-right dynamic-col font-black border-l border-yellow-300/50 ${remain < 0 ? 'text-red-600 animate-pulse' : ''}`;
-            tdRem.textContent = remain.toLocaleString();
-            remainRow.appendChild(tdRem);
+            const tdRem = document.getElementById(`rem-${col.name}`);
+            if (tdRem) {
+                tdRem.textContent = remain.toLocaleString();
+                tdRem.className = `py-3 px-4 text-right dynamic-col font-black border-l border-yellow-300/50 ${remain < 0 ? 'text-red-600 animate-pulse' : ''}`;
+            }
         });
 
         // 7. Update Dashboard Stats
         const totalSpentMonth = Object.values(colTotals).reduce((a,b) => a+b, 0);
-        const totalPlanMonth = window.financeColumns.reduce((a,b) => a + (Number(b.plan) || 0), 0);
+        const totalPlanMonth = window.financeColumns.reduce((a,b) => {
+            const mPlans = b.monthlyPlans || {};
+            const p = Number(mPlans[periodKey] !== undefined ? mPlans[periodKey] : (b.plan || 0));
+            return a + p;
+        }, 0);
         const totalCumulative = window.financeExpenses.reduce((a,b) => a + (Number(b.amount) || 0), 0);
 
         document.getElementById('finKpiCumulative').textContent = totalCumulative.toLocaleString();
@@ -7138,6 +7175,7 @@
         const perc = totalPlanMonth > 0 ? Math.min(100, Math.round((totalSpentMonth/totalPlanMonth)*100)) : 0;
         document.getElementById('finSpentPerc').textContent = perc + '%';
         document.getElementById('finSpentBar').style.width = perc + '%';
+
 
         renderFinanceCharts(colTotals);
     } catch (e) {
@@ -7297,9 +7335,11 @@
         document.getElementById('expenseType').value = exp.type;
         document.getElementById('expenseMainCategory').value = exp.mainCategory || '';
         document.getElementById('expenseAmount').value = exp.amount;
+        if(document.getElementById('expenseDept')) document.getElementById('expenseDept').value = exp.department || '';
         document.getElementById('expenseModalTitle').textContent = 'Chỉnh sửa giao dịch';
         document.getElementById('expenseModal').classList.remove('hidden');
     };
+
 
     document.getElementById('expenseForm').onsubmit = async function(e) {
         e.preventDefault();
@@ -7352,10 +7392,16 @@
                         </div>
                         <span class="text-sm font-bold text-slate-700">${c.name}</span>
                     </div>
-                    <button onclick="window.deleteFinanceColumn('${c.id}')" class="w-10 h-10 rounded-xl hover:bg-red-50 flex items-center justify-center text-slate-300 hover:text-red-500 transition-all">
-                        <span class="material-symbols-outlined text-lg">delete</span>
-                    </button>
+                    <div class="flex items-center gap-1">
+                        <button onclick="window.editFinanceColumn('${c.id}')" class="w-10 h-10 rounded-xl hover:bg-indigo-50 flex items-center justify-center text-slate-300 hover:text-indigo-600 transition-all">
+                            <span class="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        <button onclick="window.deleteFinanceColumn('${c.id}')" class="w-10 h-10 rounded-xl hover:bg-red-50 flex items-center justify-center text-slate-300 hover:text-red-500 transition-all">
+                            <span class="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                    </div>
                 `;
+
                 list.appendChild(div);
             });
         } catch (e) {
@@ -7407,6 +7453,41 @@
             });
         } catch(err) { console.error(err); }
     };
+
+    window.formatCurrencyInput = function(input) {
+        let val = input.value.replace(/[^0-9]/g, '');
+        if (val === '') {
+            input.value = '';
+            return;
+        }
+        input.value = Number(val).toLocaleString('en-US');
+    };
+
+    window.unformatCurrencyValue = function(str) {
+        return Number(str.replace(/,/g, '')) || 0;
+    };
+
+    window.focusNextPlanInput = function(currentInput) {
+        const row = currentInput.closest('tr');
+        const inputs = Array.from(row.querySelectorAll('input'));
+        const idx = inputs.indexOf(currentInput);
+        if (idx !== -1 && idx < inputs.length - 1) {
+            inputs[idx + 1].focus();
+        } else {
+            currentInput.blur();
+        }
+    };
+
+    window.updateColumnPlan = async function(id, newPlan, periodKey) {
+        try {
+            const updateObj = {};
+            updateObj[`monthlyPlans.${periodKey}`] = Number(newPlan) || 0;
+            await window.fsUpdateDoc(window.fsDoc(window.db, "ledger_columns", id), updateObj);
+        } catch(err) { console.error(err); }
+    };
+
+
+
 
     window.updateExpenseColumnValue = async function(expenseId, colName, value) {
         try {
