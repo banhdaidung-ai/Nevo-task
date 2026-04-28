@@ -1137,9 +1137,9 @@
             await window.fs.addDoc(window.fs.collection(window.db, "activities"), {
                 type: type, // 'create', 'update', 'delete', 'login'
                 title: title,
-                details: description,
+                description: description,
                 user: userName,
-                timestamp: window.fs.serverTimestamp ? window.fs.serverTimestamp() : new Date()
+                createdAt: window.fs.serverTimestamp ? window.fs.serverTimestamp() : new Date().toISOString()
             });
             console.log("Activity logged:", title);
         } catch (error) {
@@ -1279,7 +1279,7 @@
         });
 
         // --- 6. ACTIVITIES SYNC ---
-        const qActivities = window.fs.query(window.fs.collection(window.db, "activities"), window.fs.orderBy("timestamp", "desc"));
+        const qActivities = window.fs.query(window.fs.collection(window.db, "activities"), window.fs.orderBy("createdAt", "desc"));
         window.fs.onSnapshot(qActivities, (snap) => {
             window.activities = [];
             snap.forEach(doc => window.activities.push({ id: doc.id, ...doc.data() }));
@@ -1864,7 +1864,7 @@
             const filtered = data.filter(a => {
                 return (a.title || '').toLowerCase().includes(searchTerm) ||
                        (a.user || '').toLowerCase().includes(searchTerm) ||
-                       (a.details || '').toLowerCase().includes(searchTerm);
+                       (a.description || a.details || '').toLowerCase().includes(searchTerm);
             });
 
             if (countEl) countEl.textContent = `Hiển thị ${filtered.length} hoạt động`;
@@ -1877,7 +1877,8 @@
             tbody.innerHTML = filtered.map(a => {
                 let dateStr = 'N/A';
                 try {
-                    const date = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp instanceof Date ? a.timestamp : (a.timestamp ? new Date(a.timestamp) : new Date()));
+                    const dateVal = a.createdAt || a.timestamp;
+                    const date = dateVal?.toDate ? dateVal.toDate() : (dateVal instanceof Date ? dateVal : (dateVal ? new Date(dateVal) : new Date()));
                     dateStr = date.toLocaleString('vi-VN');
                 } catch(e) { console.warn("Date parse error:", e); }
                 
@@ -1904,7 +1905,7 @@
                             <span class="text-sm font-bold text-slate-800">${a.title || 'N/A'}</span>
                         </td>
                         <td class="py-4 px-6">
-                            <p class="text-xs text-slate-500 max-w-[400px] leading-relaxed">${a.details || ''}</p>
+                            <p class="text-xs text-slate-500 max-w-[400px] leading-relaxed">${a.description || a.details || ''}</p>
                         </td>
                     </tr>
                 `;
