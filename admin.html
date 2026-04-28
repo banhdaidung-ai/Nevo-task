@@ -1247,15 +1247,12 @@
         const categoryRef = window.fs.collection(window.db, CATEGORY_COLLECTION);
         const qCategory = window.fs.query(categoryRef, window.fs.orderBy("name"));
         
-        // Cải tiến logic khởi tạo: kiểm tra từng category mặc định
         const snapCategory = await window.fs.getDocs(qCategory);
-        const existingNames = new Set(snapCategory.docs.map(doc => doc.data().name.toLowerCase()));
         
-        for (const name of DEFAULT_CATEGORIES) {
-            if (!existingNames.has(name.toLowerCase())) {
-                console.log(`Initializing missing category: ${name}`);
+        if (snapCategory.empty) {
+            console.log("Initializing default categories...");
+            for (const name of DEFAULT_CATEGORIES) {
                 await window.fs.addDoc(categoryRef, { name, createdAt: new Date().toISOString() });
-                existingNames.add(name.toLowerCase()); // Tránh lặp trong cùng một lần chạy
             }
         }
 
