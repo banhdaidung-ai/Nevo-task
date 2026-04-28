@@ -3302,9 +3302,18 @@
 
         // If roles data isn't loaded yet, use hardcoded fallback
         if (!window.appRoles || !window.appRoles[userRoleSlug]) {
+            if (field === 'admin_access') return userRoleSlug === 'admin';
             if (field === 'costs') return userRoleSlug === 'admin';
+            if (field === 'delete') return userRoleSlug === 'admin';
             if (userRoleSlug === 'manager') return true;
-            const restrictedFields = ['status', 'deployDate', 'stylist', 'assignedVideo', 'assignedPhoto', 'note', 'department', 'requester'];
+            if (userRoleSlug === 'viewer') return false;
+            
+            // Standard User restrictions
+            const restrictedFields = [
+                'status', 'deployDate', 'stylist', 'assignedVideo', 'assignedPhoto', 
+                'note', 'department', 'requester', 'costs', 'delete', 'orderCode',
+                'category', 'title', 'content', 'deadline', 'orderDate'
+            ];
             return !restrictedFields.includes(field);
         }
 
@@ -4228,8 +4237,8 @@
                         </td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-1">
-                                <button onclick="openEditModal('${dataStr}')" class="p-1.5 hover:bg-slate-100 rounded-full hover:text-primary transition-all"><span class="material-symbols-outlined text-[18px]">edit</span></button>
-                                ${isAdmin ? `<button onclick="deleteOrder('${data.id}', '${data.code}')" class="p-1.5 hover:bg-red-50 rounded-full hover:text-red-600 transition-all"><span class="material-symbols-outlined text-[18px]">delete</span></button>` : ''}
+                                ${checkPermission('orders_edit_info') ? `<button onclick="openEditModal('${dataStr}')" class="p-1.5 hover:bg-slate-100 rounded-full hover:text-primary transition-all"><span class="material-symbols-outlined text-[18px]">edit</span></button>` : ''}
+                                ${checkPermission('delete') ? `<button onclick="deleteOrder('${data.id}', '${data.code}')" class="p-1.5 hover:bg-red-50 rounded-full hover:text-red-600 transition-all"><span class="material-symbols-outlined text-[18px]">delete</span></button>` : ''}
                             </div>
                         </td>
                     </tr>`;
@@ -4578,6 +4587,10 @@
 
     // ===== Action Functions =====
     window.deleteOrder = async function(id, code) {
+        if (!checkPermission('delete')) {
+            showToast('Từ chối!', 'Bạn không có quyền xóa đơn hàng.', 'block', 'text-error');
+            return;
+        }
         if (confirm('Bạn có chắc chắn muốn xóa đơn hàng ' + code + ' không? Thao tác này không thể hoàn tác.')) {
             try {
                 await window.fsDeleteDoc(window.fsDoc(window.db, "orders", id));
@@ -4595,8 +4608,11 @@
     };
 
     window.openEditModal = function(dataStr) {
+        if (!checkPermission('orders_edit_info')) {
+            showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa đơn hàng.', 'block', 'text-error');
+            return;
+        }
         const data = JSON.parse(decodeURIComponent(dataStr));
-        const role = localStorage.getItem('nevo_role') || 'user';
         
         document.getElementById('editOrderId').value = data.id;
         document.getElementById('editOrderCode').value = data.code || '';
@@ -4738,6 +4754,10 @@
     };
 
     window.saveCostDetails = async function() {
+        if (!checkPermission('costs')) {
+            showToast('Từ chối!', 'Bạn không có quyền lưu chi phí.', 'block', 'text-error');
+            return;
+        }
         const id = document.getElementById('costOrderId').value;
         const fields = ['model', 'makeup', 'studio', 'travel', 'video', 'photo', 'stylist', 'assistant', 'other'];
         const costs = {};
@@ -4772,6 +4792,10 @@
     };
 
     window.saveEditOrder = async function() {
+        if (!checkPermission('orders_edit_info')) {
+            showToast('Từ chối!', 'Bạn không có quyền lưu chỉnh sửa.', 'block', 'text-error');
+            return;
+        }
         const id = document.getElementById('editOrderId').value;
         const code = document.getElementById('editOrderCode').value;
         const status = document.getElementById('editOrderStatus').value;
@@ -6363,12 +6387,13 @@
     };
 
     window.updateSelectedPlanningCount = function() {
+        const isAdmin = (localStorage.getItem('nevo_role') === 'admin');
         const checkboxes = document.querySelectorAll('.planning-row-checkbox:checked');
         const count = checkboxes.length;
         const btn = document.getElementById('btnDeleteSelectedPlanning');
         const countSpan = document.getElementById('selectedPlanningCount');
         
-        if(count > 0) {
+        if(count > 0 && isAdmin) {
             btn.classList.remove('hidden');
             countSpan.textContent = count;
         } else {
@@ -6377,6 +6402,10 @@
     };
 
     window.deleteSelectedPlanningRows = async function() {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể xoá hàng loạt.', 'block', 'text-error');
+            return;
+        }
         const checkboxes = document.querySelectorAll('.planning-row-checkbox:checked');
         if(checkboxes.length === 0) return;
         
@@ -6400,6 +6429,10 @@
     };
 
     window.deletePlanningRow = async function(id) {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Bạn không có quyền xoá kế hoạch.', 'block', 'text-error');
+            return;
+        }
         if(confirm('Bạn có chắc chắn muốn xoá dòng kế hoạch này?')) {
             await window.fsDeleteDoc(window.fsDoc(window.db, "planning", id));
             
@@ -7507,6 +7540,10 @@
     };
 
     window.deleteFinanceRow = async function(id) {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Bạn không có quyền xoá dòng tài chính.', 'block', 'text-error');
+            return;
+        }
         if (!confirm("Bạn có chắc chắn muốn xoá dòng này không?")) return;
         try {
             await window.fsDeleteDoc(window.fsDoc(window.db, "ledger_expenses", id));
@@ -7518,6 +7555,10 @@
     };
 
     window.bulkDeleteFinance = async function() {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể xoá hàng loạt.', 'block', 'text-error');
+            return;
+        }
         const checkboxes = document.querySelectorAll('.finance-row-checkbox:checked');
         const ids = Array.from(checkboxes).map(cb => cb.value);
         if (ids.length === 0) return;
@@ -7548,6 +7589,10 @@
     };
 
     window.addNewExpenseRow = async function() {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể thêm dòng.', 'block', 'text-error');
+            return;
+        }
         if (!window.db || !window.fsAddDoc || !window.fsCollection) return;
         
         const mEl = document.getElementById('financeFilterMonth');
@@ -7613,6 +7658,36 @@
 
     window.closeExpenseModal = function() {
         document.getElementById('expenseModal').classList.add('hidden');
+    };
+
+    window.addNewFinanceColumn = async function() {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể thêm cột.', 'block', 'text-error');
+            return;
+        }
+        const name = document.getElementById('newColName').value.trim();
+        const code = document.getElementById('newColCode').value.trim();
+        const plan = Number(document.getElementById('newColPlan').value.replace(/,/g, '')) || 0;
+
+        if (!name || !code) return;
+        try {
+            await window.fsAddDoc(window.fsCollection(window.db, "ledger_columns"), {
+                name, code, plan, createdAt: new Date().toISOString()
+            });
+            document.getElementById('newColName').value = '';
+            document.getElementById('newColCode').value = '';
+            document.getElementById('newColPlan').value = '';
+            renderFinanceColumnsList();
+        } catch(err) { alert(err.message); }
+    };
+
+    window.deleteFinanceColumn = async function(id) {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể xoá cột.', 'block', 'text-error');
+            return;
+        }
+        if(!confirm('Xóa hạng mục này sẽ ảnh hưởng đến việc hiển thị các chi phí cũ. Bạn có chắc chắn?')) return;
+        await window.fsDeleteDoc(window.fsDoc(window.db, "ledger_columns", id));
     };
 
     window.editExpense = function(id) {
@@ -7722,6 +7797,10 @@
     };
 
     window.editFinanceColumn = function(id) {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể sửa cột.', 'block', 'text-error');
+            return;
+        }
         const c = window.financeColumns.find(x => x.id === id);
         if(!c) return;
         const newName = prompt('Tên mới cho hạng mục:', c.name);
@@ -7769,6 +7848,7 @@
     };
 
     window.updateColumnPlan = async function(id, newPlan, periodKey) {
+        if (localStorage.getItem('nevo_role') !== 'admin') return;
         try {
             const updateObj = {};
             updateObj[`monthlyPlans.${periodKey}`] = Number(newPlan) || 0;
@@ -7779,7 +7859,13 @@
 
 
 
+
+
     window.updateExpenseColumnValue = async function(expenseId, colName, value) {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể sửa chi phí.', 'block', 'text-error');
+            return;
+        }
         try {
             const exp = window.financeExpenses.find(e => e.id === expenseId);
             if (!exp) return;
@@ -7808,6 +7894,10 @@
 
     // Config Management
     window.manageFinanceDropdown = function(type) {
+        if (localStorage.getItem('nevo_role') !== 'admin') {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể quản lý cấu hình.', 'block', 'text-error');
+            return;
+        }
         try {
             // Normalize to plural
             const normalizedType = (type === 'type' || type === 'types') ? 'types' : 'spenders';
