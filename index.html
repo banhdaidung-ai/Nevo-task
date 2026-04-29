@@ -3276,7 +3276,7 @@
         // Super-admin always has permission (slug 'admin' is reserved)
         if (userRoleSlug === 'admin') return true;
 
-        // Map old field names to new granular permission keys
+        // Map UI field/action keys to granular permission slugs defined in Admin Dashboard
         const permissionMap = {
             'costs': 'orders_edit_costs',
             'status': 'orders_edit_status',
@@ -3295,33 +3295,43 @@
             'assignedPhoto': 'orders_edit_info',
             'requester': 'orders_edit_info',
             'department': 'orders_edit_info',
-            'deployDate': 'orders_edit_info'
+            'deployDate': 'orders_edit_info',
+            'title': 'orders_edit_info',
+            'content': 'orders_edit_info',
+            'delete': 'orders_delete',
+            'create': 'orders_create',
+            'planning_view': 'planning_view',
+            'planning_edit': 'planning_edit',
+            'finance_view': 'finance_view',
+            'finance_edit': 'finance_edit',
+            'reports_view': 'reports_view',
+            'admin_access': 'admin_access'
         };
 
         const permKey = permissionMap[field] || field;
 
-        // If roles data isn't loaded yet, use hardcoded fallback
-        if (!window.appRoles || !window.appRoles[userRoleSlug]) {
-            if (field === 'admin_access') return userRoleSlug === 'admin';
-            if (field === 'costs') return userRoleSlug === 'admin';
-            if (field === 'delete') return userRoleSlug === 'admin';
-            if (userRoleSlug === 'manager') return true;
-            if (userRoleSlug === 'viewer') return false;
-            
-            // Standard User restrictions
-            const restrictedFields = [
-                'status', 'deployDate', 'stylist', 'assignedVideo', 'assignedPhoto', 
-                'note', 'department', 'requester', 'costs', 'delete', 'orderCode',
-                'category', 'title', 'content', 'deadline', 'orderDate'
-            ];
-            return !restrictedFields.includes(field);
+        // 1. Check if roles data is loaded and has permissions
+        if (window.appRoles && window.appRoles[userRoleSlug]) {
+            const roleData = window.appRoles[userRoleSlug];
+            if (roleData.permissions && roleData.permissions[permKey] !== undefined) {
+                return !!roleData.permissions[permKey];
+            }
         }
 
-        const roleData = window.appRoles[userRoleSlug];
-        if (!roleData || !roleData.permissions) return false;
+        // 2. Hardcoded Fallback if roles data isn't loaded or key is missing
+        if (userRoleSlug === 'viewer') return ['orders_view', 'planning_view', 'finance_view', 'reports_view'].includes(permKey);
+        
+        if (userRoleSlug === 'manager') {
+            const deniedForManager = ['admin_access', 'orders_delete'];
+            return !deniedForManager.includes(permKey);
+        }
 
-        // Return the specific permission if it exists, otherwise deny by default
-        return !!roleData.permissions[permKey];
+        if (userRoleSlug === 'user') {
+            const allowedForUser = ['orders_view', 'orders_create', 'planning_view', 'reports_view'];
+            return allowedForUser.includes(permKey);
+        }
+
+        return false;
     }
 
     // Refresh UI elements when permissions load
@@ -3339,6 +3349,32 @@
                 adminLink.classList.add('hidden');
             }
         }
+
+        // Planning buttons
+        const planningAddBtn = document.getElementById('btnAddPlanningRow');
+        if (planningAddBtn) {
+            if (checkPermission('planning_edit')) planningAddBtn.classList.remove('hidden');
+            else planningAddBtn.classList.add('hidden');
+        }
+
+        const planningImportBtn = document.querySelector('button[onclick*="planningImportInput"]');
+        if (planningImportBtn) {
+            if (checkPermission('planning_edit')) planningImportBtn.classList.remove('hidden');
+            else planningImportBtn.classList.add('hidden');
+        }
+
+        // Finance buttons
+        const financeAddBtn = document.getElementById('btnAddFinanceRow');
+        if (financeAddBtn) {
+            if (checkPermission('finance_edit')) financeAddBtn.classList.remove('hidden');
+            else financeAddBtn.classList.add('hidden');
+        }
+
+        const financeBulkDeleteBtn = document.getElementById('btnBulkDeleteFinance');
+        if (financeBulkDeleteBtn) {
+            if (!checkPermission('finance_edit')) financeBulkDeleteBtn.classList.add('hidden');
+        }
+
 
         // Check schedule access
         if (scheduleLink) {
@@ -3595,6 +3631,10 @@
 
     // ===== Create Order Handler =====
     async function handleCreateOrder() {
+        if (!checkPermission('create')) {
+            showToast('Từ chối!', 'Bạn không có quyền tạo đơn hàng.', 'block', 'text-error');
+            return;
+        }
         const title = document.getElementById('orderTitle').value;
         let code = document.getElementById('orderCode').value;
         const department = document.getElementById('department').value;
@@ -5820,7 +5860,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Handle initial hash navigation
         const hash = window.location.hash.substring(1);
-        const validPages = ['dashboard', 'orders', 'reports', 'create-order', 'profile'];
+        const validPages = ['dashboard', 'orders', 'planning', 'budgetReport', 'reports', 'create-order', 'profile'];
         if (hash && validPages.includes(hash)) {
             navigateTo(hash);
         } else {
@@ -6349,6 +6389,10 @@
     };
 
     window.addPlanningRow = async function(data = {}) {
+        if (!checkPermission('planning_edit')) {
+            showToast('Từ chối!', 'Bạn không có quyền thêm dòng kế hoạch.', 'block', 'text-error');
+            return;
+        }
         if(!window.db) {
             alert("Hệ thống đang khởi tạo kết nối database, vui lòng đợi trong giây lát...");
             return;
@@ -6444,6 +6488,7 @@
     };
 
     window.renderPlanningTable = function() {
+        const canEdit = checkPermission('planning_edit');
         const tbody = document.getElementById('planningTableBody');
         if(!tbody) return;
         tbody.innerHTML = '';
@@ -6493,7 +6538,7 @@
                     const displayVal = val === 0 ? '-' : val;
                     
                     daysHtml += `<td class="planning-col-${i} py-5 px-3 text-center border-r border-b border-slate-100 transition-colors ${isSat || isSun ? 'bg-slate-50/50' : ''}" onmouseenter="window.highlightPlanningColumn(${i})" onmouseleave="window.removeHighlightPlanningColumn(${i})">
-                        <input type="text" onfocus="if(this.value==='-') this.value='';" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isSun ? 'font-extrabold text-rose-500' : isSat ? 'font-bold text-blue-500' : 'font-bold text-slate-700'}" value="${displayVal}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
+                        <input type="text" ${!canEdit ? 'disabled' : ''} onfocus="if(this.value==='-') this.value='';" class="w-10 text-center border-none bg-transparent focus:ring-0 p-0 text-sm ${isSun ? 'font-extrabold text-rose-500' : isSat ? 'font-bold text-blue-500' : 'font-bold text-slate-700'} ${!canEdit ? 'cursor-not-allowed opacity-70' : ''}" value="${displayVal}" onchange="window.updateRowData('${row.id}', ${i}, this.value)">
                     </td>`;
                 }
                 
@@ -6510,38 +6555,38 @@
 
                 tr.innerHTML = `
                     <td class="py-3 px-4 xl:sticky left-0 z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[50px] text-center align-top">
-                        <input type="checkbox" class="planning-row-checkbox rounded border-slate-300 text-rose-600 focus:ring-rose-500" data-id="${row.id}" onchange="window.updateSelectedPlanningCount()">
+                        <input type="checkbox" ${!canEdit ? 'disabled' : ''} class="planning-row-checkbox rounded border-slate-300 text-rose-600 focus:ring-rose-500" data-id="${row.id}" onchange="window.updateSelectedPlanningCount()">
                     </td>
                     <td class="py-3 px-6 font-bold text-slate-700 xl:sticky left-[50px] z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[140px] align-top">
-                        <select onchange="window.updateRowField('${row.id}', 'dept', this.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-sm font-bold text-[#1e293b] outline-none bg-transparent">
+                        <select ${!canEdit ? 'disabled' : ''} onchange="window.updateRowField('${row.id}', 'dept', this.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-sm font-bold text-[#1e293b] outline-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}">
                             ${window.getPlanningDeptOptions(row.dept)}
                         </select>
                     </td>
                     <td class="py-3 px-6 xl:sticky left-[190px] z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[140px] align-top">
-                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'campaign', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-bold text-[#1e293b] outline-none resize-none bg-transparent">${row.campaign || ''}</textarea>
+                        <textarea rows="2" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowField('${row.id}', 'campaign', this.value)" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-bold text-[#1e293b] outline-none resize-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}">${row.campaign || ''}</textarea>
                     </td>
                     <td class="py-3 px-6 xl:sticky left-[330px] z-10 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 text-center min-w-[110px] align-top">
-                        <select onchange="window.updateRowField('${row.id}', 'type', this.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 outline-none bg-transparent">
+                        <select ${!canEdit ? 'disabled' : ''} onchange="window.updateRowField('${row.id}', 'type', this.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-700 outline-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}">
                             ${typeOptions}
                         </select>
                     </td>
                     <td class="py-3 px-6 xl:sticky left-[440px] z-10 bg-white group-hover:bg-blue-50 border-r-2 border-b border-slate-200 min-w-[160px] align-top">
-                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'outcome', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Outcome', encodeURIComponent(this.value.replace(/\\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-3 py-2 text-sm text-[#1e293b] outline-none resize-none bg-transparent">${row.outcome || ''}</textarea>
+                        <textarea rows="2" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowField('${row.id}', 'outcome', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Outcome', encodeURIComponent(this.value.replace(/\\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-3 py-2 text-sm text-[#1e293b] outline-none resize-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}">${row.outcome || ''}</textarea>
                     </td>
                     <td class="py-3 px-6 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[180px] align-top">
-                        <textarea rows="2" onblur="window.updateRowField('${row.id}', 'note', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Ghi chú', encodeURIComponent(this.value.replace(/\\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 outline-none resize-none leading-relaxed bg-transparent">${row.note || ''}</textarea>
+                        <textarea rows="2" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowField('${row.id}', 'note', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Ghi chú', encodeURIComponent(this.value.replace(/\\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 outline-none resize-none leading-relaxed bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}">${row.note || ''}</textarea>
                     </td>
                     <td class="py-3 px-1 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[40px] align-top">
-                        <input type="text" onblur="window.updateRowBudget('${row.id}', this.value); this.value = this.value ? Number(this.value.replace(/\\D/g, '')).toLocaleString() : ''" class="w-full border border-slate-200 rounded px-1 py-2 text-right text-[10px] font-bold text-rose-600 outline-none bg-transparent" placeholder="0" value="${row.budget ? Number(row.budget.toString().replace(/\\D/g, '')).toLocaleString() : ''}">
+                        <input type="text" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowBudget('${row.id}', this.value); this.value = this.value ? Number(this.value.replace(/\\D/g, '')).toLocaleString() : ''" class="w-full border border-slate-200 rounded px-1 py-2 text-right text-[10px] font-bold text-rose-600 outline-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}" placeholder="0" value="${row.budget ? Number(row.budget.toString().replace(/\\D/g, '')).toLocaleString() : ''}">
                     </td>
                     <td class="py-3 px-6 border-r-2 border-b border-slate-200 bg-rose-50 group-hover:bg-rose-100 text-center align-middle font-black text-rose-600 text-sm min-w-[70px]">
                         ${rowTotal}
                     </td>
                     ${daysHtml}
                     <td class="py-3 px-6 xl:sticky right-0 z-10 bg-white group-hover:bg-blue-50 border-l border-b border-slate-100 text-center min-w-[80px] align-top">
-                        <button onclick="window.deletePlanningRow('${row.id}')" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                        ${canEdit ? `<button onclick="window.deletePlanningRow('${row.id}')" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
                             <span class="material-symbols-outlined text-[20px]">delete</span>
-                        </button>
+                        </button>` : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -6569,6 +6614,10 @@
     };
 
     window.updateRowData = function(rowId, day, value) {
+        if (!checkPermission('planning_edit')) {
+            showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa số liệu.', 'block', 'text-error');
+            return;
+        }
         const numVal = parseInt(value);
         const finalVal = isNaN(numVal) || numVal <= 0 ? 0 : numVal;
         const updates = {};
@@ -6582,6 +6631,10 @@
     };
 
     window.updateRowBudget = function(rowId, value) {
+        if (!checkPermission('planning_edit')) {
+            showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa ngân sách.', 'block', 'text-error');
+            return;
+        }
         const cleanValue = value ? value.toString().replace(/\D/g, '') : '';
         window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { budget: cleanValue });
         
@@ -6592,6 +6645,10 @@
     };
 
     window.updateRowField = function(rowId, field, value) {
+        if (!checkPermission('planning_edit')) {
+            showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa trường này.', 'block', 'text-error');
+            return;
+        }
         window.fsUpdateDoc(window.fsDoc(window.db, "planning", rowId), { [field]: value });
         
         // LOG ACTIVITY
@@ -7246,6 +7303,15 @@
 
 
     window.renderFinancePage = function() {
+        if (!checkPermission('finance_view')) {
+            const container = document.getElementById('financeTableContainer');
+            if (container) container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+                    <span class="material-symbols-outlined text-[64px] mb-4 opacity-20">lock</span>
+                    <p class="text-sm font-bold uppercase tracking-widest">Bạn không có quyền xem dữ liệu tài chính</p>
+                </div>`;
+            return;
+        }
         try {
             const tab = document.getElementById('page-budgetReport');
             if (!tab || !tab.classList.contains('active')) return;
@@ -7387,9 +7453,9 @@
                     ${(Number(item.amount) || 0).toLocaleString()}
                 </td>
                 <td class="py-5 px-4 text-center border-l border-slate-50">
-                    <button onclick="event.stopPropagation(); window.deleteFinanceRow('${item.id}')" class="p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-xl transition-all">
+                    ${checkPermission('finance_edit') ? `<button onclick="event.stopPropagation(); window.deleteFinanceRow('${item.id}')" class="p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-xl transition-all">
                         <span class="material-symbols-outlined text-[18px]">delete</span>
-                    </button>
+                    </button>` : ''}
                 </td>
             `;
             
@@ -7524,7 +7590,7 @@
         const btn = document.getElementById('btnBulkDeleteFinance');
         const countEl = document.getElementById('selectedFinanceCount');
         
-        if (count > 0) {
+        if (count > 0 && checkPermission('finance_edit')) {
             btn.classList.remove('hidden');
             countEl.textContent = count;
         } else {
@@ -7540,7 +7606,7 @@
     };
 
     window.deleteFinanceRow = async function(id) {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
+        if (!checkPermission('finance_edit')) {
             showToast('Từ chối!', 'Bạn không có quyền xoá dòng tài chính.', 'block', 'text-error');
             return;
         }
@@ -7555,8 +7621,8 @@
     };
 
     window.bulkDeleteFinance = async function() {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
-            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể xoá hàng loạt.', 'block', 'text-error');
+        if (!checkPermission('finance_edit')) {
+            showToast('Từ chối!', 'Bạn không có quyền xoá hàng loạt tài chính.', 'block', 'text-error');
             return;
         }
         const checkboxes = document.querySelectorAll('.finance-row-checkbox:checked');

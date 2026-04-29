@@ -187,9 +187,10 @@
                 <a href="index.html#dashboard" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Bảng điều khiển</a>
                 <a href="index.html#orders" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
                 <a href="index.html#planning" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
-                <a href="index.html#reports" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Báo cáo</a>
+                <a href="index.html#budgetReport" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
+                <a href="index.html#reports" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Lịch làm việc</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-red-600 border-b-2 border-red-600 pb-1 transition-all duration-200">Quản trị</a>
-                <a href="#" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
+                <a href="support.html" target="_blank" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
             </div>
         </div>
         <!-- Actions -->
@@ -265,8 +266,20 @@
         <a href="index.html#orders" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
             <span class="material-symbols-outlined">shopping_cart</span> Đơn hàng
         </a>
+        <a href="index.html#planning" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">event_note</span> Kế hoạch
+        </a>
+        <a href="index.html#budgetReport" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">payments</span> Chi phí
+        </a>
+        <a href="index.html#reports" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">bar_chart</span> Lịch làm việc
+        </a>
         <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-600 transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined">admin_panel_settings</span> Quản trị Hệ thống
+        </a>
+        <a href="support.html" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">support_agent</span> Trung tâm hỗ trợ
         </a>
     </div>
 </div>
@@ -875,6 +888,10 @@
                             <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="finance_view">
                                 <span class="text-xs font-semibold">Xem bảng tài chính</span>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="finance_edit">
+                                <span class="text-xs font-semibold">Sửa/Xóa dòng tài chính</span>
                             </label>
                         </div>
                     </div>
