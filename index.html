@@ -1332,6 +1332,7 @@
                             <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[190px] z-30 min-w-[140px] border-r border-slate-100 border-b">CHIẾN DỊCH</th>
                             <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[330px] z-30 min-w-[110px] text-center border-r border-slate-100 border-b">LOẠI ORDER</th>
                             <th class="py-4 px-6 bg-[#f8fafc] xl:sticky left-[440px] z-30 min-w-[160px] border-r-2 border-slate-200 border-b">OUTCOME</th>
+                            <th class="py-4 px-6 bg-[#f8fafc] min-w-[160px] border-r border-slate-100 border-b">LINK MẪU</th>
                             <th class="py-4 px-6 bg-[#f8fafc] min-w-[180px] border-r border-slate-100 border-b">GHI CHÚ</th>
                             <th class="py-4 px-1 bg-[#f8fafc] min-w-[40px] text-right border-r border-slate-100 border-b">NGÂN SÁCH</th>
                             <th class="py-4 px-6 bg-[#f8fafc] min-w-[70px] font-black text-rose-600 text-center border-r-2 border-slate-200 border-b">TỔNG</th>
@@ -1345,6 +1346,7 @@
                     <tfoot class="bg-[#f8fafc] font-bold text-[#1e293b] sticky bottom-0 z-20">
                         <tr id="planningTableFooterRow">
                             <td colspan="5" class="py-4 px-6 text-rose-600 uppercase tracking-widest xl:sticky left-0 z-20 bg-[#f8fafc] border-r-2 border-slate-200 text-right font-black">TỔNG CỘNG</td>
+                            <td class="py-4 px-6 bg-[#f8fafc] border-r border-slate-100"></td>
                             <td class="py-4 px-6 bg-[#f8fafc] border-r border-slate-100"></td>
                             <td id="planningTotalBudget" class="py-4 px-6 text-right bg-[#f8fafc] border-r border-slate-100 text-rose-600 font-black">0</td>
                             <td id="planningGrandTotalOrders" class="py-4 px-6 text-center bg-rose-50 text-rose-700 font-black text-sm border-r-2 border-slate-200">0</td>
@@ -6371,8 +6373,8 @@
             return;
         }
         const csvContent = "data:text/csv;charset=utf-8," 
-            + "Phòng Ban,Chiến Dịch,Loại,Ngân Sách,Ngày\n"
-            + window.planningRowsData.map(r => `${r.dept},${r.campaign},${r.type},${r.budget},${r.month}`).join("\n");
+            + "Phòng Ban,Chiến Dịch,Loại,Ngân Sách,Kết Quả,Link Mẫu,Ghi Chú,Ngày\n"
+            + window.planningRowsData.map(r => `${r.dept},${r.campaign},${r.type},${r.budget},${r.outcome},${r.sampleLink},${r.note},${r.month}`).join("\n");
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -6409,6 +6411,7 @@
             dept: finalDept,
             campaign: data.campaign || '',
             outcome: data.outcome || '',
+            sampleLink: data.sampleLink || '',
             note: data.note || '',
             type: data.type || '',
             budget: data.budget || '',
@@ -6573,6 +6576,9 @@
                     <td class="py-3 px-6 xl:sticky left-[440px] z-10 bg-white group-hover:bg-blue-50 border-r-2 border-b border-slate-200 min-w-[160px] align-top">
                         <textarea rows="2" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowField('${row.id}', 'outcome', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Outcome', encodeURIComponent(this.value.replace(/\\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-3 py-2 text-sm text-[#1e293b] outline-none resize-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}">${row.outcome || ''}</textarea>
                     </td>
+                    <td class="py-3 px-6 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[160px] align-top">
+                        <textarea rows="2" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowField('${row.id}', 'sampleLink', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Link mẫu', encodeURIComponent(this.value.replace(/\\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-3 py-2 text-sm text-[#1e293b] outline-none resize-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}" placeholder="Dán link tại đây...">${row.sampleLink || ''}</textarea>
+                    </td>
                     <td class="py-3 px-6 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[180px] align-top">
                         <textarea rows="2" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowField('${row.id}', 'note', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Ghi chú', encodeURIComponent(this.value.replace(/\\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500 outline-none resize-none leading-relaxed bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}">${row.note || ''}</textarea>
                     </td>
@@ -6653,7 +6659,7 @@
         
         // LOG ACTIVITY
         if (window.logActivity) {
-            const labels = { 'campaign': 'chiến dịch', 'dept': 'phòng ban', 'type': 'phân loại', 'note': 'ghi chú', 'outcome': 'kết quả' };
+            const labels = { 'campaign': 'chiến dịch', 'dept': 'phòng ban', 'type': 'phân loại', 'note': 'ghi chú', 'outcome': 'kết quả', 'sampleLink': 'link mẫu' };
             const label = labels[field] || field;
             window.logActivity('update', `Cập nhật ${label}`, `Trường ${label} kế hoạch đã được thay đổi.`);
         }
