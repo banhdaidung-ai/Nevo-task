@@ -3273,7 +3273,8 @@
 <script>
     // ===== RBAC HELPERS =====
     function checkPermission(field) {
-        const userRoleSlug = localStorage.getItem('nevo_role') || 'user';
+        const userRoleSlug = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
+        console.log(`[Permission Check] Field: ${field}, Role: ${userRoleSlug}`);
         
         // Super-admin always has permission (slug 'admin' is reserved)
         if (userRoleSlug === 'admin') return true;
@@ -3328,11 +3329,14 @@
             return !deniedForManager.includes(permKey);
         }
 
-        if (userRoleSlug === 'user') {
+        if (userRoleSlug === 'user' || userRoleSlug === 'member' || userRoleSlug === 'thành viên') {
             const allowedForUser = ['orders_view', 'orders_create', 'planning_view', 'reports_view'];
-            return allowedForUser.includes(permKey);
+            const isAllowed = allowedForUser.includes(permKey);
+            console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Allowed: ${isAllowed}`);
+            return isAllowed;
         }
 
+        console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Default: false`);
         return false;
     }
 
