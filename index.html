@@ -4960,11 +4960,13 @@
                 ${optionsHtml}
             </select>`;
         } else if (field === 'category') {
+            let optionsHtml = '';
+            (window.orderCategoriesData || []).forEach(c => {
+                const catName = c.name || c;
+                optionsHtml += `<option value="${catName}" ${originalVal === catName ? 'selected' : ''}>${catName}</option>`;
+            });
             inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
-                <option value="Video" ${originalVal === 'Video' ? 'selected' : ''}>Video</option>
-                <option value="Hình Ảnh" ${originalVal === 'Hình Ảnh' ? 'selected' : ''}>Hình Ảnh</option>
-                <option value="Livestream" ${originalVal === 'Livestream' ? 'selected' : ''}>Livestream</option>
-                <option value="Giả Live" ${originalVal === 'Giả Live' ? 'selected' : ''}>Giả Live</option>
+                ${optionsHtml}
             </select>`;
         } else if (field === 'requester' || field === 'stylist' || field === 'assignedVideo' || field === 'assignedPhoto') {
             let optionsHtml = '<option value="-">-</option>';
