@@ -1084,59 +1084,83 @@
                 </select>
             </div>
 
-            <!-- Permissions -->
+            <!-- Permissions (synced with Role permissions) -->
             <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-2">Quyền chi tiết</label>
-                <div class="grid grid-cols-2 gap-2" id="permGroup">
-                    <label class="perm-checkbox" id="perm-view">
-                        <input type="checkbox" id="permView" value="view" checked/>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700">Xem đơn hàng</p>
-                            <p class="text-[10px] text-slate-400">Xem danh sách và chi tiết</p>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-semibold text-slate-600">Quyền chi tiết <span class="text-slate-400 font-normal">(theo nhóm quyền)</span></label>
+                    <span id="userPermRoleBadge" class="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider"></span>
+                </div>
+                <div class="space-y-3 bg-slate-50/50 rounded-xl p-3 border border-slate-100" id="permGroup">
+                    <!-- Hành động cơ bản -->
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">touch_app</span> Hành động cơ bản
+                        </p>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_view" disabled><span class="text-[10px] font-semibold">Xem danh sách</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_create" disabled><span class="text-[10px] font-semibold">Tạo mới đơn</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_delete" disabled><span class="text-[10px] font-semibold">Xóa đơn hàng</span></label>
                         </div>
-                    </label>
-                    <label class="perm-checkbox" id="perm-create">
-                        <input type="checkbox" id="permCreate" value="create"/>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700">Tạo đơn hàng</p>
-                            <p class="text-[10px] text-slate-400">Thêm đơn mới vào hệ thống</p>
+                    </div>
+                    <!-- Sửa thông tin -->
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-bold text-blue-500 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">edit_note</span> Sửa thông tin đơn hàng
+                        </p>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_requester" disabled><span class="text-[10px] font-semibold">Người yêu cầu</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_department" disabled><span class="text-[10px] font-semibold">Phòng ban</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_category" disabled><span class="text-[10px] font-semibold">Thể loại</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_title" disabled><span class="text-[10px] font-semibold">Nội dung</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_note" disabled><span class="text-[10px] font-semibold">Ghi chú</span></label>
                         </div>
-                    </label>
-                    <label class="perm-checkbox" id="perm-edit">
-                        <input type="checkbox" id="permEdit" value="edit"/>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700">Chỉnh sửa</p>
-                            <p class="text-[10px] text-slate-400">Sửa thông tin đơn hàng</p>
+                    </div>
+                    <!-- Lịch trình -->
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">calendar_month</span> Sửa lịch trình
+                        </p>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_orderDate" disabled><span class="text-[10px] font-semibold">Ngày order</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_deployDate" disabled><span class="text-[10px] font-semibold">Ngày triển khai</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_deadline" disabled><span class="text-[10px] font-semibold">Deadline</span></label>
                         </div>
-                    </label>
-                    <label class="perm-checkbox" id="perm-approve">
-                        <input type="checkbox" id="permApprove" value="approve"/>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700">Phê duyệt</p>
-                            <p class="text-[10px] text-slate-400">Duyệt / từ chối đơn hàng</p>
+                    </div>
+                    <!-- Nhân sự -->
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-bold text-teal-500 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">group</span> Sửa phân công nhân sự
+                        </p>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_stylist" disabled><span class="text-[10px] font-semibold">Stylist</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_video" disabled><span class="text-[10px] font-semibold">Video</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_photo" disabled><span class="text-[10px] font-semibold">Photo</span></label>
                         </div>
-                    </label>
-                    <label class="perm-checkbox" id="perm-delete">
-                        <input type="checkbox" id="permDelete" value="delete"/>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700">Xóa đơn hàng</p>
-                            <p class="text-[10px] text-slate-400">Xóa đơn khỏi hệ thống</p>
+                    </div>
+                    <!-- Dữ liệu nhạy cảm -->
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">shield</span> Dữ liệu nhạy cảm
+                        </p>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_status" disabled><span class="text-[10px] font-semibold">Trạng thái</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_costs" disabled><span class="text-[10px] font-semibold">Chi phí</span></label>
                         </div>
-                    </label>
-                    <label class="perm-checkbox" id="perm-report">
-                        <input type="checkbox" id="permReport" value="report"/>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700">Xem báo cáo</p>
-                            <p class="text-[10px] text-slate-400">Truy cập trang báo cáo</p>
+                    </div>
+                    <!-- Kế hoạch & Hệ thống -->
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">settings</span> Kế hoạch & Hệ thống
+                        </p>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="planning_view" disabled><span class="text-[10px] font-semibold">Xem kế hoạch</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="planning_edit" disabled><span class="text-[10px] font-semibold">Sửa kế hoạch</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="finance_view" disabled><span class="text-[10px] font-semibold">Xem tài chính</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="finance_edit" disabled><span class="text-[10px] font-semibold">Sửa tài chính</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="reports_view" disabled><span class="text-[10px] font-semibold">Xem báo cáo</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="admin_access" disabled><span class="text-[10px] font-semibold">Trang quản trị</span></label>
                         </div>
-                    </label>
-                    <label class="perm-checkbox" id="perm-admin">
-                        <input type="checkbox" id="permAdmin" value="admin"/>
-                        <div>
-                            <p class="text-xs font-semibold text-slate-700">Quản trị hệ thống</p>
-                            <p class="text-[10px] text-slate-400">Truy cập trang Admin</p>
-                        </div>
-                    </label>
+                    </div>
                 </div>
             </div>
 
@@ -1743,13 +1767,8 @@
         document.getElementById('fieldStatus').value   = u.status;
         hideModalError();
 
-        const perms = u.permissions || [];
-        ['view','create','edit','delete','approve','report','admin'].forEach(p => {
-            const cb  = document.getElementById('perm' + cap(p));
-            const lbl = document.getElementById('perm-' + p);
-            if (cb) cb.checked = perms.includes(p);
-            if (lbl) lbl.classList.toggle('checked', perms.includes(p));
-        });
+        // Load permissions from selected role (synced with Role permissions)
+        updatePermCheckboxes();
 
         document.getElementById('userModal').classList.remove('hidden');
     }
@@ -1777,18 +1796,13 @@
         const isDuplicate = users.find(u => u.empId === empId && u.id !== id);
         if (isDuplicate) return showModalError('Mã nhân viên đã tồn tại trên hệ thống.');
 
-        const permissions = ['view','create','edit','delete','approve','report','admin'].filter(p => {
-            const cb = document.getElementById('perm' + cap(p));
-            return cb && cb.checked;
-        });
-
         const btn = document.getElementById('btnSave');
         btn.disabled = true;
         btn.textContent = 'Đang lưu...';
 
         try {
             const userData = {
-                name, empId, email, phone, dept, role, status, permissions,
+                name, empId, email, phone, dept, role, status,
                 updatedAt: new Date().toISOString()
             };
             if (password) userData.password = password;
@@ -2347,21 +2361,28 @@
         }
     });
 
-    const ROLE_PERMS = {
-        admin:   ['view','create','edit','delete','approve','report','admin'],
-        manager: ['view','create','edit','approve','report'],
-        user:    ['view','create'],
-        viewer:  ['view'],
-    };
-
     window.updatePermCheckboxes = function() {
-        const role = document.getElementById('fieldRole').value;
-        const preset = ROLE_PERMS[role] || [];
-        ['view','create','edit','delete','approve','report','admin'].forEach(p => {
-            const cb = document.getElementById('perm' + cap(p));
-            if (cb) cb.checked = preset.includes(p);
-            const lbl = document.getElementById('perm-' + p);
-            if (lbl) lbl.classList.toggle('checked', preset.includes(p));
+        const roleSlug = document.getElementById('fieldRole').value;
+        const badge = document.getElementById('userPermRoleBadge');
+        
+        // Find the role data from systemRoles (Firestore)
+        const roleData = systemRoles.find(r => r.slug === roleSlug || r.id === roleSlug);
+        const perms = roleData ? (roleData.permissions || {}) : {};
+        
+        // Update badge
+        if (badge) badge.textContent = roleData ? roleData.name : roleSlug;
+        
+        // Update all permission checkboxes
+        document.querySelectorAll('#permGroup [data-user-perm]').forEach(cb => {
+            const permKey = cb.getAttribute('data-user-perm');
+            const isGranted = !!perms[permKey];
+            cb.checked = isGranted;
+            // Visual feedback on parent label
+            const label = cb.closest('.perm-checkbox');
+            if (label) {
+                label.classList.toggle('checked', isGranted);
+                label.style.opacity = isGranted ? '1' : '0.5';
+            }
         });
     }
 
