@@ -4229,20 +4229,20 @@
                                 ${data.code || '-'}
                             </div>
                         </td>
-                        <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'requester')">
+                        <td class="${checkPermission('requester') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('requester') ? `onclick="startInlineEdit(this, '${dataStr}', 'requester')"` : ''}>
                             <div class="display-val flex items-center gap-2">
                                 <div class="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">${initials}</div>
                                 <div class="text-[13px] font-semibold text-on-surface">${getUserBadge(data.requester)}</div>
                             </div>
                         </td>
-                        <td class="text-[12px] font-medium text-slate-500 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'department')">
+                        <td class="text-[12px] font-medium text-slate-500 ${checkPermission('department') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('department') ? `onclick="startInlineEdit(this, '${dataStr}', 'department')"` : ''}>
                             <span class="display-val">${data.department || '-'}</span>
                         </td>
-                        <td class="text-[12px] font-semibold text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'category')">
+                        <td class="text-[12px] font-semibold text-slate-600 ${checkPermission('category') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('category') ? `onclick="startInlineEdit(this, '${dataStr}', 'category')"` : ''}>
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
-                        <td class="max-w-[200px] cursor-pointer hover:bg-slate-100/50 transition-all" 
-                            onclick="openEditModal('${dataStr}')"
+                        <td class="max-w-[200px] ${checkPermission('orders_edit_info') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" 
+                            ${checkPermission('orders_edit_info') ? `onclick="openEditModal('${dataStr}')"` : ''}
                             onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
                             onmouseleave="window.hidePremiumTooltip()">
                             <div class="display-val">
@@ -4250,31 +4250,31 @@
                                 <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${(data.content || '').replace(/<[^>]*>/g, ' ')}</div>
                             </div>
                         </td>
-                        <td class="text-[12px] text-slate-500 italic cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'note')">
+                        <td class="text-[12px] text-slate-500 italic ${checkPermission('note') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('note') ? `onclick="startInlineEdit(this, '${dataStr}', 'note')"` : ''}>
                             <span class="display-val truncate max-w-[150px] inline-block">${data.note || '-'}</span>
                         </td>
                         <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'orderDate')">
                             <div class="display-val">${orderText}</div>
                         </td>
-                        <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deployDate')">
+                        <td class="text-[11px] text-slate-500 font-bold ${checkPermission('deployDate') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('deployDate') ? `onclick="startInlineEdit(this, '${dataStr}', 'deployDate')"` : ''}>
                             <div class="display-val">${deployText}</div>
                         </td>
                         <td class="text-[12px] font-bold text-primary cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
                             <div class="display-val">${deadlineText}</div>
                         </td>
-                        <td class="cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'status')">
+                        <td class="${checkPermission('status') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('status') ? `onclick="startInlineEdit(this, '${dataStr}', 'status')"` : ''}>
                             <div class="display-val">${statusBadgeFull}</div>
                         </td>
                         <td class="${checkPermission('costs') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} text-[12px] font-bold text-emerald-600 transition-all text-right pr-4" onclick="${checkPermission('costs') ? `openCostModal('${dataStr}')` : ''}">
                             <span class="display-val">${formatCurrency(data.totalCost || 0)}</span>
                         </td>
-                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'stylist')">
+                        <td class="text-[12px] font-medium text-slate-600 ${checkPermission('stylist') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('stylist') ? `onclick="startInlineEdit(this, '${dataStr}', 'stylist')"` : ''}>
                             <div class="display-val">${getUserBadge(data.stylist)}</div>
                         </td>
-                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')">
+                        <td class="text-[12px] font-medium text-slate-600 ${checkPermission('assignedVideo') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('assignedVideo') ? `onclick="startInlineEdit(this, '${dataStr}', 'assignedVideo')"` : ''}>
                             <div class="display-val">${getUserBadge(data.assignedVideo)}</div>
                         </td>
-                        <td class="text-[12px] font-medium text-slate-600 cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')">
+                        <td class="text-[12px] font-medium text-slate-600 ${checkPermission('assignedPhoto') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('assignedPhoto') ? `onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')"` : ''}>
                             <div class="display-val">${getUserBadge(data.assignedPhoto)}</div>
                         </td>
                         <td class="text-right">
