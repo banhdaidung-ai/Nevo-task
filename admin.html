@@ -814,7 +814,7 @@
 
 <!-- ====== ROLE MODAL ====== -->
 <div id="roleModal" class="modal-overlay hidden">
-    <div class="modal-box !max-w-[600px]">
+    <div class="modal-box !max-w-[720px]">
         <div class="p-6 border-b border-slate-100 flex items-center justify-between">
             <h2 id="roleModalTitle" class="font-headline font-bold text-slate-900">Thiết lập nhóm quyền</h2>
             <button onclick="closeRoleModal()" class="p-2 hover:bg-slate-100 rounded-lg transition-colors"><span class="material-symbols-outlined text-slate-400">close</span></button>
@@ -843,33 +843,116 @@
                 
                 <div class="grid grid-cols-2 gap-3" id="rolePermsGrid">
                     <!-- Orders -->
-                    <div class="space-y-2 col-span-2">
+                    <div class="space-y-3 col-span-2">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">📦 Quản lý Đơn hàng</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label class="perm-checkbox">
-                                <input type="checkbox" data-perm="orders_view">
-                                <span class="text-xs font-semibold">Xem danh sách</span>
-                            </label>
-                            <label class="perm-checkbox">
-                                <input type="checkbox" data-perm="orders_create">
-                                <span class="text-xs font-semibold">Tạo mới đơn</span>
-                            </label>
-                            <label class="perm-checkbox">
-                                <input type="checkbox" data-perm="orders_edit_info">
-                                <span class="text-xs font-semibold">Sửa thông tin cơ bản</span>
-                            </label>
-                            <label class="perm-checkbox">
-                                <input type="checkbox" data-perm="orders_edit_status">
-                                <span class="text-xs font-semibold">Sửa trạng thái</span>
-                            </label>
-                            <label class="perm-checkbox">
-                                <input type="checkbox" data-perm="orders_edit_costs">
-                                <span class="text-xs font-semibold">Sửa chi phí</span>
-                            </label>
-                            <label class="perm-checkbox">
-                                <input type="checkbox" data-perm="orders_delete">
-                                <span class="text-xs font-semibold">Xóa đơn hàng</span>
-                            </label>
+                        
+                        <!-- Hành động cơ bản -->
+                        <div class="space-y-1.5">
+                            <p class="text-[9px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[12px]">touch_app</span> Hành động cơ bản
+                            </p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_view">
+                                    <span class="text-xs font-semibold">Xem danh sách</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_create">
+                                    <span class="text-xs font-semibold">Tạo mới đơn</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_delete">
+                                    <span class="text-xs font-semibold">Xóa đơn hàng</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sửa thông tin đơn hàng -->
+                        <div class="space-y-1.5">
+                            <p class="text-[9px] font-bold text-blue-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[12px]">edit_note</span> Sửa thông tin đơn hàng
+                            </p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_requester">
+                                    <span class="text-xs font-semibold">Người yêu cầu</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_department">
+                                    <span class="text-xs font-semibold">Phòng ban</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_category">
+                                    <span class="text-xs font-semibold">Thể loại</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_title">
+                                    <span class="text-xs font-semibold">Nội dung</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_note">
+                                    <span class="text-xs font-semibold">Ghi chú</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sửa lịch trình -->
+                        <div class="space-y-1.5">
+                            <p class="text-[9px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[12px]">calendar_month</span> Sửa lịch trình
+                            </p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_orderDate">
+                                    <span class="text-xs font-semibold">Ngày order</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_deployDate">
+                                    <span class="text-xs font-semibold">Ngày triển khai</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_deadline">
+                                    <span class="text-xs font-semibold">Deadline</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sửa phân công nhân sự -->
+                        <div class="space-y-1.5">
+                            <p class="text-[9px] font-bold text-teal-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[12px]">group</span> Sửa phân công nhân sự
+                            </p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_stylist">
+                                    <span class="text-xs font-semibold">Stylist</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_video">
+                                    <span class="text-xs font-semibold">Video</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_photo">
+                                    <span class="text-xs font-semibold">Photo</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sửa dữ liệu nhạy cảm -->
+                        <div class="space-y-1.5">
+                            <p class="text-[9px] font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[12px]">shield</span> Dữ liệu nhạy cảm
+                            </p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_status">
+                                    <span class="text-xs font-semibold">Trạng thái</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_costs">
+                                    <span class="text-xs font-semibold">Chi phí</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -1193,10 +1276,10 @@
     ];
 
     const DEFAULT_ROLES = [
-        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_edit_info:true, orders_edit_status:true, orders_edit_costs:true, orders_delete:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, admin_access:true } },
-        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_edit_info:true, orders_edit_status:true, orders_edit_costs:false, orders_delete:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, admin_access:false } },
-        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_edit_info:true, orders_edit_status:false, orders_edit_costs:false, orders_delete:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, admin_access:false } },
-        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_edit_info:false, orders_edit_status:false, orders_edit_costs:false, orders_delete:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, admin_access:false } }
+        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, admin_access:true } },
+        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, admin_access:false } },
+        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, admin_access:false } },
+        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:false, orders_edit_title:false, orders_edit_note:false, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, admin_access:false } }
     ];
 
     const DEFAULT_CATEGORIES = [

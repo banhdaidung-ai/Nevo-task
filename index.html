@@ -3283,24 +3283,24 @@
         const permissionMap = {
             'costs': 'orders_edit_costs',
             'status': 'orders_edit_status',
-            'orderCode': 'orders_edit_info',
-            'customer': 'orders_edit_info',
-            'product': 'orders_edit_info',
-            'quantity': 'orders_edit_info',
-            'orderDate': 'orders_edit_info',
-            'deadline': 'orders_edit_info',
-            'deploymentDate': 'orders_edit_info',
-            'category': 'orders_edit_info',
-            'dept': 'orders_edit_info',
-            'note': 'orders_edit_info',
-            'stylist': 'orders_edit_info',
-            'assignedVideo': 'orders_edit_info',
-            'assignedPhoto': 'orders_edit_info',
-            'requester': 'orders_edit_info',
-            'department': 'orders_edit_info',
-            'deployDate': 'orders_edit_info',
-            'title': 'orders_edit_info',
-            'content': 'orders_edit_info',
+            'orderCode': 'orders_edit_title',
+            'customer': 'orders_edit_requester',
+            'product': 'orders_edit_category',
+            'quantity': 'orders_edit_title',
+            'orderDate': 'orders_edit_orderDate',
+            'deadline': 'orders_edit_deadline',
+            'deploymentDate': 'orders_edit_deployDate',
+            'category': 'orders_edit_category',
+            'dept': 'orders_edit_department',
+            'note': 'orders_edit_note',
+            'stylist': 'orders_edit_stylist',
+            'assignedVideo': 'orders_edit_video',
+            'assignedPhoto': 'orders_edit_photo',
+            'requester': 'orders_edit_requester',
+            'department': 'orders_edit_department',
+            'deployDate': 'orders_edit_deployDate',
+            'title': 'orders_edit_title',
+            'content': 'orders_edit_title',
             'delete': 'orders_delete',
             'create': 'orders_create',
             'planning_view': 'planning_view',
@@ -3312,6 +3312,18 @@
         };
 
         const permKey = permissionMap[field] || field;
+
+        // Special case: check if user has ANY edit permission for orders
+        if (permKey === 'orders_edit_any') {
+            const editPerms = ['orders_edit_requester','orders_edit_department','orders_edit_category','orders_edit_title','orders_edit_note','orders_edit_orderDate','orders_edit_deployDate','orders_edit_deadline','orders_edit_stylist','orders_edit_video','orders_edit_photo','orders_edit_status','orders_edit_costs'];
+            if (window.appRoles) {
+                const userRoleData = window.appRoles[(localStorage.getItem('nevo_role') || 'user').toLowerCase()];
+                if (userRoleData && userRoleData.permissions) {
+                    return editPerms.some(p => !!userRoleData.permissions[p]);
+                }
+            }
+            return false;
+        }
 
         // 1. Check if roles data is loaded and has permissions
         if (window.appRoles && window.appRoles[userRoleSlug]) {
@@ -4245,8 +4257,8 @@
                         <td class="text-[12px] font-semibold text-slate-600 ${checkPermission('category') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('category') ? `onclick="startInlineEdit(this, '${dataStr}', 'category')"` : ''}>
                             <span class="display-val">${getCategoryBadge(data.category)}</span>
                         </td>
-                        <td class="max-w-[200px] ${checkPermission('orders_edit_info') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" 
-                            ${checkPermission('orders_edit_info') ? `onclick="openEditModal('${dataStr}')"` : ''}
+                        <td class="max-w-[200px] ${checkPermission('title') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" 
+                            ${checkPermission('title') ? `onclick="openEditModal('${dataStr}')"` : ''}
                             onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
                             onmouseleave="window.hidePremiumTooltip()">
                             <div class="display-val">
@@ -4283,7 +4295,7 @@
                         </td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-1">
-                                ${checkPermission('orders_edit_info') ? `<button onclick="openEditModal('${dataStr}')" class="p-1.5 hover:bg-slate-100 rounded-full hover:text-primary transition-all"><span class="material-symbols-outlined text-[18px]">edit</span></button>` : ''}
+                                ${checkPermission('orders_edit_any') ? `<button onclick="openEditModal('${dataStr}')" class="p-1.5 hover:bg-slate-100 rounded-full hover:text-primary transition-all"><span class="material-symbols-outlined text-[18px]">edit</span></button>` : ''}
                                 ${checkPermission('delete') ? `<button onclick="deleteOrder('${data.id}', '${data.code}')" class="p-1.5 hover:bg-red-50 rounded-full hover:text-red-600 transition-all"><span class="material-symbols-outlined text-[18px]">delete</span></button>` : ''}
                             </div>
                         </td>
@@ -4654,7 +4666,7 @@
     };
 
     window.openEditModal = function(dataStr) {
-        if (!checkPermission('orders_edit_info')) {
+        if (!checkPermission('orders_edit_any')) {
             showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa đơn hàng.', 'block', 'text-error');
             return;
         }
@@ -4838,7 +4850,7 @@
     };
 
     window.saveEditOrder = async function() {
-        if (!checkPermission('orders_edit_info')) {
+        if (!checkPermission('orders_edit_any')) {
             showToast('Từ chối!', 'Bạn không có quyền lưu chỉnh sửa.', 'block', 'text-error');
             return;
         }
