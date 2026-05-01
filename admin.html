@@ -747,6 +747,15 @@
                                 <input type="time" id="owEndTime" class="form-input" value="17:00" onchange="saveOrderWindowConfig()">
                             </div>
                         </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">Thể loại được mở</label>
+                            <div id="owAutoCategoryList" class="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5 max-h-[140px] overflow-y-auto">
+                                <label class="flex items-center gap-2 cursor-pointer hover:bg-white rounded-lg px-2 py-1 transition-colors">
+                                    <input type="checkbox" checked value="all" class="ow-auto-cat accent-teal-600 w-4 h-4 rounded" onchange="toggleAutoAllCategory(this)">
+                                    <span class="text-xs font-medium text-slate-700">Tất cả thể loại</span>
+                                </label>
+                            </div>
+                        </div>
                         <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
                             <p class="text-[11px] text-slate-500"><span class="material-symbols-outlined text-[14px] align-middle text-teal-500">info</span> Hệ thống sẽ tự mở bảng đơn hàng vào ngày và giờ đã chọn. Ngoài thời gian này, User không thể tạo đơn mới.</p>
                         </div>
@@ -772,6 +781,15 @@
                             <select id="owManualTarget" class="form-input">
                                 <option value="all">Tất cả người dùng</option>
                             </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">Thể loại đơn hàng</label>
+                            <div id="owManualCategoryList" class="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1.5 max-h-[140px] overflow-y-auto">
+                                <label class="flex items-center gap-2 cursor-pointer hover:bg-white rounded-lg px-2 py-1 transition-colors">
+                                    <input type="checkbox" checked value="all" class="ow-manual-cat accent-amber-600 w-4 h-4 rounded" onchange="toggleManualAllCategory(this)">
+                                    <span class="text-xs font-medium text-slate-700">Tất cả thể loại</span>
+                                </label>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-2">Thời lượng mở</label>
@@ -835,6 +853,7 @@
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bắt đầu</th>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kết thúc</th>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đối tượng</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thể loại</th>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lý do</th>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trạng thái</th>
                                 <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
@@ -2630,6 +2649,14 @@
                 document.getElementById('owScheduledDay').value = data.scheduledDay ?? 4;
                 document.getElementById('owStartTime').value = data.startTime || '08:00';
                 document.getElementById('owEndTime').value = data.endTime || '17:00';
+                // Restore category checkboxes
+                if (data.allowedCategories && data.allowedCategories.length > 0 && !data.allowedCategories.includes('all')) {
+                    const allCb = document.querySelector('#owAutoCategoryList input[value="all"]');
+                    if (allCb) allCb.checked = false;
+                    document.querySelectorAll('#owAutoCategoryList input.ow-auto-cat:not([value="all"])').forEach(cb => {
+                        cb.checked = data.allowedCategories.includes(cb.value);
+                    });
+                }
             }
         } catch (e) { console.error('Load OW config error:', e); }
         updateOwStatus();
@@ -2638,16 +2665,18 @@
     async function saveOrderWindowConfig() {
         if (!window.db) return;
         try {
+            const allowedCategories = getSelectedCategories('ow-auto-cat');
             const config = {
                 autoEnabled: document.getElementById('owAutoEnabled').checked,
                 scheduledDay: parseInt(document.getElementById('owScheduledDay').value),
                 startTime: document.getElementById('owStartTime').value,
                 endTime: document.getElementById('owEndTime').value,
+                allowedCategories: allowedCategories,
                 updatedAt: window.fs.serverTimestamp()
             };
             await window.fs.setDoc(window.fs.doc(window.db, OW_CONFIG_COLLECTION, 'settings'), config, { merge: true });
             showToast('Đã lưu cài đặt lịch mở đơn!');
-            if (window.logActivity) window.logActivity('update', 'Cập nhật lịch mở đơn', `Auto=${config.autoEnabled}, Day=${config.scheduledDay}, ${config.startTime}-${config.endTime}`);
+            if (window.logActivity) window.logActivity('update', 'Cập nhật lịch mở đơn', `Auto=${config.autoEnabled}, Day=${config.scheduledDay}, ${config.startTime}-${config.endTime}, Categories=${allowedCategories.join(',')}`);
             checkAndCreateAutoSession();
         } catch (e) {
             console.error('Save OW config error:', e);
@@ -2661,6 +2690,7 @@
         const duration = parseInt(document.getElementById('owManualDuration').value) || 60;
         const unit = document.getElementById('owManualUnit').value;
         const reason = document.getElementById('owManualReason').value || 'Mở thủ công bởi Admin';
+        const targetCategories = getSelectedCategories('ow-manual-cat');
 
         let ms = duration * 60 * 1000;
         if (unit === 'hours') ms = duration * 60 * 60 * 1000;
@@ -2677,12 +2707,13 @@
                 startTime: window.fs.Timestamp.fromDate(now),
                 endTime: window.fs.Timestamp.fromDate(endTime),
                 targetUsers: [target],
+                targetCategories: targetCategories,
                 reason: reason,
                 createdBy: userName,
                 createdAt: window.fs.serverTimestamp()
             });
             showToast('Đã mở phiên tạo đơn thành công!');
-            if (window.logActivity) window.logActivity('create', 'Mở phiên tạo đơn thủ công', `Đối tượng: ${target === 'all' ? 'Tất cả' : target}, Thời lượng: ${duration} ${unit}, Lý do: ${reason}`);
+            if (window.logActivity) window.logActivity('create', 'Mở phiên tạo đơn thủ công', `Đối tượng: ${target === 'all' ? 'Tất cả' : target}, Thể loại: ${targetCategories.join(', ')}, Thời lượng: ${duration} ${unit}, Lý do: ${reason}`);
             document.getElementById('owManualReason').value = '';
             loadOrderWindowSessions();
         } catch (e) {
@@ -2745,11 +2776,14 @@
                 ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 animate-pulse">● Đang mở</span>'
                 : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">Đã hết hạn</span>';
             const target = (s.targetUsers && s.targetUsers[0] === 'all') ? 'Tất cả' : (s.targetUsers || []).join(', ');
+            const cats = s.targetCategories || ['all'];
+            const catDisplay = cats.includes('all') ? '<span class="text-slate-400">Tất cả</span>' : cats.map(c => `<span class="inline-flex px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 text-[10px] font-medium mr-0.5 mb-0.5">${c}</span>`).join('');
             return `<tr class="table-row text-[12px]">
                 <td class="px-5 py-3">${typeBadge}</td>
                 <td class="px-5 py-3 text-slate-600 font-medium">${fmt(s.startTime)}</td>
                 <td class="px-5 py-3 text-slate-600 font-medium">${fmt(s.endTime)}</td>
                 <td class="px-5 py-3 text-slate-600">${target}</td>
+                <td class="px-5 py-3">${catDisplay}</td>
                 <td class="px-5 py-3 text-slate-500 italic">${s.reason || '--'}</td>
                 <td class="px-5 py-3">${statusBadge}</td>
                 <td class="px-5 py-3 text-right">${isActive ? `<button onclick="closeActiveSession('${s.id}')" class="btn-icon-sm btn-delete" title="Đóng sớm"><span class="material-symbols-outlined text-[16px]">close</span></button>` : ''}</td>
@@ -2867,6 +2901,7 @@
                 startTime: window.fs.Timestamp.fromDate(startDate),
                 endTime: window.fs.Timestamp.fromDate(endDate),
                 targetUsers: ['all'],
+                targetCategories: config.allowedCategories || ['all'],
                 reason: 'Lịch tự động ' + ['Chủ Nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][config.scheduledDay],
                 dateKey: todayStr,
                 createdBy: 'Hệ thống (Auto)',
@@ -2895,6 +2930,84 @@
     // Auto-check scheduler every 60 seconds
     setInterval(() => { checkAndCreateAutoSession(); }, 60000);
     setTimeout(() => { checkAndCreateAutoSession(); }, 3000);
+
+    // ===== CATEGORY CHECKBOX HELPERS =====
+    function getSelectedCategories(cssClass) {
+        const allCb = document.querySelector(`.${cssClass}[value="all"]`);
+        if (allCb && allCb.checked) return ['all'];
+        const checked = [...document.querySelectorAll(`.${cssClass}:checked:not([value="all"])`)].map(cb => cb.value);
+        return checked.length > 0 ? checked : ['all'];
+    }
+
+    window.toggleAutoAllCategory = function(el) {
+        if (el.checked) {
+            document.querySelectorAll('#owAutoCategoryList input.ow-auto-cat:not([value="all"])').forEach(cb => cb.checked = false);
+        }
+        saveOrderWindowConfig();
+    };
+    window.toggleManualAllCategory = function(el) {
+        if (el.checked) {
+            document.querySelectorAll('#owManualCategoryList input.ow-manual-cat:not([value="all"])').forEach(cb => cb.checked = false);
+        }
+    };
+
+    // Auto-uncheck "all" when individual category is checked
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('ow-auto-cat') && e.target.value !== 'all' && e.target.checked) {
+            const allCb = document.querySelector('#owAutoCategoryList input[value="all"]');
+            if (allCb) allCb.checked = false;
+            saveOrderWindowConfig();
+        }
+        if (e.target.classList.contains('ow-manual-cat') && e.target.value !== 'all' && e.target.checked) {
+            const allCb = document.querySelector('#owManualCategoryList input[value="all"]');
+            if (allCb) allCb.checked = false;
+        }
+    });
+
+    async function populateCategoryCheckboxes() {
+        if (!window.db) return;
+        try {
+            const snap = await window.fs.getDocs(window.fs.query(window.fs.collection(window.db, 'order_categories'), window.fs.orderBy('name')));
+            const cats = [];
+            snap.forEach(d => { const data = d.data(); if (data.name) cats.push(data.name); });
+
+            // Auto card
+            const autoList = document.getElementById('owAutoCategoryList');
+            if (autoList) {
+                const allLabel = autoList.querySelector('label');
+                autoList.innerHTML = '';
+                if (allLabel) autoList.appendChild(allLabel);
+                cats.forEach(name => {
+                    autoList.innerHTML += `<label class="flex items-center gap-2 cursor-pointer hover:bg-white rounded-lg px-2 py-1 transition-colors">
+                        <input type="checkbox" value="${name}" class="ow-auto-cat accent-teal-600 w-4 h-4 rounded">
+                        <span class="text-xs font-medium text-slate-700">${name}</span>
+                    </label>`;
+                });
+            }
+
+            // Manual card
+            const manualList = document.getElementById('owManualCategoryList');
+            if (manualList) {
+                const allLabel = manualList.querySelector('label');
+                manualList.innerHTML = '';
+                if (allLabel) manualList.appendChild(allLabel);
+                cats.forEach(name => {
+                    manualList.innerHTML += `<label class="flex items-center gap-2 cursor-pointer hover:bg-white rounded-lg px-2 py-1 transition-colors">
+                        <input type="checkbox" value="${name}" class="ow-manual-cat accent-amber-600 w-4 h-4 rounded">
+                        <span class="text-xs font-medium text-slate-700">${name}</span>
+                    </label>`;
+                });
+            }
+        } catch (e) { console.error('Populate categories error:', e); }
+    }
+
+    // Init: load categories then config
+    setTimeout(async () => {
+        await populateCategoryCheckboxes();
+        await populateUserDropdown();
+        await loadOrderWindowConfig();
+        await loadOrderWindowSessions();
+    }, 2500);
 </script>
 </body>
 </html>

@@ -3298,7 +3298,7 @@
 
     // ===== ORDER WINDOW CHECK SYSTEM =====
     let indexOwInterval = null;
-    window.checkOrderWindowOpen = async function() {
+    window.checkOrderWindowOpen = async function(category) {
         const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
         if (role === 'admin') return { allowed: true };
         if (!window.db) return { allowed: true };
@@ -3311,18 +3311,36 @@
             );
             const snap = await window.fsGetDocs(q);
             let found = null;
+            let openCategories = [];
             snap.forEach(d => {
                 const s = d.data();
                 const end = s.endTime?.toDate ? s.endTime.toDate() : new Date(s.endTime);
                 if (end > now) {
                     const targets = s.targetUsers || ['all'];
                     if (targets.includes('all') || targets.includes(userId)) {
-                        found = { allowed: true, endTime: end, reason: s.reason || '' };
+                        const cats = s.targetCategories || ['all'];
+                        // Collect all open categories from all active sessions
+                        if (cats.includes('all')) {
+                            openCategories = ['all'];
+                        } else {
+                            cats.forEach(c => { if (!openCategories.includes(c) && !openCategories.includes('all')) openCategories.push(c); });
+                        }
+                        // Check if specific category is allowed
+                        if (!category || cats.includes('all') || cats.includes(category)) {
+                            found = { allowed: true, endTime: end, reason: s.reason || '', targetCategories: cats };
+                        }
                     }
                 }
             });
-            if (found) return found;
-            return { allowed: false };
+            if (found) {
+                found.openCategories = openCategories;
+                return found;
+            }
+            // If we have open categories but the specific category isn't in them
+            if (openCategories.length > 0 && category) {
+                return { allowed: false, openCategories: openCategories, categoryBlocked: true };
+            }
+            return { allowed: false, openCategories: [] };
         } catch (e) {
             console.error('Check OW error:', e);
             return { allowed: true };
@@ -3342,7 +3360,10 @@
             openBanner.classList.remove('hidden');
             closedBanner.classList.add('hidden');
             if (createBtn) { createBtn.disabled = false; createBtn.style.opacity = '1'; createBtn.title = ''; }
-            document.getElementById('indexOwReason').textContent = result.reason;
+            // Show categories info
+            const cats = result.openCategories || result.targetCategories || ['all'];
+            const catText = cats.includes('all') ? '' : ' | Thể loại: ' + cats.join(', ');
+            document.getElementById('indexOwReason').textContent = (result.reason || '') + catText;
             if (indexOwInterval) clearInterval(indexOwInterval);
             function tick() {
                 const diff = result.endTime - new Date();
@@ -3398,6 +3419,7 @@
                 startTime: window.fsTimestamp.fromDate(startD),
                 endTime: window.fsTimestamp.fromDate(endD),
                 targetUsers:['all'],
+                targetCategories: config.allowedCategories || ['all'],
                 reason:'Lịch tự động '+['CN','T2','T3','T4','T5','T6','T7'][config.scheduledDay],
                 dateKey:todayStr, createdBy:'Hệ thống (Auto)', createdAt:window.fsServerTimestamp()
             });
@@ -3794,10 +3816,15 @@
             showToast('Từ chối!', 'Bạn không có quyền tạo đơn hàng.', 'block', 'text-error');
             return;
         }
-        // Check Order Window
-        const owResult = await window.checkOrderWindowOpen();
+        // Check Order Window with selected category
+        const category = document.getElementById('orderCategory').value;
+        const owResult = await window.checkOrderWindowOpen(category);
         if (!owResult.allowed) {
-            showToast('Bảng đơn đang đóng!', 'Hiện tại chưa đến thời gian tạo đơn. Vui lòng liên hệ quản trị viên.', 'lock', 'text-error');
+            if (owResult.categoryBlocked) {
+                showToast('Thể loại bị khóa!', `Thể loại "${category}" hiện không được phép tạo đơn. Thể loại đang mở: ${(owResult.openCategories||[]).join(', ')}`, 'block', 'text-error');
+            } else {
+                showToast('Bảng đơn đang đóng!', 'Hiện tại chưa đến thời gian tạo đơn. Vui lòng liên hệ quản trị viên.', 'lock', 'text-error');
+            }
             return;
         }
         const title = document.getElementById('orderTitle').value;
