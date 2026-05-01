@@ -1380,7 +1380,7 @@
 <!-- ====== FIREBASE SYSTEM ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch, limit, Timestamp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -1398,7 +1398,7 @@
     window.db = db;
     window.fs = {
         collection, addDoc, getDocs, onSnapshot, query, orderBy, 
-        serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch
+        serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch, limit, Timestamp
     };
     
     console.log("Firebase System Initialized");
