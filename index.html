@@ -928,11 +928,12 @@
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-widest opacity-80">Bảng đơn đang mở</p>
                         <p class="text-sm font-semibold" id="indexOwReason"></p>
+                        <p class="text-[11px] text-white/80 font-medium mt-0.5 empty:hidden" id="indexOwUpcoming"></p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="text-2xl font-extrabold text-white font-headline" id="indexOwTimer">00:00:00</span>
-                    <span class="text-[10px] text-white/70 uppercase tracking-widest">còn lại</span>
+                    <span class="text-[10px] text-white/70 uppercase tracking-widest" id="indexOwTimerLabel">còn lại</span>
                 </div>
             </div>
         </div>
@@ -3312,6 +3313,7 @@
             const snap = await window.fsGetDocs(q);
             let found = null;
             let openCategories = [];
+            let shortestEnd = new Date(2100, 0, 1);
             snap.forEach(d => {
                 const s = d.data();
                 const end = s.endTime?.toDate ? s.endTime.toDate() : new Date(s.endTime);
@@ -3327,7 +3329,10 @@
                         }
                         // Check if specific category is allowed
                         if (!category || cats.includes('all') || cats.includes(category)) {
-                            found = { allowed: true, endTime: end, reason: s.reason || '', targetCategories: cats };
+                            if (end < shortestEnd) {
+                                shortestEnd = end;
+                                found = { allowed: true, endTime: end, reason: s.reason || '', targetCategories: cats };
+                            }
                         }
                     }
                 }
@@ -3381,15 +3386,38 @@
         if (!openBanner || !closedBanner) return;
         if (role === 'admin') { openBanner.classList.add('hidden'); closedBanner.classList.add('hidden'); return; }
 
+        let upcomingText = '';
+        try {
+            const configSnap = await window.fsGetDoc(window.fsDoc(window.db, 'order_window_config', 'settings'));
+            if (configSnap.exists()) {
+                const config = configSnap.data();
+                if (config.autoEnabled) {
+                    const dayNames = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+                    const dayName = config.scheduledDay === -1 ? 'Hằng ngày' : dayNames[config.scheduledDay];
+                    upcomingText = `Lịch tự động tiếp theo: ${dayName} (${config.startTime || '08:00'} - ${config.endTime || '17:00'})`;
+                    
+                    const nextOpenEl = document.getElementById('indexOwNextOpen');
+                    if (nextOpenEl) nextOpenEl.textContent = upcomingText;
+                }
+            }
+        } catch(e) {}
+
         const result = await window.checkOrderWindowOpen();
         if (result.allowed && result.endTime) {
             openBanner.classList.remove('hidden');
             closedBanner.classList.add('hidden');
             if (createBtn) { createBtn.disabled = false; createBtn.style.opacity = '1'; createBtn.title = ''; }
-            // Show categories info
+            
             const cats = result.openCategories || result.targetCategories || ['all'];
-            const catText = cats.includes('all') ? '' : ' | Thể loại: ' + cats.join(', ');
-            document.getElementById('indexOwReason').textContent = (result.reason || '') + catText;
+            let catText = cats.includes('all') ? 'Tất cả thể loại' : cats.join(', ');
+            
+            document.getElementById('indexOwReason').textContent = (result.reason || '') + ' | ' + catText;
+            
+            const upcomingEl = document.getElementById('indexOwUpcoming');
+            if (upcomingEl && upcomingText) {
+                upcomingEl.textContent = upcomingText;
+            }
+
             if (indexOwInterval) clearInterval(indexOwInterval);
             function tick() {
                 const diff = result.endTime - new Date();
@@ -3398,10 +3426,25 @@
                     if (createBtn) { createBtn.disabled = true; createBtn.style.opacity = '0.5'; createBtn.title = 'Bảng đơn đã đóng'; }
                     return;
                 }
-                const h = String(Math.floor(diff/3600000)).padStart(2,'0');
-                const m = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
-                const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
-                document.getElementById('indexOwTimer').textContent = h+':'+m+':'+s;
+                
+                const timerEl = document.getElementById('indexOwTimer');
+                const labelEl = document.getElementById('indexOwTimerLabel');
+                
+                if (diff > 30 * 24 * 60 * 60 * 1000) {
+                    timerEl.textContent = 'Mở 24/7';
+                    timerEl.classList.remove('text-2xl');
+                    timerEl.classList.add('text-lg');
+                    if (labelEl) labelEl.classList.add('hidden');
+                    clearInterval(indexOwInterval);
+                } else {
+                    timerEl.classList.add('text-2xl');
+                    timerEl.classList.remove('text-lg');
+                    if (labelEl) labelEl.classList.remove('hidden');
+                    const h = String(Math.floor(diff/3600000)).padStart(2,'0');
+                    const m = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+                    const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+                    timerEl.textContent = h+':'+m+':'+s;
+                }
             }
             tick();
             indexOwInterval = setInterval(tick, 1000);
