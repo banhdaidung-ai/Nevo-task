@@ -3347,6 +3347,32 @@
         }
     };
 
+    window.updateOrderCategoryDropdown = async function() {
+        if (!window.orderCategoriesData) return;
+        const result = await window.checkOrderWindowOpen();
+        let allowedCats = window.orderCategoriesData;
+        if (!result.allowed) {
+            allowedCats = [];
+        } else if (result.openCategories && !result.openCategories.includes('all')) {
+            allowedCats = window.orderCategoriesData.filter(c => result.openCategories.includes(c.name));
+        }
+        
+        const catEl = document.getElementById('orderCategory');
+        if (catEl) {
+            const currentVal = catEl.value;
+            catEl.innerHTML = '<option value="">- Chọn thể loại -</option>';
+            allowedCats.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.name;
+                opt.textContent = cat.name;
+                catEl.appendChild(opt);
+            });
+            if (allowedCats.some(c => c.name === currentVal)) {
+                catEl.value = currentVal;
+            }
+        }
+    };
+
     window.updateIndexOwBanner = async function() {
         const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
         const openBanner = document.getElementById('indexOwBanner');
@@ -3668,6 +3694,7 @@
 
             // SPECIAL LOGIC FOR PAGES
             if (pageId === 'create-order') {
+                if (window.updateOrderCategoryDropdown) window.updateOrderCategoryDropdown();
                 const role = localStorage.getItem('nevo_role') || 'user';
                 const userName = localStorage.getItem('nevo_user') || '';
                 const userDept = localStorage.getItem('nevo_dept') || '';
@@ -4742,7 +4769,11 @@
                     seenNames.add(data.name.toLowerCase());
                 }
             });
-            populateDropdown('orderCategory', window.orderCategoriesData, '- Chọn thể loại -');
+            if (window.updateOrderCategoryDropdown) {
+                window.updateOrderCategoryDropdown();
+            } else {
+                populateDropdown('orderCategory', window.orderCategoriesData, '- Chọn thể loại -');
+            }
             populateDropdown('editOrderCategory', window.orderCategoriesData, '- Chọn thể loại -');
             populateDropdown('budgetFilterCategory', window.orderCategoriesData, 'Tất cả hạng mục', 'all');
             populateMultiSelect('menu-category', window.orderCategoriesData, 'category');
