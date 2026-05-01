@@ -3426,7 +3426,7 @@
             const config = configSnap.data();
             if (!config.autoEnabled) return;
             const now = new Date();
-            if (now.getDay() !== config.scheduledDay) return;
+            if (now.getDay() !== config.scheduledDay && config.scheduledDay !== -1) return;
             const [sH, sM] = (config.startTime||'08:00').split(':').map(Number);
             const [eH, eM] = (config.endTime||'17:00').split(':').map(Number);
             const startD = new Date(now); startD.setHours(sH,sM,0,0);
@@ -3446,7 +3446,7 @@
                 endTime: window.fsTimestamp.fromDate(endD),
                 targetUsers:['all'],
                 targetCategories: config.allowedCategories || ['all'],
-                reason:'Lịch tự động '+['CN','T2','T3','T4','T5','T6','T7'][config.scheduledDay],
+                reason:'Lịch tự động '+ (config.scheduledDay === -1 ? 'Hằng ngày' : ['CN','T2','T3','T4','T5','T6','T7'][config.scheduledDay]),
                 dateKey:todayStr, createdBy:'Hệ thống (Auto)', createdAt:window.fsServerTimestamp()
             });
         } catch(e) { console.error('Index auto-scheduler error:', e); }
