@@ -3032,7 +3032,7 @@
         console.log("Permissions system updated:", Object.keys(roles).length, "roles loaded");
         
         // Refresh UI elements that depend on permissions
-        if (typeof refreshPermissionUI === 'function') refreshPermissionUI();
+        if (typeof window.refreshPermissionUI === 'function') window.refreshPermissionUI();
     });
 
     // Middleware: Cập nhật đơn hàng kèm lưu lịch sử thay đổi (order_history)
@@ -3514,6 +3514,7 @@
         console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Default: false`);
         return false;
     }
+    window.checkPermission = checkPermission;
 
     // Refresh UI elements when permissions load
     window.refreshPermissionUI = function() {
@@ -3734,6 +3735,7 @@
             }
         }, currentEl ? 200 : 0);
     }
+    window.navigateTo = navigateTo;
 
     // ===== Mobile Menu =====
     function openMobileMenu() {
@@ -3741,11 +3743,13 @@
         document.getElementById('mobileMenu').classList.add('open');
         document.body.style.overflow = 'hidden';
     }
+    window.openMobileMenu = openMobileMenu;
     function closeMobileMenu() {
         document.getElementById('mobileMenu').classList.remove('open');
         document.getElementById('mobileOverlay').classList.add('hidden');
         document.body.style.overflow = '';
     }
+    window.closeMobileMenu = closeMobileMenu;
     document.getElementById('mobileMenuBtn').addEventListener('click', openMobileMenu);
 
     // ===== Dropdown Management (Mutual Exclusivity) =====
@@ -6052,6 +6056,12 @@
 
     // ===== Initialize =====
     document.addEventListener('DOMContentLoaded', () => {
+        // Start Firebase data tracking
+        if (window.initOrdersTracker) window.initOrdersTracker();
+        
+        // Refresh permission-based UI (admin link, etc.)
+        if (window.refreshPermissionUI) window.refreshPermissionUI();
+
         // Handle initial hash navigation
         const hash = window.location.hash.substring(1);
         const validPages = ['dashboard', 'orders', 'planning', 'budgetReport', 'reports', 'create-order', 'profile'];
