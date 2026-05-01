@@ -315,6 +315,10 @@
                     <span class="material-symbols-outlined text-[20px]">security</span>
                     Quản trị Quyền
                 </button>
+                <button onclick="switchTab('orderwindow')" id="tab-orderwindow" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">schedule</span>
+                    Lịch mở đơn
+                </button>
             </nav>
         </div>
 
@@ -679,6 +683,169 @@
                         </thead>
                         <tbody id="roleTableBody" class="divide-y divide-slate-50"></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: ORDER WINDOW SCHEDULER -->
+        <div id="section-orderwindow" class="tab-content hidden">
+            <div class="mb-8">
+                <p class="text-teal-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Quản lý thời gian</p>
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Lịch mở Đơn hàng<span class="text-teal-600">.</span></h1>
+                        <p class="text-slate-500 text-sm mt-1.5">Cài đặt thời gian cho phép tạo đơn hàng mới, tự động hoặc thủ công</p>
+                    </div>
+                    <div id="owCurrentStatus" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500" id="owStatusDot"></span>
+                        <span class="text-xs font-bold text-slate-600" id="owStatusText">ĐANG ĐÓNG</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Card 1: Lịch tự động -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-gradient-to-r from-teal-50 to-cyan-50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined">event_repeat</span>
+                            </div>
+                            <div>
+                                <h3 class="font-headline font-bold text-slate-900 text-sm">Lịch tự động hàng tuần</h3>
+                                <p class="text-[11px] text-slate-500">Hệ thống tự mở/đóng theo lịch cài đặt</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-slate-600">Bật lịch tự động</label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="owAutoEnabled" class="sr-only peer" onchange="saveOrderWindowConfig()">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-teal-300/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-teal-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">Ngày trong tuần</label>
+                            <select id="owScheduledDay" class="form-input" onchange="saveOrderWindowConfig()">
+                                <option value="1">Thứ Hai</option>
+                                <option value="2">Thứ Ba</option>
+                                <option value="3">Thứ Tư</option>
+                                <option value="4" selected>Thứ Năm</option>
+                                <option value="5">Thứ Sáu</option>
+                                <option value="6">Thứ Bảy</option>
+                                <option value="0">Chủ Nhật</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-2">Giờ bắt đầu</label>
+                                <input type="time" id="owStartTime" class="form-input" value="08:00" onchange="saveOrderWindowConfig()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-2">Giờ kết thúc</label>
+                                <input type="time" id="owEndTime" class="form-input" value="17:00" onchange="saveOrderWindowConfig()">
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                            <p class="text-[11px] text-slate-500"><span class="material-symbols-outlined text-[14px] align-middle text-teal-500">info</span> Hệ thống sẽ tự mở bảng đơn hàng vào ngày và giờ đã chọn. Ngoài thời gian này, User không thể tạo đơn mới.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Mở thủ công -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined">lock_open</span>
+                            </div>
+                            <div>
+                                <h3 class="font-headline font-bold text-slate-900 text-sm">Mở thủ công (Bổ sung)</h3>
+                                <p class="text-[11px] text-slate-500">Mở cho user cụ thể trong khoảng thời gian tùy chỉnh</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">Đối tượng</label>
+                            <select id="owManualTarget" class="form-input">
+                                <option value="all">Tất cả người dùng</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">Thời lượng mở</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="owManualDuration" class="form-input flex-1" value="60" min="5" placeholder="Số">
+                                <select id="owManualUnit" class="form-input !w-[120px]">
+                                    <option value="minutes">Phút</option>
+                                    <option value="hours" selected>Giờ</option>
+                                    <option value="days">Ngày</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-2">Lý do</label>
+                            <input type="text" id="owManualReason" class="form-input" placeholder="VD: Bổ sung đơn cho Phòng Marketing">
+                        </div>
+                        <button onclick="openManualSession()" class="btn-primary !bg-amber-600 w-full justify-center">
+                            <span class="material-symbols-outlined text-[18px]">lock_open</span>
+                            Mở ngay
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Countdown banner -->
+            <div id="owCountdownBanner" class="hidden mb-6 bg-gradient-to-r from-teal-600 to-cyan-600 rounded-2xl p-5 shadow-lg shadow-teal-600/20">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="flex items-center gap-3 text-white">
+                        <span class="material-symbols-outlined text-[32px] animate-pulse">timer</span>
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-widest opacity-80">Bảng đơn đang mở</p>
+                            <p class="text-sm font-semibold" id="owCountdownReason">Lịch tự động Thứ 5</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-center">
+                            <span class="text-3xl font-extrabold text-white font-headline" id="owCountdownTimer">00:00:00</span>
+                            <p class="text-[10px] text-white/70 uppercase tracking-widest">Thời gian còn lại</p>
+                        </div>
+                        <button onclick="closeActiveSession()" class="px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold transition-all">
+                            <span class="material-symbols-outlined text-[16px]">close</span> Đóng sớm
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lịch sử phiên -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-slate-400">history</span>
+                        Lịch sử các phiên mở
+                    </h3>
+                    <span id="owSessionCount" class="text-xs text-slate-400 font-medium">0 phiên</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50/80 border-b border-slate-100">
+                            <tr>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loại</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bắt đầu</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kết thúc</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đối tượng</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lý do</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trạng thái</th>
+                                <th class="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="owSessionTableBody" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+                <div id="owEmptyState" class="hidden py-12 text-center">
+                    <span class="material-symbols-outlined text-[48px] text-slate-200 mb-2">event_busy</span>
+                    <p class="text-slate-400 text-sm">Chưa có phiên mở nào được ghi nhận</p>
                 </div>
             </div>
         </div>
@@ -1278,6 +1445,8 @@
     const STATUS_COLLECTION = "order_statuses";
     const CATEGORY_COLLECTION = "order_categories";
     const ROLES_COLLECTION = "system_roles";
+    const OW_CONFIG_COLLECTION = "order_window_config";
+    const OW_SESSIONS_COLLECTION = "order_window_sessions";
 
     const DEFAULT_DEPTS = [
         "Ban Giám Đốc", "Kế toán", "Kỹ thuật", "Logistics", "Marketing", "Nhân sự", "Sản xuất", "IT",
@@ -1318,7 +1487,7 @@
         
         // Handle initial tab from Hash
         const hash = window.location.hash.replace('#', '');
-        if (hash && ['users', 'depts', 'statuses', 'categories', 'activities'].includes(hash)) {
+        if (hash && ['users', 'depts', 'statuses', 'categories', 'activities', 'orderwindow'].includes(hash)) {
             switchTab(hash);
         }
         
@@ -1945,7 +2114,7 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById('section-' + tabId).classList.remove('hidden');
 
-        ['overview', 'users', 'depts', 'statuses', 'categories', 'roles', 'activities'].forEach(id => {
+        ['overview', 'users', 'depts', 'statuses', 'categories', 'roles', 'activities', 'orderwindow'].forEach(id => {
             const btn = document.getElementById('tab-' + id);
             if (!btn) return;
             const icon = btn.querySelector('.material-symbols-outlined');
@@ -1962,6 +2131,11 @@
 
         if (tabId === 'activities') {
             window.renderActivitiesTable();
+        }
+        if (tabId === 'orderwindow') {
+            loadOrderWindowConfig();
+            loadOrderWindowSessions();
+            populateUserDropdown();
         }
     }
 
@@ -2438,6 +2612,289 @@
         // Default tab
         if (window.switchTab) window.switchTab('overview');
     });
+
+    // =============================================
+    // ORDER WINDOW SCHEDULER FUNCTIONS
+    // =============================================
+    let owCountdownInterval = null;
+    let owSessions = [];
+
+    async function loadOrderWindowConfig() {
+        if (!window.db) return;
+        try {
+            const docRef = window.fs.doc(window.db, OW_CONFIG_COLLECTION, 'settings');
+            const snap = await window.fs.getDoc(docRef);
+            if (snap.exists()) {
+                const data = snap.data();
+                document.getElementById('owAutoEnabled').checked = !!data.autoEnabled;
+                document.getElementById('owScheduledDay').value = data.scheduledDay ?? 4;
+                document.getElementById('owStartTime').value = data.startTime || '08:00';
+                document.getElementById('owEndTime').value = data.endTime || '17:00';
+            }
+        } catch (e) { console.error('Load OW config error:', e); }
+        updateOwStatus();
+    }
+
+    async function saveOrderWindowConfig() {
+        if (!window.db) return;
+        try {
+            const config = {
+                autoEnabled: document.getElementById('owAutoEnabled').checked,
+                scheduledDay: parseInt(document.getElementById('owScheduledDay').value),
+                startTime: document.getElementById('owStartTime').value,
+                endTime: document.getElementById('owEndTime').value,
+                updatedAt: window.fs.serverTimestamp()
+            };
+            await window.fs.setDoc(window.fs.doc(window.db, OW_CONFIG_COLLECTION, 'settings'), config, { merge: true });
+            showToast('Đã lưu cài đặt lịch mở đơn!');
+            if (window.logActivity) window.logActivity('update', 'Cập nhật lịch mở đơn', `Auto=${config.autoEnabled}, Day=${config.scheduledDay}, ${config.startTime}-${config.endTime}`);
+            checkAndCreateAutoSession();
+        } catch (e) {
+            console.error('Save OW config error:', e);
+            showToast('Lỗi lưu cài đặt!');
+        }
+    }
+
+    async function openManualSession() {
+        if (!window.db) return;
+        const target = document.getElementById('owManualTarget').value;
+        const duration = parseInt(document.getElementById('owManualDuration').value) || 60;
+        const unit = document.getElementById('owManualUnit').value;
+        const reason = document.getElementById('owManualReason').value || 'Mở thủ công bởi Admin';
+
+        let ms = duration * 60 * 1000;
+        if (unit === 'hours') ms = duration * 60 * 60 * 1000;
+        if (unit === 'days') ms = duration * 24 * 60 * 60 * 1000;
+
+        const now = new Date();
+        const endTime = new Date(now.getTime() + ms);
+        const userName = localStorage.getItem('nevo_user') || 'Admin';
+
+        try {
+            await window.fs.addDoc(window.fs.collection(window.db, OW_SESSIONS_COLLECTION), {
+                type: 'manual',
+                status: 'active',
+                startTime: window.fs.Timestamp.fromDate(now),
+                endTime: window.fs.Timestamp.fromDate(endTime),
+                targetUsers: [target],
+                reason: reason,
+                createdBy: userName,
+                createdAt: window.fs.serverTimestamp()
+            });
+            showToast('Đã mở phiên tạo đơn thành công!');
+            if (window.logActivity) window.logActivity('create', 'Mở phiên tạo đơn thủ công', `Đối tượng: ${target === 'all' ? 'Tất cả' : target}, Thời lượng: ${duration} ${unit}, Lý do: ${reason}`);
+            document.getElementById('owManualReason').value = '';
+            loadOrderWindowSessions();
+        } catch (e) {
+            console.error('Open manual session error:', e);
+            showToast('Lỗi khi mở phiên!');
+        }
+    }
+
+    async function loadOrderWindowSessions() {
+        if (!window.db) return;
+        try {
+            const q = window.fs.query(window.fs.collection(window.db, OW_SESSIONS_COLLECTION), window.fs.orderBy('createdAt', 'desc'), window.fs.limit(50));
+            const snap = await window.fs.getDocs(q);
+            owSessions = [];
+            snap.forEach(d => owSessions.push({ id: d.id, ...d.data() }));
+
+            const now = new Date();
+            for (const s of owSessions) {
+                if (s.status === 'active' && s.endTime) {
+                    const end = s.endTime.toDate ? s.endTime.toDate() : new Date(s.endTime);
+                    if (end <= now) {
+                        await window.fs.updateDoc(window.fs.doc(window.db, OW_SESSIONS_COLLECTION, s.id), { status: 'expired' });
+                        s.status = 'expired';
+                    }
+                }
+            }
+            renderSessionTable();
+            updateOwStatus();
+        } catch (e) { console.error('Load sessions error:', e); }
+    }
+
+    function renderSessionTable() {
+        const tbody = document.getElementById('owSessionTableBody');
+        const emptyState = document.getElementById('owEmptyState');
+        const countEl = document.getElementById('owSessionCount');
+        if (!tbody) return;
+
+        if (owSessions.length === 0) {
+            tbody.innerHTML = '';
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (countEl) countEl.textContent = '0 phiên';
+            return;
+        }
+        if (emptyState) emptyState.classList.add('hidden');
+        if (countEl) countEl.textContent = owSessions.length + ' phiên';
+
+        const dayNames = ['CN','T2','T3','T4','T5','T6','T7'];
+        const fmt = (ts) => {
+            if (!ts) return '--';
+            const d = ts.toDate ? ts.toDate() : new Date(ts);
+            return d.toLocaleString('vi-VN', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit', year:'numeric' });
+        };
+
+        tbody.innerHTML = owSessions.map(s => {
+            const isActive = s.status === 'active';
+            const typeBadge = s.type === 'scheduled'
+                ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700"><span class="material-symbols-outlined text-[12px]">event_repeat</span>Tự động</span>'
+                : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700"><span class="material-symbols-outlined text-[12px]">lock_open</span>Thủ công</span>';
+            const statusBadge = isActive
+                ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 animate-pulse">● Đang mở</span>'
+                : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">Đã hết hạn</span>';
+            const target = (s.targetUsers && s.targetUsers[0] === 'all') ? 'Tất cả' : (s.targetUsers || []).join(', ');
+            return `<tr class="table-row text-[12px]">
+                <td class="px-5 py-3">${typeBadge}</td>
+                <td class="px-5 py-3 text-slate-600 font-medium">${fmt(s.startTime)}</td>
+                <td class="px-5 py-3 text-slate-600 font-medium">${fmt(s.endTime)}</td>
+                <td class="px-5 py-3 text-slate-600">${target}</td>
+                <td class="px-5 py-3 text-slate-500 italic">${s.reason || '--'}</td>
+                <td class="px-5 py-3">${statusBadge}</td>
+                <td class="px-5 py-3 text-right">${isActive ? `<button onclick="closeActiveSession('${s.id}')" class="btn-icon-sm btn-delete" title="Đóng sớm"><span class="material-symbols-outlined text-[16px]">close</span></button>` : ''}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function updateOwStatus() {
+        const dot = document.getElementById('owStatusDot');
+        const text = document.getElementById('owStatusText');
+        const banner = document.getElementById('owCountdownBanner');
+        if (!dot || !text) return;
+
+        const now = new Date();
+        const activeSession = owSessions.find(s => {
+            if (s.status !== 'active') return false;
+            const end = s.endTime?.toDate ? s.endTime.toDate() : new Date(s.endTime);
+            return end > now;
+        });
+
+        if (activeSession) {
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+            text.textContent = 'ĐANG MỞ';
+            text.className = 'text-xs font-bold text-emerald-600';
+            if (banner) {
+                banner.classList.remove('hidden');
+                document.getElementById('owCountdownReason').textContent = activeSession.reason || 'Phiên mở đơn';
+                startCountdown(activeSession);
+            }
+        } else {
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+            text.textContent = 'ĐANG ĐÓNG';
+            text.className = 'text-xs font-bold text-slate-600';
+            if (banner) banner.classList.add('hidden');
+            if (owCountdownInterval) { clearInterval(owCountdownInterval); owCountdownInterval = null; }
+        }
+    }
+
+    function startCountdown(session) {
+        if (owCountdownInterval) clearInterval(owCountdownInterval);
+        const timerEl = document.getElementById('owCountdownTimer');
+        if (!timerEl) return;
+
+        function tick() {
+            const now = new Date();
+            const end = session.endTime?.toDate ? session.endTime.toDate() : new Date(session.endTime);
+            const diff = end - now;
+            if (diff <= 0) {
+                timerEl.textContent = '00:00:00';
+                clearInterval(owCountdownInterval);
+                owCountdownInterval = null;
+                loadOrderWindowSessions();
+                return;
+            }
+            const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+            const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+            const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+            timerEl.textContent = `${h}:${m}:${s}`;
+        }
+        tick();
+        owCountdownInterval = setInterval(tick, 1000);
+    }
+
+    window.closeActiveSession = async function(sessionId) {
+        if (!window.db) return;
+        if (!sessionId) {
+            const active = owSessions.find(s => s.status === 'active');
+            if (active) sessionId = active.id;
+            else return;
+        }
+        if (!confirm('Xác nhận đóng phiên tạo đơn này sớm?')) return;
+        try {
+            await window.fs.updateDoc(window.fs.doc(window.db, OW_SESSIONS_COLLECTION, sessionId), {
+                status: 'expired',
+                endTime: window.fs.Timestamp.fromDate(new Date())
+            });
+            showToast('Đã đóng phiên tạo đơn!');
+            if (window.logActivity) window.logActivity('update', 'Đóng sớm phiên tạo đơn', `Session ID: ${sessionId}`);
+            loadOrderWindowSessions();
+        } catch (e) {
+            console.error('Close session error:', e);
+            showToast('Lỗi khi đóng phiên!');
+        }
+    };
+
+    async function checkAndCreateAutoSession() {
+        if (!window.db) return;
+        try {
+            const configSnap = await window.fs.getDoc(window.fs.doc(window.db, OW_CONFIG_COLLECTION, 'settings'));
+            if (!configSnap.exists()) return;
+            const config = configSnap.data();
+            if (!config.autoEnabled) return;
+
+            const now = new Date();
+            if (now.getDay() !== config.scheduledDay) return;
+
+            const [startH, startM] = (config.startTime || '08:00').split(':').map(Number);
+            const [endH, endM] = (config.endTime || '17:00').split(':').map(Number);
+            const startDate = new Date(now); startDate.setHours(startH, startM, 0, 0);
+            const endDate = new Date(now); endDate.setHours(endH, endM, 0, 0);
+            if (now < startDate || now > endDate) return;
+
+            const todayStr = now.toISOString().slice(0, 10);
+            const q = window.fs.query(
+                window.fs.collection(window.db, OW_SESSIONS_COLLECTION),
+                window.fs.where('type', '==', 'scheduled'),
+                window.fs.where('dateKey', '==', todayStr)
+            );
+            const existing = await window.fs.getDocs(q);
+            if (!existing.empty) return;
+
+            await window.fs.addDoc(window.fs.collection(window.db, OW_SESSIONS_COLLECTION), {
+                type: 'scheduled',
+                status: 'active',
+                startTime: window.fs.Timestamp.fromDate(startDate),
+                endTime: window.fs.Timestamp.fromDate(endDate),
+                targetUsers: ['all'],
+                reason: 'Lịch tự động ' + ['Chủ Nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][config.scheduledDay],
+                dateKey: todayStr,
+                createdBy: 'Hệ thống (Auto)',
+                createdAt: window.fs.serverTimestamp()
+            });
+            console.log('Auto session created for', todayStr);
+            loadOrderWindowSessions();
+        } catch (e) { console.error('Auto session check error:', e); }
+    }
+
+    async function populateUserDropdown() {
+        const select = document.getElementById('owManualTarget');
+        if (!select || !window.db) return;
+        select.innerHTML = '<option value="all">Tất cả người dùng</option>';
+        try {
+            const snap = await window.fs.getDocs(window.fs.collection(window.db, 'users'));
+            snap.forEach(d => {
+                const u = d.data();
+                if (u.status === 'active') {
+                    select.innerHTML += `<option value="${u.empId || d.id}">${u.name || u.empId} (${u.role || 'user'})</option>`;
+                }
+            });
+        } catch (e) { console.error('Populate users error:', e); }
+    }
+
+    // Auto-check scheduler every 60 seconds
+    setInterval(() => { checkAndCreateAutoSession(); }, 60000);
+    setTimeout(() => { checkAndCreateAutoSession(); }, 3000);
 </script>
 </body>
 </html>

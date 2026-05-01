@@ -920,6 +920,33 @@
 <!-- ==================== PAGE 2: ORDER MANAGEMENT ==================== -->
 <div id="page-orders" class="page">
     <div class="p-4 md:p-8 max-w-full mx-auto">
+        <!-- Order Window Countdown Banner -->
+        <div id="indexOwBanner" class="hidden mb-6 rounded-2xl p-4 shadow-lg animate-fade-in-up" style="background:linear-gradient(135deg,#0d9488,#06b6d4)">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3 text-white">
+                    <span class="material-symbols-outlined text-[28px] animate-pulse">timer</span>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest opacity-80">Bảng đơn đang mở</p>
+                        <p class="text-sm font-semibold" id="indexOwReason"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl font-extrabold text-white font-headline" id="indexOwTimer">00:00:00</span>
+                    <span class="text-[10px] text-white/70 uppercase tracking-widest">còn lại</span>
+                </div>
+            </div>
+        </div>
+        <div id="indexOwClosedBanner" class="hidden mb-6 rounded-2xl p-4 border border-slate-200 bg-white shadow-sm animate-fade-in-up">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3 text-slate-500">
+                    <span class="material-symbols-outlined text-[28px] text-red-400">lock</span>
+                    <div>
+                        <p class="text-xs font-bold text-slate-700">Bảng đơn hàng đang đóng</p>
+                        <p class="text-[11px] text-slate-400" id="indexOwNextOpen">Liên hệ quản trị viên để được mở quyền tạo đơn.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Header & Stats -->
         <!-- Top Stats Row -->
         <div class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
@@ -2963,7 +2990,7 @@
 <!-- ====== FIREBASE JAVASCRIPT ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc, deleteDoc, updateDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc, deleteDoc, updateDoc, getDoc, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -2991,6 +3018,7 @@
     window.fsUpdateDoc = updateDoc;
     window.fsGetDoc = getDoc;
     window.fsWhere = where;
+    window.fsTimestamp = Timestamp;
 
     // Load and Sync Roles for Permission Management
     window.appRoles = {};
@@ -3267,6 +3295,119 @@
     if (window.initOrdersTracker) {
         window.initOrdersTracker();
     }
+
+    // ===== ORDER WINDOW CHECK SYSTEM =====
+    let indexOwInterval = null;
+    window.checkOrderWindowOpen = async function() {
+        const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
+        if (role === 'admin') return { allowed: true };
+        if (!window.db) return { allowed: true };
+        try {
+            const userId = localStorage.getItem('nevo_user_id') || localStorage.getItem('nevo_user') || '';
+            const now = new Date();
+            const q = window.fsQuery(
+                window.fsCollection(window.db, 'order_window_sessions'),
+                window.fsWhere('status', '==', 'active')
+            );
+            const snap = await window.fsGetDocs(q);
+            let found = null;
+            snap.forEach(d => {
+                const s = d.data();
+                const end = s.endTime?.toDate ? s.endTime.toDate() : new Date(s.endTime);
+                if (end > now) {
+                    const targets = s.targetUsers || ['all'];
+                    if (targets.includes('all') || targets.includes(userId)) {
+                        found = { allowed: true, endTime: end, reason: s.reason || '' };
+                    }
+                }
+            });
+            if (found) return found;
+            return { allowed: false };
+        } catch (e) {
+            console.error('Check OW error:', e);
+            return { allowed: true };
+        }
+    };
+
+    window.updateIndexOwBanner = async function() {
+        const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
+        const openBanner = document.getElementById('indexOwBanner');
+        const closedBanner = document.getElementById('indexOwClosedBanner');
+        const createBtn = document.getElementById('createOrderBtn');
+        if (!openBanner || !closedBanner) return;
+        if (role === 'admin') { openBanner.classList.add('hidden'); closedBanner.classList.add('hidden'); return; }
+
+        const result = await window.checkOrderWindowOpen();
+        if (result.allowed && result.endTime) {
+            openBanner.classList.remove('hidden');
+            closedBanner.classList.add('hidden');
+            if (createBtn) { createBtn.disabled = false; createBtn.style.opacity = '1'; createBtn.title = ''; }
+            document.getElementById('indexOwReason').textContent = result.reason;
+            if (indexOwInterval) clearInterval(indexOwInterval);
+            function tick() {
+                const diff = result.endTime - new Date();
+                if (diff <= 0) {
+                    openBanner.classList.add('hidden'); closedBanner.classList.remove('hidden'); clearInterval(indexOwInterval);
+                    if (createBtn) { createBtn.disabled = true; createBtn.style.opacity = '0.5'; createBtn.title = 'Bảng đơn đã đóng'; }
+                    return;
+                }
+                const h = String(Math.floor(diff/3600000)).padStart(2,'0');
+                const m = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+                const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+                document.getElementById('indexOwTimer').textContent = h+':'+m+':'+s;
+            }
+            tick();
+            indexOwInterval = setInterval(tick, 1000);
+        } else if (!result.allowed) {
+            openBanner.classList.add('hidden');
+            closedBanner.classList.remove('hidden');
+            if (createBtn) { createBtn.disabled = true; createBtn.style.opacity = '0.5'; createBtn.title = 'Bảng đơn đang đóng. Liên hệ quản trị viên.'; }
+        } else {
+            openBanner.classList.add('hidden');
+            closedBanner.classList.add('hidden');
+        }
+    };
+
+    // Auto-check & create scheduled session from index page
+    window.indexAutoSchedulerCheck = async function() {
+        if (!window.db) return;
+        const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
+        if (role !== 'admin') return;
+        try {
+            const configSnap = await window.fsGetDoc(window.fsDoc(window.db, 'order_window_config', 'settings'));
+            if (!configSnap.exists()) return;
+            const config = configSnap.data();
+            if (!config.autoEnabled) return;
+            const now = new Date();
+            if (now.getDay() !== config.scheduledDay) return;
+            const [sH, sM] = (config.startTime||'08:00').split(':').map(Number);
+            const [eH, eM] = (config.endTime||'17:00').split(':').map(Number);
+            const startD = new Date(now); startD.setHours(sH,sM,0,0);
+            const endD = new Date(now); endD.setHours(eH,eM,0,0);
+            if (now < startD || now > endD) return;
+            const todayStr = now.toISOString().slice(0,10);
+            const q = window.fsQuery(
+                window.fsCollection(window.db, 'order_window_sessions'),
+                window.fsWhere('type','==','scheduled'),
+                window.fsWhere('dateKey','==',todayStr)
+            );
+            const ex = await window.fsGetDocs(q);
+            if (!ex.empty) return;
+            await window.fsAddDoc(window.fsCollection(window.db, 'order_window_sessions'), {
+                type:'scheduled', status:'active',
+                startTime: window.fsTimestamp.fromDate(startD),
+                endTime: window.fsTimestamp.fromDate(endD),
+                targetUsers:['all'],
+                reason:'Lịch tự động '+['CN','T2','T3','T4','T5','T6','T7'][config.scheduledDay],
+                dateKey:todayStr, createdBy:'Hệ thống (Auto)', createdAt:window.fsServerTimestamp()
+            });
+        } catch(e) { console.error('Index auto-scheduler error:', e); }
+    };
+
+    // Run checks periodically
+    setTimeout(() => { window.indexAutoSchedulerCheck(); window.updateIndexOwBanner(); }, 2000);
+    setInterval(() => { window.updateIndexOwBanner(); }, 30000);
+    setInterval(() => { window.indexAutoSchedulerCheck(); }, 60000);
 </script>
 
 <!-- ====== JAVASCRIPT ====== -->
@@ -3651,6 +3792,12 @@
     async function handleCreateOrder() {
         if (!checkPermission('create')) {
             showToast('Từ chối!', 'Bạn không có quyền tạo đơn hàng.', 'block', 'text-error');
+            return;
+        }
+        // Check Order Window
+        const owResult = await window.checkOrderWindowOpen();
+        if (!owResult.allowed) {
+            showToast('Bảng đơn đang đóng!', 'Hiện tại chưa đến thời gian tạo đơn. Vui lòng liên hệ quản trị viên.', 'lock', 'text-error');
             return;
         }
         const title = document.getElementById('orderTitle').value;
