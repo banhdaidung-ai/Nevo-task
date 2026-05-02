@@ -1300,9 +1300,13 @@
                         <option value="">Tất cả phòng ban</option>
                     </select>
                 </div>
-                <div class="bg-surface-container-lowest p-3 rounded-xl border border-slate-100 shadow-sm min-w-[150px]">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">THÁNG</p>
-                    <select id="planningMonthFilter" class="w-full font-bold text-sm text-[#1e293b] bg-transparent border-none focus:ring-0 p-0 cursor-pointer outline-none">
+                <div class="bg-blue-50/50 p-3 rounded-xl border-2 border-blue-200 shadow-sm min-w-[150px] relative ring-4 ring-blue-50/50 transition-all hover:border-blue-300 group">
+                    <span class="absolute -top-1.5 -right-1.5 flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                    <p class="text-[9px] font-bold text-blue-600 uppercase tracking-widest mb-1 group-hover:text-blue-700 transition-colors">THÁNG LẬP KẾ HOẠCH</p>
+                    <select id="planningMonthFilter" class="w-full font-bold text-sm text-blue-950 bg-transparent border-none focus:ring-0 p-0 cursor-pointer outline-none">
                         <option value="2026-04" selected>Tháng 04, 2026</option>
                         <option value="2026-05">Tháng 05, 2026</option>
                         <option value="2026-06">Tháng 06, 2026</option>
@@ -1317,6 +1321,17 @@
                         <option value="2027-03">Tháng 03, 2027</option>
                     </select>
                 </div>
+            </div>
+        </div>
+
+        <!-- Planning Reminder Banner -->
+        <div class="mb-6 bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3 animate-fade-in-up delay-100 shadow-sm">
+            <div class="p-2 bg-blue-100 text-blue-600 rounded-lg shrink-0">
+                <span class="material-symbols-outlined text-[20px]">lightbulb</span>
+            </div>
+            <div>
+                <p class="text-sm font-bold text-blue-900">Lưu ý khi lập kế hoạch tháng mới</p>
+                <p class="text-xs text-blue-700 mt-1">Hệ thống đang mặc định hiển thị <span class="font-bold">tháng hiện tại</span>. Nếu bạn muốn lập kế hoạch cho tháng tiếp theo, vui lòng chọn lại <strong>"THÁNG LẬP KẾ HOẠCH"</strong> ở góc phải màn hình.</p>
             </div>
         </div>
 
