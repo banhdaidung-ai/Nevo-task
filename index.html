@@ -1307,8 +1307,8 @@
                     </span>
                     <p class="text-[9px] font-bold text-blue-600 uppercase tracking-widest mb-1 group-hover:text-blue-700 transition-colors">THÁNG LẬP KẾ HOẠCH</p>
                     <select id="planningMonthFilter" class="w-full font-bold text-sm text-blue-950 bg-transparent border-none focus:ring-0 p-0 cursor-pointer outline-none">
-                        <option value="2026-04" selected>Tháng 04, 2026</option>
-                        <option value="2026-05">Tháng 05, 2026</option>
+                        <option value="2026-04">Tháng 04, 2026</option>
+                        <option value="2026-05" selected>Tháng 05, 2026</option>
                         <option value="2026-06">Tháng 06, 2026</option>
                         <option value="2026-07">Tháng 07, 2026</option>
                         <option value="2026-08">Tháng 08, 2026</option>
@@ -1599,7 +1599,7 @@
                 <div id="monthlyCalendarContainer" class="hidden p-6">
                     <div id="calendarHeader" class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-4">
-                            <h3 id="calendarMonthTitle" class="text-xl font-black text-[#1e293b] font-headline uppercase tracking-tight">Tháng 04 / 2026</h3>
+                            <h3 id="calendarMonthTitle" class="text-xl font-black text-[#1e293b] font-headline uppercase tracking-tight">Tháng 05 / 2026</h3>
                             <div class="flex gap-1">
                                 <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
                                 <button onclick="changeMonth(1)" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 transition-all"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
@@ -6525,10 +6525,10 @@
         const footerRow = document.getElementById('planningTableFooterRow');
         if(headerRow && footerRow) {
             const cols = headerRow.querySelectorAll('th');
-            for(let i=8; i<cols.length - 1; i++) cols[i].remove();
+            for(let i=9; i<cols.length - 1; i++) cols[i].remove();
             const lastHeader = headerRow.querySelector('th:last-child');
             const fCols = footerRow.querySelectorAll('td');
-            for(let i=3; i<fCols.length - 1; i++) fCols[i].remove();
+            for(let i=5; i<fCols.length - 1; i++) fCols[i].remove();
             const lastFooter = footerRow.querySelector('td:last-child');
 
             const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -6603,7 +6603,9 @@
         const daysInMonth = new Date(year, month, 0).getDate();
 
         const depts = (window.departmentsData || []).map(d => d.name);
-                const types = ['Video', 'Hình Ảnh', 'Giả Live', 'Livestream', 'Thiết kế'];
+        const types = window.orderCategoriesData && window.orderCategoriesData.length > 0 
+            ? window.orderCategoriesData.map(c => c.name) 
+            : ['Video', 'Hình Ảnh', 'Giả Live', 'Livestream', 'Thiết kế'];
 
         depts.forEach(dept => {
             types.forEach(type => {
@@ -6626,15 +6628,8 @@
                 `;
                 tbody.appendChild(trPlan);
 
-                // MAPPING CATEGORIES
-                const mapTypeToCategory = {
-                    'Video': ['Quay phim', 'Video'],
-                    'Hình Ảnh': ['Chụp ảnh', 'Hình Ảnh'],
-                    'Giả Live': ['Giả Live', 'Livestream'],
-                    'Livestream': ['Livestream'],
-                    'Thiết kế': ['Thiết kế']
-                };
-                const orderCats = mapTypeToCategory[type] || [type];
+                // MAPPING CATEGORIES (Now synchronized)
+                const orderCats = [type];
 
                 const trActual = document.createElement('tr');
                 trActual.className = "bg-rose-50/10";
@@ -6839,7 +6834,9 @@
                 const cleanBudget = (row.budget || '0').toString().replace(/[^0-9]/g, '');
                 deptBudgetTotal += (parseInt(cleanBudget) || 0);
 
-                const orderTypes = ['Video', 'Hình Ảnh', 'Giả Live', 'Livestream'];
+                const orderTypes = window.orderCategoriesData && window.orderCategoriesData.length > 0 
+                    ? window.orderCategoriesData.map(c => c.name) 
+                    : ['Video', 'Hình Ảnh', 'Giả Live', 'Livestream'];
                 let typeOptions = `<option value="">Chọn</option>`;
                 orderTypes.forEach(t => {
                     const selected = row.type === t ? 'selected' : '';
@@ -7478,7 +7475,14 @@
 
     function initPlanningEvents() {
         const monthFilter = document.getElementById('planningMonthFilter');
-        if(monthFilter) monthFilter.onchange = () => { window.renderPlanningCalendarHeaders(); window.renderPlanningTable(); window.renderPlanningReport(); };
+        if(monthFilter) {
+            const today = new Date();
+            const currentMonthVal = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+            if (monthFilter.querySelector(`option[value="${currentMonthVal}"]`)) {
+                monthFilter.value = currentMonthVal;
+            }
+            monthFilter.onchange = () => { window.renderPlanningCalendarHeaders(); window.renderPlanningTable(); window.renderPlanningReport(); };
+        }
         const deptFilter = document.getElementById('planningDepartmentFilter');
         if(deptFilter) deptFilter.onchange = () => { window.renderPlanningTable(); window.renderPlanningReport(); };
         
