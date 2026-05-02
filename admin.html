@@ -12,7 +12,9 @@
             if (localStorage.getItem('nevo_logged_in') !== 'true') {
                 window.location.replace('login.html'); return;
             }
-            if (localStorage.getItem('nevo_role') !== 'admin') {
+            var role = (localStorage.getItem('nevo_role') || '').toLowerCase();
+            var hasAdminAccess = localStorage.getItem('nevo_admin_access') === 'true';
+            if (role !== 'admin' && role !== 'manager' && !hasAdminAccess) {
                 window.location.replace('index.html');
             }
         })();
