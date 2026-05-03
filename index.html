@@ -42,7 +42,6 @@
     <style>
         /* Keep only critical inline styles that need instant rendering */
         [v-cloak] { display: none; }
-    </style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
@@ -858,40 +857,40 @@
                     <span class="material-symbols-outlined text-[10px]">chevron_right</span>
                     <span class="text-primary">Quản lý Đơn hàng</span>
                 </nav>
-                <h1 class="font-headline font-extrabold text-3xl tracking-tight text-[#1e293b]">Danh sách Đơn hàng <span class="text-primary">.</span></h1>
+                <h1 class="font-headline font-extrabold text-3xl tracking-tight text-[#1e293b] dark:text-white">Danh sách Đơn hàng <span class="text-primary">.</span></h1>
             </div>
             <div class="flex flex-wrap gap-4">
                 <!-- Tổng đơn hàng -->
-                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
+                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
                     <div class="flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tổng đơn hàng</span>
                     </div>
-                    <span id="statTotal" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
+                    <span id="statTotal" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
                 </div>
                 <!-- Đang xử lý -->
-                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
+                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
                     <div class="flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đang xử lý</span>
                     </div>
-                    <span id="statProcessing" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
+                    <span id="statProcessing" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
                 </div>
                 <!-- Chờ duyệt -->
-                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
+                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
                     <div class="flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chờ duyệt</span>
                     </div>
-                    <span id="statPending" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
+                    <span id="statPending" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
                 </div>
                 <!-- Hoàn thành -->
-                <div class="bg-white px-8 py-4 rounded-xl border border-slate-100 flex flex-col gap-1 min-w-[150px] shadow-sm">
+                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
                     <div class="flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hoàn thành</span>
                     </div>
-                    <span id="statCompleted" class="font-headline font-extrabold text-3xl text-[#1e293b]">0</span>
+                    <span id="statCompleted" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
                 </div>
             </div>
         </div>
@@ -915,7 +914,7 @@
         </div>
 
         <!-- Main Data Table Container -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 animate-fade-in-up delay-300 flex flex-col h-[75vh]">
+        <div class="glass-panel rounded-2xl animate-fade-in-up delay-300 flex flex-col h-[75vh] overflow-hidden">
             <!-- Action Row -->
             <div class="bg-[#f8fafc] p-4 border-b border-slate-200 flex justify-between items-center rounded-t-xl shrink-0">
                 <div class="flex gap-3">
@@ -2731,7 +2730,7 @@
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Ngân sách dự kiến</label>
                             <div class="relative">
-                                <input type="text" id="pmBudget" onblur="this.value = this.value ? Number(this.value.replace(/\D/g, '')).toLocaleString() : ''" oninput="window.updatePlanningModalTotals()" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-right text-sm font-black text-rose-600 focus:ring-2 focus:ring-rose-500/20 transition-all outline-none" placeholder="0">
+                                <input type="text" id="pmBudget" onblur="this.value = window.formatCurrency(this.value)" oninput="window.updatePlanningModalTotals()" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-right text-sm font-black text-rose-600 focus:ring-2 focus:ring-rose-500/20 transition-all outline-none" placeholder="0">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300">VNĐ</span>
                             </div>
                         </div>
@@ -2997,8 +2996,6 @@
                             <textarea id="editOrderNote" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-4 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow h-32 resize-none" placeholder="Ghi chú nội bộ..."></textarea>
                         </div>
                     </div>
-
-                    <!-- Chi phí chi tiết -->
                     <div class="mt-8 pt-8 border-t border-slate-100">
                         <h3 class="text-[10px] font-black text-[#b80035] uppercase tracking-widest mb-4 flex items-center gap-2">
                             <span class="material-symbols-outlined text-[16px]">payments</span> CHI PHÍ ĐƠN HÀNG
@@ -3033,38 +3030,18 @@
     </div>
 </div>
 
-<!-- ====== FIREBASE JAVASCRIPT ====== -->
+<!-- ====== CORE SCRIPTS ====== -->
+<script type="module" src="main.js"></script>
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, limit, runTransaction, doc, deleteDoc, updateDoc, getDoc, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { db, collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, limit, startAfter, setDoc } from "./firebase-service.js";
+    import { formatCurrency, formatDate, sanitizeNumber, getStatusColorClass } from "./utils.js";
+    import { checkPermission } from "./auth-service.js";
+    import { showToast } from "./ui-service.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
-      authDomain: "nevotask.firebaseapp.com",
-      projectId: "nevotask",
-      storageBucket: "nevotask.firebasestorage.app",
-      messagingSenderId: "1031918825498",
-      appId: "1:1031918825498:web:16f85584b81072db0be1a3"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // Set globals for legacy support
     window.db = db;
-    window.fsCollection = collection;
-    window.fsAddDoc = addDoc;
-    window.fsGetDocs = getDocs;
-    window.fsOnSnapshot = onSnapshot;
-    window.fsQuery = query;
-    window.fsOrderBy = orderBy;
-    window.fsServerTimestamp = serverTimestamp;
-    window.fsLimit = limit;
-    window.fsRunTransaction = runTransaction;
-    window.fsDoc = doc;
-    window.fsDeleteDoc = deleteDoc;
-    window.fsUpdateDoc = updateDoc;
-    window.fsGetDoc = getDoc;
-    window.fsWhere = where;
-    window.fsTimestamp = Timestamp;
+    window.formatCurrency = formatCurrency;
+    window.sanitizeNumber = sanitizeNumber;
 
     // Load and Sync Roles for Permission Management
     window.appRoles = {};
@@ -3693,164 +3670,8 @@
         }
     };
 
-    // ===== Page Navigation =====
-    let currentPage = 'dashboard';
-    
-    function navigateTo(pageId) {
-        try {
-            if (typeof event !== 'undefined' && event && event.preventDefault) {
-                event.preventDefault();
-            }
-            // Close any open dropdowns when navigating
-            if (window.closeAllDropdowns) window.closeAllDropdowns();
-        } catch (e) {}
-
-        if (currentPage === pageId) {
-            const el = document.getElementById('page-' + pageId);
-            if (el && el.classList.contains('active')) return;
-        }
-        
-        // Hide current page
-        const currentEl = document.getElementById('page-' + currentPage);
-        if (currentEl) {
-            currentEl.classList.remove('visible');
-            setTimeout(() => {
-                currentEl.classList.remove('active');
-            }, 300);
-        }
-
-        // Show new page
-        setTimeout(() => {
-            const newEl = document.getElementById('page-' + pageId);
-            if (newEl) {
-                newEl.classList.add('active');
-                // Trigger reflow
-                void newEl.offsetWidth;
-                newEl.classList.add('visible');
-                
-                // Trigger page-specific renders
-                if (pageId === 'dashboard') window.renderDashboardTable();
-                if (pageId === 'orders') window.renderOrdersTable();
-                if (pageId === 'reports') {
-                    window.renderReports();
-                    if (typeof window.renderCategoryStats === 'function') window.renderCategoryStats();
-                }
-                if (pageId === 'planning') {
-                    if (typeof window.renderPlanningReport === 'function') window.renderPlanningReport();
-                }
-                if (pageId === 'budgetReport') {
-                    if (typeof window.switchBudgetTab === 'function') {
-                        // Ensure we switch to a valid tab and elements exist
-                        window.switchBudgetTab('production');
-                    } else if (typeof window.renderBudgetReport === 'function') {
-                        window.renderBudgetReport();
-                    }
-                }
-                if (pageId === 'detailed-report') {
-                    if (typeof window.renderDetailedReport === 'function') window.renderDetailedReport();
-                }
-                
-                // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'auto' });
-                
-                // Handle page-specific initialization
-                if (pageId === 'orders') {
-                    if (window.renderOrdersTable) window.renderOrdersTable();
-                } else if (pageId === 'profile') {
-                    if (window.updateProfilePage) window.updateProfilePage();
-                } else if (pageId === 'dashboard') {
-                    if (window.updateDashboardStats) window.updateDashboardStats();
-                } else if (pageId === 'reports') {
-                    if (window.renderReports) window.renderReports();
-                }
-            }
-            
-            // Update nav links
-            document.querySelectorAll('.nav-link').forEach(link => {
-                const linkPage = link.getAttribute('data-page');
-                const isHidden = link.classList.contains('hidden');
-                if (linkPage === pageId) {
-                    link.className = 'nav-link text-rose-600 border-b-2 border-rose-600 pb-1 transition-all duration-200' + (isHidden ? ' hidden' : '');
-                } else {
-                    link.className = 'nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200' + (isHidden ? ' hidden' : '');
-                }
-            });
-            if (window.refreshPermissionUI) window.refreshPermissionUI();
-
-            currentPage = pageId;
-            window.location.hash = pageId;
-
-            // SPECIAL LOGIC FOR PAGES
-            if (pageId === 'create-order') {
-                if (window.updateOrderCategoryDropdown) window.updateOrderCategoryDropdown();
-                const role = localStorage.getItem('nevo_role') || 'user';
-                const userName = localStorage.getItem('nevo_user') || '';
-                const userDept = localStorage.getItem('nevo_dept') || '';
-                
-                const reqEl = document.getElementById('requester');
-                const deptEl = document.getElementById('department');
-                
-                if (reqEl) {
-                    // Set default requester if it exists in options, else add it
-                    let found = false;
-                    for (let i = 0; i < reqEl.options.length; i++) {
-                        if (reqEl.options[i].text === userName) {
-                            reqEl.selectedIndex = i;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        const opt = document.createElement('option');
-                        opt.text = userName;
-                        opt.selected = true;
-                        reqEl.add(opt);
-                    }
-                    if (role === 'user') {
-                        reqEl.parentElement.classList.add('opacity-70', 'pointer-events-none');
-                        reqEl.disabled = true;
-                    } else {
-                        reqEl.parentElement.classList.remove('opacity-70', 'pointer-events-none');
-                        reqEl.disabled = false;
-                    }
-                }
-                
-                if (deptEl) {
-                    let found = false;
-                    for (let i = 0; i < deptEl.options.length; i++) {
-                        if (deptEl.options[i].text === userDept) {
-                            deptEl.selectedIndex = i;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found && userDept) {
-                        const opt = document.createElement('option');
-                        opt.text = userDept;
-                        opt.selected = true;
-                        deptEl.add(opt);
-                    }
-                    if (role === 'user') {
-                        deptEl.classList.add('opacity-70', 'pointer-events-none');
-                        deptEl.disabled = true;
-                    } else {
-                        deptEl.classList.remove('opacity-70', 'pointer-events-none');
-                        deptEl.disabled = false;
-                    }
-                }
-
-                // Hide restricted sections for users
-                const assignmentsSection = document.getElementById('assignmentsSection');
-                if (assignmentsSection) {
-                    if (role === 'user') assignmentsSection.classList.add('hidden');
-                    else assignmentsSection.classList.remove('hidden');
-                }
-            } else if (pageId === 'profile') {
-                if (window.updateProfilePage) window.updateProfilePage();
-            }
-        }, currentEl ? 200 : 0);
-    }
-    window.navigateTo = navigateTo;
+    // Note: navigateTo is now managed by ui-service.js module
+    window.currentPage = 'dashboard';
 
     // ===== Mobile Menu =====
     function openMobileMenu() {
@@ -7098,7 +6919,7 @@
                         <textarea rows="1" ${!canEdit ? 'disabled' : ''} oninput="window.autoResizeTextarea(this)" onblur="window.updateRowField('${row.id}', 'note', this.value)" onmouseenter="if(this.value.trim()){window.showPremiumTooltip(event, 'Ghi chú', encodeURIComponent(this.value.replace(/\n/g, '<br>')));}" onmouseleave="window.hidePremiumTooltip()" class="w-full border border-slate-200 rounded px-1 py-1 text-[10px] text-slate-500 outline-none resize-none leading-tight bg-transparent overflow-hidden ${!canEdit ? 'cursor-not-allowed' : ''}">${row.note || ''}</textarea>
                     </td>
                     <td class="py-2 px-0.5 bg-white group-hover:bg-blue-50 border-r border-b border-slate-100 min-w-[35px] max-w-[35px] align-top">
-                        <input type="text" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowBudget('${row.id}', this.value); this.value = this.value ? Number(this.value.replace(/\D/g, '')).toLocaleString() : ''" class="w-full border border-slate-200 rounded px-0.5 py-1 text-right text-[9px] font-bold text-rose-600 outline-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}" placeholder="0" value="${row.budget ? Number(row.budget.toString().replace(/\D/g, '')).toLocaleString() : ''}">
+                        <input type="text" ${!canEdit ? 'disabled' : ''} onblur="window.updateRowBudget('${row.id}', this.value); this.value = window.formatCurrency(this.value)" class="w-full border border-slate-200 rounded px-0.5 py-1 text-right text-[9px] font-bold text-rose-600 outline-none bg-transparent ${!canEdit ? 'cursor-not-allowed' : ''}" placeholder="0" value="${window.formatCurrency(row.budget || 0)}">
                     </td>
                     <td class="py-2 px-1 border-r-2 border-b border-slate-200 bg-rose-50 group-hover:bg-rose-100 text-center align-middle font-black text-rose-600 text-[11px] min-w-[50px] max-w-[50px]">
                         ${rowTotal}
@@ -8429,7 +8250,7 @@
             input.value = '';
             return;
         }
-        input.value = Number(val).toLocaleString('en-US');
+        input.value = window.formatCurrency(val);
     };
 
     window.unformatCurrencyValue = function(str) {

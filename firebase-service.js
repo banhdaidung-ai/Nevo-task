@@ -7,7 +7,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/fireba
 import { 
     getFirestore, collection, addDoc, getDocs, getDoc, doc, 
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
-    serverTimestamp, limit, startAfter, setDoc 
+    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 import { firebaseConfig } from "./app-config.js";
 
@@ -32,9 +32,11 @@ window.fsServerTimestamp = serverTimestamp;
 window.fsLimit = limit;
 window.fsStartAfter = startAfter;
 window.fsSetDoc = setDoc;
+window.fsRunTransaction = runTransaction;
+window.fsTimestamp = Timestamp;
 
 export { 
     db, collection, addDoc, getDocs, getDoc, doc, 
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
-    serverTimestamp, limit, startAfter, setDoc 
+    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
 };

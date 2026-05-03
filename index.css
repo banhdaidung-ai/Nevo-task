@@ -16,10 +16,16 @@
   --bg-card: rgba(255, 255, 255, 0.8);
   --bg-sidebar: #ffffff;
   
-  /* Text */
   --text-main: #131b2e;
   --text-muted: #64748b;
   --text-on-primary: #ffffff;
+  
+  /* Missing semantic tokens for compatibility */
+  --bg-background: #faf8ff;
+  --text-on-surface: #131b2e;
+  --text-on-surface-variant: #64748b;
+  --bg-surface-container-low: #f1f5f9;
+  --bg-surface-container-lowest: #ffffff;
   
   /* Glassmorphism */
   --glass-bg: rgba(255, 255, 255, 0.6);
@@ -41,6 +47,12 @@ html.dark {
   
   --text-main: #f1f5f9;
   --text-muted: #94a3b8;
+  
+  --bg-background: #0f172a;
+  --text-on-surface: #f1f5f9;
+  --text-on-surface-variant: #94a3b8;
+  --bg-surface-container-low: #1e293b;
+  --bg-surface-container-lowest: #1e293b;
   
   --glass-bg: rgba(15, 23, 42, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);
@@ -85,6 +97,13 @@ h1, h2, h3, h4, h5, h6, .font-headline {
   transform: translateY(-6px) scale(1.01);
   box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.15);
 }
+
+/* Tailwind Semantic Overrides */
+.bg-background { background-color: var(--bg-background); }
+.text-on-surface { color: var(--text-on-surface); }
+.text-on-surface-variant { color: var(--text-on-surface-variant); }
+.bg-surface-container-low { background-color: var(--bg-surface-container-low); }
+.bg-surface-container-lowest { background-color: var(--bg-surface-container-lowest); }
 
 /* Animations */
 @keyframes fadeIn {
@@ -215,4 +234,39 @@ html.dark .form-input:focus {
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Page transitions */
+.page { 
+    display: none; 
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+.page.active { 
+    display: block; 
+}
+.page.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Toast notification */
+.toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+    transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.toast.show { transform: translateX(0); }
+
+/* Additional Utilities */
+.card-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.card-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 60px -15px rgba(19, 27, 46, 0.12); }
+
+.notification-dropdown {
+    opacity: 0; transform: translateY(-8px) scale(0.95);
+    pointer-events: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.notification-dropdown.open {
+    opacity: 1; transform: translateY(0) scale(1);
+    pointer-events: auto;
 }

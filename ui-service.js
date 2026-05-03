@@ -56,7 +56,10 @@ export function navigateTo(pageId) {
     const currentEl = document.querySelector('.page.active');
     const newEl = document.getElementById(`page-${pageId}`);
     
-    if (currentEl === newEl) return;
+    if (currentEl === newEl && currentEl?.classList.contains('visible')) return;
+
+    // Update global state for other scripts
+    window.currentPage = pageId;
 
     if (currentEl) {
         currentEl.classList.remove('visible');
@@ -70,6 +73,75 @@ export function navigateTo(pageId) {
             newEl.classList.add('visible');
             window.location.hash = pageId;
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Trigger page-specific renders if they exist on window
+            if (pageId === 'dashboard' && window.renderDashboardTable) window.renderDashboardTable();
+            if (pageId === 'orders' && window.renderOrdersTable) window.renderOrdersTable();
+            if (pageId === 'reports' && window.renderReports) window.renderReports();
+            if (pageId === 'planning' && window.renderPlanningReport) window.renderPlanningReport();
+            if (pageId === 'budgetReport') {
+                if (window.switchBudgetTab) window.switchBudgetTab('production');
+                else if (window.renderBudgetReport) window.renderBudgetReport();
+            }
+            if (pageId === 'detailed-report' && window.renderDetailedReport) window.renderDetailedReport();
+            if (pageId === 'profile' && window.updateProfilePage) window.updateProfilePage();
+            
+            // Special logic for Create Order page
+            if (pageId === 'create-order') {
+                if (window.updateOrderCategoryDropdown) window.updateOrderCategoryDropdown();
+                const role = localStorage.getItem('nevo_role') || 'user';
+                const userName = localStorage.getItem('nevo_user') || '';
+                const userDept = localStorage.getItem('nevo_dept') || '';
+                
+                const reqEl = document.getElementById('requester');
+                const deptEl = document.getElementById('department');
+                
+                if (reqEl) {
+                    let found = false;
+                    for (let i = 0; i < reqEl.options.length; i++) {
+                        if (reqEl.options[i].text === userName) {
+                            reqEl.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && userName) {
+                        const opt = document.createElement('option');
+                        opt.text = userName; opt.selected = true;
+                        reqEl.add(opt);
+                    }
+                    if (role === 'user') {
+                        reqEl.parentElement.classList.add('opacity-70', 'pointer-events-none');
+                        reqEl.disabled = true;
+                    }
+                }
+                
+                if (deptEl) {
+                    let found = false;
+                    for (let i = 0; i < deptEl.options.length; i++) {
+                        if (deptEl.options[i].text === userDept) {
+                            deptEl.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && userDept) {
+                        const opt = document.createElement('option');
+                        opt.text = userDept; opt.selected = true;
+                        deptEl.add(opt);
+                    }
+                    if (role === 'user') {
+                        deptEl.classList.add('opacity-70', 'pointer-events-none');
+                        deptEl.disabled = true;
+                    }
+                }
+                
+                const assignmentsSection = document.getElementById('assignmentsSection');
+                if (assignmentsSection) {
+                    if (role === 'user') assignmentsSection.classList.add('hidden');
+                    else assignmentsSection.classList.remove('hidden');
+                }
+            }
         }
     }, currentEl ? 300 : 0);
 }
