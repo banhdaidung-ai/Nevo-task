@@ -3045,8 +3045,8 @@
 
     // Load and Sync Roles for Permission Management
     window.appRoles = {};
-    const qRoles = query(collection(db, "system_roles"));
-    onSnapshot(qRoles, (snap) => {
+    const qRoles = window.fsQuery(window.fsCollection(window.db, "system_roles"));
+    window.fsOnSnapshot(qRoles, (snap) => {
         const roles = {};
         snap.forEach(doc => {
             roles[doc.id] = doc.data();
@@ -3596,9 +3596,15 @@
         }
 
         if (userRoleSlug === 'user' || userRoleSlug === 'member' || userRoleSlug === 'thành viên') {
-            const allowedForUser = ['orders_view', 'orders_create', 'planning_view', 'reports_view'];
+            // Fallback: allow basic order operations when Firestore roles haven't loaded yet
+            const allowedForUser = [
+                'orders_view', 'orders_create',
+                'orders_edit_title', 'orders_edit_category', 'orders_edit_deadline',
+                'orders_edit_status', 'orders_edit_info',
+                'planning_view', 'reports_view'
+            ];
             const isAllowed = allowedForUser.includes(permKey);
-            console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Allowed: ${isAllowed}`);
+            console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Allowed: ${isAllowed} (fallback)`);
             return isAllowed;
         }
 
@@ -3667,6 +3673,17 @@
                 mobileScheduleLink.classList.remove('hidden');
                 mobileScheduleLink.classList.add('flex');
             }
+        }
+
+        // Re-render current page tables if they depend on RBAC
+        if (window.currentPage === 'orders' && typeof window.renderOrdersTable === 'function') {
+            window.renderOrdersTable();
+        } else if (window.currentPage === 'planning' && typeof window.renderPlanningReport === 'function') {
+            window.renderPlanningReport();
+        } else if (window.currentPage === 'dashboard' && typeof window.renderDashboardTable === 'function') {
+            window.renderDashboardTable();
+        } else if (window.currentPage === 'detailed-report' && typeof window.renderDetailedReport === 'function') {
+            window.renderDetailedReport();
         }
     };
 
@@ -4840,7 +4857,10 @@
             { id: 'editOrderStylist', field: 'stylist' },
             { id: 'editOrderVideo', field: 'assignedVideo' },
             { id: 'editOrderPhoto', field: 'assignedPhoto' },
-            { id: 'editOrderNote', field: 'note' }
+            { id: 'editOrderNote', field: 'note' },
+            { id: 'editOrderTitle', field: 'title' },
+            { id: 'editOrderRequester', field: 'requester' },
+            { id: 'editOrderDeadline', field: 'deadline' }
         ];
 
         fieldsToProtect.forEach(item => {

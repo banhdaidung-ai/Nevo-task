@@ -21,10 +21,16 @@ export function getCurrentUser() {
 }
 
 export function checkPermission(field) {
+    // Delegate to the comprehensive global version if available (defined in index.html)
+    if (typeof window.checkPermission === 'function' && window.checkPermission !== checkPermission) {
+        return window.checkPermission(field);
+    }
+
+    // Fallback: basic permission check if global version not yet loaded
     const user = getCurrentUser();
     const userRoleSlug = user.role.toLowerCase();
+    if (userRoleSlug === 'admin') return true;
     
-    // Permission map based on the existing logic
     const permissionMap = {
         'view': 'orders_view',
         'costs': 'orders_edit_costs',
@@ -38,32 +44,16 @@ export function checkPermission(field) {
         'reports_view': 'reports_view',
         'admin_access': 'admin_access'
     };
-
     const permKey = permissionMap[field] || field;
 
-    // Use global appRoles if available, otherwise fallback
     if (window.appRoles && window.appRoles[userRoleSlug]) {
         const roleData = window.appRoles[userRoleSlug];
         if (roleData.permissions && roleData.permissions[permKey] !== undefined) {
             return !!roleData.permissions[permKey];
         }
     }
-
-    // Fallbacks
-    if (userRoleSlug === 'admin') return true;
-    if (userRoleSlug === 'viewer') return ['orders_view', 'planning_view', 'finance_view', 'reports_view'].includes(permKey);
-    
-    if (userRoleSlug === 'manager') {
-        const deniedForManager = ['admin_access', 'orders_delete'];
-        return !deniedForManager.includes(permKey);
-    }
-
-    if (['user', 'member', 'thành viên'].includes(userRoleSlug)) {
-        const allowedForUser = ['orders_view', 'orders_create', 'planning_view', 'reports_view'];
-        return allowedForUser.includes(permKey);
-    }
-
     return false;
 }
 
-window.checkPermission = checkPermission; // Export to global for legacy inline calls
+// DO NOT overwrite window.checkPermission here — the comprehensive version
+// in index.html (regular <script>) must remain the authoritative global.
