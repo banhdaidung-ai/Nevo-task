@@ -74,6 +74,19 @@ export function navigateTo(pageId) {
             window.location.hash = pageId;
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
+            // Update nav links active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.dataset.page) {
+                    if (link.dataset.page === pageId) {
+                        link.classList.remove('text-slate-500', 'hover:text-[#131b2e]');
+                        link.classList.add('text-rose-600', 'border-b-2', 'border-rose-600', 'pb-1');
+                    } else {
+                        link.classList.add('text-slate-500', 'hover:text-[#131b2e]');
+                        link.classList.remove('text-rose-600', 'border-b-2', 'border-rose-600', 'pb-1');
+                    }
+                }
+            });
+
             // Trigger page-specific renders if they exist on window
             if (pageId === 'dashboard' && window.renderDashboardTable) window.renderDashboardTable();
             if (pageId === 'orders' && window.renderOrdersTable) window.renderOrdersTable();
