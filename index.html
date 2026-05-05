@@ -3584,6 +3584,7 @@
             'create': 'orders_create',
             'planning_view': 'planning_view',
             'planning_edit': 'planning_edit',
+            'planning_delete': 'planning_delete',
             'finance_view': 'finance_view',
             'finance_edit': 'finance_edit',
             'reports_view': 'reports_view',
@@ -3626,7 +3627,7 @@
                 'orders_view', 'orders_create',
                 'orders_edit_title', 'orders_edit_category', 'orders_edit_deadline',
                 'orders_edit_status', 'orders_edit_info',
-                'planning_view', 'reports_view'
+                'planning_view', 'planning_delete', 'reports_view'
             ];
             const isAllowed = allowedForUser.includes(permKey);
             console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Allowed: ${isAllowed} (fallback)`);
@@ -4383,8 +4384,6 @@
                     onmouseleave="window.hidePremiumTooltip()">${name}</span>`;
             };
 
-            
-            const isAdmin = (localStorage.getItem('nevo_role') === 'admin');
             
             // Function to get row background color based on status
             const getRowBgClass = (status) => {
@@ -6855,13 +6854,13 @@
     };
 
     window.updateSelectedPlanningCount = function() {
-        const isAdmin = (localStorage.getItem('nevo_role') === 'admin');
+        const canDelete = checkPermission('planning_delete');
         const checkboxes = document.querySelectorAll('.planning-row-checkbox:checked');
         const count = checkboxes.length;
         const btn = document.getElementById('btnDeleteSelectedPlanning');
         const countSpan = document.getElementById('selectedPlanningCount');
         
-        if(count > 0 && isAdmin) {
+        if(count > 0 && canDelete) {
             btn.classList.remove('hidden');
             countSpan.textContent = count;
         } else {
@@ -6870,8 +6869,8 @@
     };
 
     window.deleteSelectedPlanningRows = async function() {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
-            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể xoá hàng loạt.', 'block', 'text-error');
+        if (!checkPermission('planning_delete')) {
+            showToast('Từ chối!', 'Bạn không có quyền xoá hàng loạt.', 'block', 'text-error');
             return;
         }
         const checkboxes = document.querySelectorAll('.planning-row-checkbox:checked');
@@ -6897,7 +6896,7 @@
     };
 
     window.deletePlanningRow = async function(id) {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
+        if (!checkPermission('planning_delete')) {
             showToast('Từ chối!', 'Bạn không có quyền xoá kế hoạch.', 'block', 'text-error');
             return;
         }
@@ -7016,7 +7015,7 @@
                     </td>
                     ${daysHtml}
                     <td class="py-2 px-1 xl:sticky right-0 z-10 bg-white group-hover:bg-blue-50 border-l border-b border-slate-100 text-center min-w-[50px] max-w-[50px] align-top">
-                        ${canEdit ? `<button onclick="window.deletePlanningRow('${row.id}')" class="p-0.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-all">
+                        ${checkPermission('planning_delete') ? `<button onclick="window.deletePlanningRow('${row.id}')" class="p-0.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-all">
                             <span class="material-symbols-outlined text-[16px]">delete</span>
                         </button>` : ''}
                     </td>
@@ -8100,8 +8099,8 @@
     };
 
     window.addNewExpenseRow = async function() {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
-            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể thêm dòng.', 'block', 'text-error');
+        if (!checkPermission('finance_edit')) {
+            showToast('Từ chối!', 'Bạn không có quyền thêm dòng tài chính.', 'block', 'text-error');
             return;
         }
         if (!window.db || !window.fsAddDoc || !window.fsCollection) return;
@@ -8172,8 +8171,8 @@
     };
 
     window.addNewFinanceColumn = async function() {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
-            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể thêm cột.', 'block', 'text-error');
+        if (!checkPermission('admin_access')) {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể thêm hạng mục tài chính.', 'block', 'text-error');
             return;
         }
         const name = document.getElementById('newColName').value.trim();
@@ -8193,8 +8192,8 @@
     };
 
     window.deleteFinanceColumn = async function(id) {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
-            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể xoá cột.', 'block', 'text-error');
+        if (!checkPermission('admin_access')) {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể xoá hạng mục tài chính.', 'block', 'text-error');
             return;
         }
         if(!confirm('Xóa hạng mục này sẽ ảnh hưởng đến việc hiển thị các chi phí cũ. Bạn có chắc chắn?')) return;
@@ -8308,8 +8307,8 @@
     };
 
     window.editFinanceColumn = function(id) {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
-            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể sửa cột.', 'block', 'text-error');
+        if (!checkPermission('admin_access')) {
+            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể sửa hạng mục tài chính.', 'block', 'text-error');
             return;
         }
         const c = window.financeColumns.find(x => x.id === id);
@@ -8359,7 +8358,7 @@
     };
 
     window.updateColumnPlan = async function(id, newPlan, periodKey) {
-        if (localStorage.getItem('nevo_role') !== 'admin') return;
+        if (!checkPermission('admin_access')) return;
         try {
             const updateObj = {};
             updateObj[`monthlyPlans.${periodKey}`] = Number(newPlan) || 0;
@@ -8373,8 +8372,8 @@
 
 
     window.updateExpenseColumnValue = async function(expenseId, colName, value) {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
-            showToast('Từ chối!', 'Chỉ quản trị viên mới có thể sửa chi phí.', 'block', 'text-error');
+        if (!checkPermission('finance_edit')) {
+            showToast('Từ chối!', 'Bạn không có quyền sửa chi phí.', 'block', 'text-error');
             return;
         }
         try {
@@ -8405,7 +8404,7 @@
 
     // Config Management
     window.manageFinanceDropdown = function(type) {
-        if (localStorage.getItem('nevo_role') !== 'admin') {
+        if (!checkPermission('admin_access')) {
             showToast('Từ chối!', 'Chỉ quản trị viên mới có thể quản lý cấu hình.', 'block', 'text-error');
             return;
         }

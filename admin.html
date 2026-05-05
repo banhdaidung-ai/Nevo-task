@@ -1146,39 +1146,72 @@
                     </div>
 
                     <!-- Planning & Finance -->
-                    <div class="space-y-2">
+                    <div class="space-y-3 col-span-2 md:col-span-1">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">📅 Kế hoạch & Tài chính</p>
-                        <div class="space-y-2">
+                        <div class="space-y-1.5">
                             <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="planning_view">
-                                <span class="text-xs font-semibold">Xem kế hoạch</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-indigo-500">visibility</span> Xem kế hoạch
+                                    </span>
+                                </div>
                             </label>
                             <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="planning_edit">
-                                <span class="text-xs font-semibold">Sửa kế hoạch/Ngân sách</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-amber-500">edit_calendar</span> Sửa kế hoạch/Ngân sách
+                                    </span>
+                                </div>
                             </label>
                             <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="planning_delete">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-rose-500">delete_sweep</span> Xoá dòng kế hoạch
+                                    </span>
+                                </div>
+                            </label>
+                            <div class="h-px bg-slate-100 my-1"></div>
+                            <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="finance_view">
-                                <span class="text-xs font-semibold">Xem bảng tài chính</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-teal-500">account_balance_wallet</span> Xem bảng tài chính
+                                    </span>
+                                </div>
                             </label>
                             <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="finance_edit">
-                                <span class="text-xs font-semibold">Sửa/Xóa dòng tài chính</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-teal-600">payments</span> Sửa/Xóa dòng tài chính
+                                    </span>
+                                </div>
                             </label>
                         </div>
                     </div>
 
                     <!-- System -->
-                    <div class="space-y-2">
+                    <div class="space-y-3 col-span-2 md:col-span-1">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">⚙️ Hệ thống</p>
-                        <div class="space-y-2">
+                        <div class="space-y-1.5">
                             <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="reports_view">
-                                <span class="text-xs font-semibold">Xem báo cáo/Lịch làm</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-blue-500">analytics</span> Xem báo cáo/Lịch làm
+                                    </span>
+                                </div>
                             </label>
                             <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="admin_access">
-                                <span class="text-xs font-semibold">Truy cập Trang Quản trị</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-red-600">admin_panel_settings</span> Truy cập Trang Quản trị
+                                    </span>
+                                </div>
                             </label>
                         </div>
                     </div>
