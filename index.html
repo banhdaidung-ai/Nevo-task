@@ -1492,9 +1492,14 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-                        <button id="btnScheduleWeek" onclick="switchScheduleView('week')" class="px-4 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all">Tuần này</button>
-                        <button id="btnScheduleMonth" onclick="switchScheduleView('month')" class="px-4 py-1.5 rounded-lg text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">Tháng này</button>
+                    <div class="flex items-center gap-3">
+                        <select id="scheduleUserFilter" class="form-input !py-1.5 !text-xs w-48" onchange="if(typeof window.switchScheduleView === 'function') window.switchScheduleView(window.currentScheduleView)">
+                            <option value="all">Tất cả thành viên</option>
+                        </select>
+                        <div class="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                            <button id="btnScheduleWeek" onclick="switchScheduleView('week')" class="px-4 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all">Tuần này</button>
+                            <button id="btnScheduleMonth" onclick="switchScheduleView('month')" class="px-4 py-1.5 rounded-lg text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all">Tháng này</button>
+                        </div>
                     </div>
                 </div>
                 <div id="weeklyScheduleContainer" class="overflow-x-auto">
@@ -4687,6 +4692,9 @@
             populateDropdown('assignedPhoto', creativeStaff, '- Chưa chọn -');
             populateDropdown('assignedDesign', creativeStaff, '- Chưa chọn -');
 
+            // Populate Schedule User Filter
+            populateDropdown('scheduleUserFilter', staff, 'Tất cả thành viên', 'all');
+
             if (window.allOrdersData && window.allOrdersData.length > 0) window.renderOrdersTable();
         });
 
@@ -5408,6 +5416,23 @@
             };
         }).sort((a, b) => a.name.localeCompare(b.name));
 
+        const scheduleUserFilterEl = document.getElementById('scheduleUserFilter');
+        const selectedUser = scheduleUserFilterEl ? scheduleUserFilterEl.value : 'all';
+
+        if (selectedUser !== 'all') {
+            const userData = (window.allUsersData || []).find(u => u.name === selectedUser);
+            if (userData) {
+                const initials = selectedUser.split(' ').filter(n => n).map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                staffList = [{
+                    name: selectedUser,
+                    role: userData.role || userData.department || 'Nhân sự',
+                    initials: initials
+                }];
+            } else {
+                staffList = [];
+            }
+        }
+
         let scheduleHtml = '';
         if (staffList.length === 0) {
             scheduleHtml = '<tr><td colspan="8" class="py-32 text-center"><div class="flex flex-col items-center gap-4 text-slate-300 opacity-50"><span class="material-symbols-outlined text-6xl">event_busy</span><p class="text-xs font-black uppercase tracking-[0.2em]">Chưa có lịch trình tuần này</p></div></td></tr>';
@@ -5509,7 +5534,19 @@
             const toLocalDateStr = (dateObj) => `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
             const dateStr = toLocalDateStr(date);
             
-            const tasks = (window.allOrdersData || []).filter(o => o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr));
+            const scheduleUserFilterEl = document.getElementById('scheduleUserFilter');
+            const selectedUser = scheduleUserFilterEl ? scheduleUserFilterEl.value : 'all';
+
+            let tasks = (window.allOrdersData || []).filter(o => o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr));
+            
+            if (selectedUser !== 'all') {
+                tasks = tasks.filter(o => 
+                    o.assignedVideo === selectedUser || 
+                    o.assignedPhoto === selectedUser || 
+                    o.assignedDesign === selectedUser || 
+                    o.stylist === selectedUser
+                );
+            }
             
             let tasksHtml = '';
             tasks.forEach(o => {
@@ -5773,21 +5810,33 @@
         const leaderboardBody = document.getElementById('leaderboardBody');
         if (leaderboardBody) {
             const sortedStaff = (window.allUsersData || []).map(u => {
-                const assigned = window.allOrdersData.filter(o => o.assignedVideo === u.name || o.assignedPhoto === u.name || o.assignedDesign === u.name || o.stylist === u.name || o.requester === u.name).length;
-                const completed = window.allOrdersData.filter(o => (o.assignedVideo === u.name || o.assignedPhoto === u.name || o.assignedDesign === u.name || o.stylist === u.name || o.requester === u.name) && o.status === 'Hoàn thành').length;
+                // Thống kê các thành viên phụ trách: stylist, photo, video, design
+                const assigned = window.allOrdersData.filter(o => 
+                    o.stylist === u.name || 
+                    o.assignedVideo === u.name || 
+                    o.assignedPhoto === u.name || 
+                    o.assignedDesign === u.name
+                ).length;
+                
+                const completed = window.allOrdersData.filter(o => 
+                    (o.stylist === u.name || o.assignedVideo === u.name || o.assignedPhoto === u.name || o.assignedDesign === u.name) && 
+                    o.status === 'Hoàn thành'
+                ).length;
+                
                 const rate = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
                 return { ...u, assigned, completed, rate };
-            }).sort((a, b) => b.completed - a.completed).slice(0, 5);
+            }).filter(s => s.assigned > 0)
+              .sort((a, b) => b.completed - a.completed).slice(0, 10);
 
             let leaderboardHtml = '';
             sortedStaff.forEach((s, idx) => {
-                const colors = ['text-rose-500 bg-rose-50', 'text-amber-500 bg-amber-50', 'text-blue-500 bg-blue-50', 'text-slate-500 bg-slate-50', 'text-slate-500 bg-slate-50'];
+                const colors = ['text-rose-500 bg-rose-50', 'text-amber-500 bg-amber-50', 'text-blue-500 bg-blue-50', 'text-indigo-500 bg-indigo-50', 'text-slate-500 bg-slate-50'];
                 const rateColor = s.rate > 90 ? 'bg-emerald-500' : s.rate > 70 ? 'bg-amber-500' : 'bg-rose-500';
                 leaderboardHtml += `
                     <tr class="hover:bg-slate-50/50 transition-all">
                         <td class="py-4 px-6">
                             <div class="flex items-center gap-3">
-                                <span class="w-5 text-[10px] font-black text-slate-300">0${idx + 1}</span>
+                                <span class="w-5 text-[10px] font-black text-slate-300">${String(idx + 1).padStart(2, '0')}</span>
                                 <p class="text-sm font-bold text-slate-700">${s.name}</p>
                             </div>
                         </td>
@@ -5815,13 +5864,25 @@
         // 4. Department Performance
         const deptBody = document.getElementById('deptPerformanceBody');
         if (deptBody) {
-            const depts = ['Marketing', 'Kinh doanh', 'Vận hành', 'Kỹ thuật'];
+            // Lấy danh sách các phòng ban duy nhất từ dữ liệu đơn hàng
+            const depts = [...new Set(window.allOrdersData.map(o => o.department).filter(Boolean))].sort();
+            
             let deptHtml = '';
             depts.forEach(d => {
                 const dOrders = window.allOrdersData.filter(o => o.department === d);
                 const dCompleted = dOrders.filter(o => o.status === 'Hoàn thành').length;
                 const dRate = dOrders.length > 0 ? Math.round((dCompleted / dOrders.length) * 100) : 0;
-                const dOnTime = dOrders.length > 0 ? 90 : 0; 
+                
+                // Tính tỷ lệ đúng hạn cho phòng ban
+                const dOnTimeOrders = dOrders.filter(o => {
+                    if (o.status !== 'Hoàn thành') return false;
+                    if (!o.deadline) return true;
+                    const deadline = new Date(o.deadline);
+                    const updated = o.updatedAt ? (o.updatedAt.toDate ? o.updatedAt.toDate() : new Date(o.updatedAt)) : new Date();
+                    return updated <= deadline;
+                });
+                const dOnTimeRate = dCompleted > 0 ? Math.round((dOnTimeOrders.length / dCompleted) * 100) : 0;
+                
                 deptHtml += `
                     <tr class="hover:bg-slate-50/50 transition-all">
                         <td class="py-5 px-6">
@@ -5836,7 +5897,7 @@
                         <td class="py-5 px-4 text-center font-bold text-emerald-600">${dCompleted}</td>
                         <td class="py-5 px-4">
                              <div class="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-emerald-500" style="width: ${dOnTime}%"></div>
+                                <div class="h-full bg-emerald-500" style="width: ${dOnTimeRate}%"></div>
                             </div>
                         </td>
                         <td class="py-5 px-6 text-right">
