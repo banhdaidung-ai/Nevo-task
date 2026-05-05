@@ -1005,6 +1005,11 @@
                                     Photo <span class="material-symbols-outlined sort-icon" id="sort-assignedPhoto">unfold_more</span>
                                 </div>
                             </th>
+                            <th class="cursor-pointer group/h py-4 min-w-[130px]" onclick="toggleSort('assignedDesign')">
+                                <div class="flex items-center whitespace-nowrap gap-1.5 group-hover/h:text-primary transition-colors">
+                                    Design <span class="material-symbols-outlined sort-icon" id="sort-assignedDesign">unfold_more</span>
+                                </div>
+                            </th>
                             <th class="text-right py-4 pr-6 min-w-[100px]">Thao tác</th>
                         </tr>
                         <tr class="bg-slate-50/40 border-b border-slate-200/50">
@@ -1142,7 +1147,14 @@
                                     <div class="multi-select-menu" id="menu-assignedPhoto"></div>
                                 </div>
                             </th>
-                            <!-- 15. Actions -->
+                            <!-- 15. Design -->
+                            <th class="px-2 py-3">
+                                <div class="multi-select-container">
+                                    <div class="multi-select-trigger" id="trigger-assignedDesign" data-label="Design" onclick="toggleMultiSelect('menu-assignedDesign')">Design</div>
+                                    <div class="multi-select-menu" id="menu-assignedDesign"></div>
+                                </div>
+                            </th>
+                            <!-- 16. Actions -->
                             <th class="px-2 py-3 text-right">
                                 <button onclick="clearAllFilters()" class="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm group mx-auto" title="Xóa tất cả bộ lọc">
                                     <span class="material-symbols-outlined text-[18px] group-hover:rotate-90 transition-transform duration-300">filter_alt_off</span>
@@ -1152,7 +1164,7 @@
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="15" class="px-6 py-8 text-center text-slate-400">
+                            <td colspan="16" class="px-6 py-8 text-center text-slate-400">
                                 <span class="material-symbols-outlined text-[24px] animate-spin mb-2">progress_activity</span>
                                 <div>Đang tải dữ liệu...</div>
                             </td>
@@ -2988,6 +3000,18 @@
                         </div>
                     </div>
 
+                    <!-- Design (Phụ trách) -->
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Design (Phụ trách)</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#b80035] text-[18px] pointer-events-none">draw</span>
+                            <select id="editOrderDesign" class="w-full bg-[#e8eefc] border-none rounded-[12px] pl-12 pr-10 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow appearance-none cursor-pointer">
+                                <option value="">- Chưa chọn -</option>
+                            </select>
+                            <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
+                        </div>
+                    </div>
+
                     <!-- Ghi chú -->
                     <div class="space-y-2">
                         <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Ghi chú</label>
@@ -3073,7 +3097,7 @@
                 'status': 'Trạng thái', 'title': 'Tiêu đề', 'requester': 'Người yêu cầu',
                 'department': 'Phòng ban', 'content': 'Nội dung', 'deadline': 'Hạn chót',
                 'deployDate': 'Ngày triển khai', 'category': 'Hạng mục', 'stylist': 'Stylist',
-                'assignedVideo': 'Video Editor', 'assignedPhoto': 'Photographer',
+                'assignedVideo': 'Video Editor', 'assignedPhoto': 'Photographer', 'assignedDesign': 'Designer',
                 'costs': 'Chi phí chi tiết', 'totalCost': 'Tổng chi phí', 'note': 'Ghi chú'
             };
             for (const key in updateData) {
@@ -3550,6 +3574,7 @@
             'stylist': 'orders_edit_stylist',
             'assignedVideo': 'orders_edit_video',
             'assignedPhoto': 'orders_edit_photo',
+            'assignedDesign': 'orders_edit_design',
             'requester': 'orders_edit_requester',
             'department': 'orders_edit_department',
             'deployDate': 'orders_edit_deployDate',
@@ -3569,7 +3594,7 @@
 
         // Special case: check if user has ANY edit permission for orders
         if (permKey === 'orders_edit_any') {
-            const editPerms = ['orders_edit_requester','orders_edit_department','orders_edit_category','orders_edit_title','orders_edit_note','orders_edit_orderDate','orders_edit_deployDate','orders_edit_deadline','orders_edit_stylist','orders_edit_video','orders_edit_photo','orders_edit_status','orders_edit_costs'];
+            const editPerms = ['orders_edit_requester','orders_edit_department','orders_edit_category','orders_edit_title','orders_edit_note','orders_edit_orderDate','orders_edit_deployDate','orders_edit_deadline','orders_edit_stylist','orders_edit_video','orders_edit_photo','orders_edit_design','orders_edit_status','orders_edit_costs'];
             if (window.appRoles) {
                 const userRoleData = window.appRoles[(localStorage.getItem('nevo_role') || 'user').toLowerCase()];
                 if (userRoleData && userRoleData.permissions) {
@@ -3796,6 +3821,7 @@
         const stylist = '';
         const assignedVideo = '';
         const assignedPhoto = '';
+        const assignedDesign = '';
         const note = '';
         
         if (!title || !deadline) {
@@ -3836,6 +3862,7 @@
                     stylist: stylist,
                     assignedVideo: assignedVideo,
                     assignedPhoto: assignedPhoto,
+                    assignedDesign: assignedDesign,
                     status: 'Chờ duyệt',
                     createdAt: window.fsServerTimestamp ? window.fsServerTimestamp() : new Date().toISOString()
                 });
@@ -3901,7 +3928,7 @@
         if (val === 'ALL') {
             columnFilters[key] = [];
             // Uncheck other checkboxes in this specific menu
-            const menu = document.getElementById(`menu-${key}`) || (key === 'assignedVideo' ? document.getElementById('menu-video') : null) || (key === 'assignedPhoto' ? document.getElementById('menu-photo') : null);
+            const menu = document.getElementById(`menu-${key}`) || (key === 'assignedVideo' ? document.getElementById('menu-video') : null) || (key === 'assignedPhoto' ? document.getElementById('menu-photo') : null) || (key === 'assignedDesign' ? document.getElementById('menu-design') : null);
             if(menu) menu.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
         } else {
             if (isChecked) {
@@ -4090,6 +4117,7 @@
             'stylist': 'Stylist',
             'assignedVideo': 'Video',
             'assignedPhoto': 'Photo',
+            'assignedDesign': 'Design',
             'code': 'Mã đơn'
         };
         const label = labels[key] || '';
@@ -4116,6 +4144,7 @@
             'stylist': 'palette',
             'assignedVideo': 'video_library',
             'assignedPhoto': 'photo_camera',
+            'assignedDesign': 'palette',
             'department': 'domain',
             'status': 'label',
             'category': 'category',
@@ -4195,7 +4224,8 @@
                 (data.requester || '').toLowerCase().includes(globalSearch) ||
                 (data.stylist || '').toLowerCase().includes(globalSearch) ||
                 (data.assignedVideo || '').toLowerCase().includes(globalSearch) ||
-                (data.assignedPhoto || '').toLowerCase().includes(globalSearch);
+                (data.assignedPhoto || '').toLowerCase().includes(globalSearch) ||
+                (data.assignedDesign || '').toLowerCase().includes(globalSearch);
             
             // Status match
             const matchStatus = statusSearch === '' || data.status === statusSearch;
@@ -4337,6 +4367,7 @@
                 stylist: data.stylist,
                 assignedVideo: data.assignedVideo,
                 assignedPhoto: data.assignedPhoto,
+                assignedDesign: data.assignedDesign,
                 costs: data.costs || {},
                 totalCost: data.totalCost || 0,
                 note: data.note || ''
@@ -4422,6 +4453,9 @@
                         </td>
                         <td class="text-[12px] font-medium text-slate-600 ${checkPermission('assignedPhoto') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('assignedPhoto') ? `onclick="startInlineEdit(this, '${dataStr}', 'assignedPhoto')"` : ''}>
                             <div class="display-val">${getUserBadge(data.assignedPhoto)}</div>
+                        </td>
+                        <td class="text-[12px] font-medium text-slate-600 ${checkPermission('assignedDesign') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('assignedDesign') ? `onclick="startInlineEdit(this, '${dataStr}', 'assignedDesign')"` : ''}>
+                            <div class="display-val">${getUserBadge(data.assignedDesign)}</div>
                         </td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-1">
@@ -4640,16 +4674,19 @@
             populateMultiSelect('menu-stylist', creativeStaff, 'stylist');
             populateMultiSelect('menu-assignedVideo', creativeStaff, 'assignedVideo');
             populateMultiSelect('menu-assignedPhoto', creativeStaff, 'assignedPhoto');
+            populateMultiSelect('menu-assignedDesign', creativeStaff, 'assignedDesign');
             
             // Populate Edit Modal Personnel Dropdowns
             populateDropdown('editOrderStylist', creativeStaff, '- Chưa chọn -');
             populateDropdown('editOrderVideo', creativeStaff, '- Chưa chọn -');
             populateDropdown('editOrderPhoto', creativeStaff, '- Chưa chọn -');
+            populateDropdown('editOrderDesign', creativeStaff, '- Chưa chọn -');
             
             // Populate Create Page Personnel Dropdowns
             populateDropdown('assignedStylist', creativeStaff, '- Chưa chọn -');
             populateDropdown('assignedVideo', creativeStaff, '- Chưa chọn -');
             populateDropdown('assignedPhoto', creativeStaff, '- Chưa chọn -');
+            populateDropdown('assignedDesign', creativeStaff, '- Chưa chọn -');
 
             if (window.allOrdersData && window.allOrdersData.length > 0) window.renderOrdersTable();
         });
@@ -4818,6 +4855,7 @@
         document.getElementById('editOrderStylist').value = data.stylist || '';
         document.getElementById('editOrderVideo').value = data.assignedVideo || '';
         document.getElementById('editOrderPhoto').value = data.assignedPhoto || '';
+        document.getElementById('editOrderDesign').value = data.assignedDesign || '';
         document.getElementById('editOrderContent').innerHTML = data.content || '';
         document.getElementById('editOrderNote').value = data.note || '';
         document.getElementById('editOrderDepartment').value = data.department || 'Công nghệ Thông tin';
@@ -4857,6 +4895,7 @@
             { id: 'editOrderStylist', field: 'stylist' },
             { id: 'editOrderVideo', field: 'assignedVideo' },
             { id: 'editOrderPhoto', field: 'assignedPhoto' },
+            { id: 'editOrderDesign', field: 'assignedDesign' },
             { id: 'editOrderNote', field: 'note' },
             { id: 'editOrderTitle', field: 'title' },
             { id: 'editOrderRequester', field: 'requester' },
@@ -5002,6 +5041,7 @@
         const stylist = document.getElementById('editOrderStylist').value;
         const assignedVideo = document.getElementById('editOrderVideo').value;
         const assignedPhoto = document.getElementById('editOrderPhoto').value;
+        const assignedDesign = document.getElementById('editOrderDesign').value;
         const department = document.getElementById('editOrderDepartment').value;
         const note = document.getElementById('editOrderNote').value;
         const content = document.getElementById('editOrderContent').innerHTML;
@@ -5027,6 +5067,7 @@
                 stylist: stylist,
                 assignedVideo: assignedVideo,
                 assignedPhoto: assignedPhoto,
+                assignedDesign: assignedDesign,
                 department: department,
                 note: note,
                 content: content
@@ -5105,7 +5146,7 @@
             inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
                 ${optionsHtml}
             </select>`;
-        } else if (field === 'requester' || field === 'stylist' || field === 'assignedVideo' || field === 'assignedPhoto') {
+        } else if (field === 'requester' || field === 'stylist' || field === 'assignedVideo' || field === 'assignedPhoto' || field === 'assignedDesign') {
             let optionsHtml = '<option value="-">-</option>';
             // Sort users by name
             const sortedUsers = (window.allUsersData || []).sort((a,b) => a.name.localeCompare(b.name));
@@ -5184,6 +5225,7 @@
                     'stylist': 'stylist',
                     'assignedVideo': 'video',
                     'assignedPhoto': 'photo',
+                    'assignedDesign': 'design',
                     'deadline': 'hạn chót',
                     'deployDate': 'ngày triển khai',
                     'orderDate': 'ngày đơn hàng',
@@ -5351,6 +5393,7 @@
             if (weekDatesStr.includes(dateStr)) {
                 if (o.assignedVideo && o.assignedVideo !== '-') assignedStaffNames.add(o.assignedVideo);
                 if (o.assignedPhoto && o.assignedPhoto !== '-') assignedStaffNames.add(o.assignedPhoto);
+                if (o.assignedDesign && o.assignedDesign !== '-') assignedStaffNames.add(o.assignedDesign);
                 if (o.stylist && o.stylist !== '-') assignedStaffNames.add(o.stylist);
             }
         });
@@ -5391,7 +5434,7 @@
                     const dateStr = toLocalDateStr(date);
                     
                     const tasks = (window.allOrdersData || []).filter(o => 
-                        (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.stylist === staff.name) &&
+                        (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.assignedDesign === staff.name || o.stylist === staff.name) &&
                         (o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr))
                     );
 
@@ -5559,7 +5602,7 @@
         // --- Staff Performance ---
         const staffPerf = {};
         window.allOrdersData.filter(o => o.status === 'Hoàn thành').forEach(o => {
-            const names = [o.assignedVideo, o.assignedPhoto, o.stylist].filter(Boolean);
+            const names = [o.assignedVideo, o.assignedPhoto, o.assignedDesign, o.stylist].filter(Boolean);
             names.forEach(name => {
                 staffPerf[name] = (staffPerf[name] || 0) + 1;
             });
@@ -5731,8 +5774,8 @@
         const leaderboardBody = document.getElementById('leaderboardBody');
         if (leaderboardBody) {
             const sortedStaff = (window.allUsersData || []).map(u => {
-                const assigned = window.allOrdersData.filter(o => o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name).length;
-                const completed = window.allOrdersData.filter(o => (o.assignedVideo === u.name || o.assignedPhoto === u.name || o.stylist === u.name || o.requester === u.name) && o.status === 'Hoàn thành').length;
+                const assigned = window.allOrdersData.filter(o => o.assignedVideo === u.name || o.assignedPhoto === u.name || o.assignedDesign === u.name || o.stylist === u.name || o.requester === u.name).length;
+                const completed = window.allOrdersData.filter(o => (o.assignedVideo === u.name || o.assignedPhoto === u.name || o.assignedDesign === u.name || o.stylist === u.name || o.requester === u.name) && o.status === 'Hoàn thành').length;
                 const rate = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
                 return { ...u, assigned, completed, rate };
             }).sort((a, b) => b.completed - a.completed).slice(0, 5);
@@ -6162,6 +6205,7 @@
                 "Stylist": order.stylist || "-",
                 "Video": order.assignedVideo || "-",
                 "Photo": order.assignedPhoto || "-",
+                "Design": order.assignedDesign || "-",
                 "Chi phí": order.totalCost || 0,
                 "Ghi chú chi phí": (order.costs?.note || "-")
             };
