@@ -91,7 +91,10 @@ export function navigateTo(pageId) {
             if (pageId === 'dashboard' && window.renderDashboardTable) window.renderDashboardTable();
             if (pageId === 'orders' && window.renderOrdersTable) window.renderOrdersTable();
             if (pageId === 'reports' && window.renderReports) window.renderReports();
-            if (pageId === 'planning' && window.renderPlanningReport) window.renderPlanningReport();
+            if (pageId === 'planning') {
+                if (window.renderPlanningTable) window.renderPlanningTable();
+                if (window.renderPlanningReport) window.renderPlanningReport();
+            }
             if (pageId === 'budgetReport') {
                 if (window.switchBudgetTab) window.switchBudgetTab('production');
                 else if (window.renderBudgetReport) window.renderBudgetReport();
