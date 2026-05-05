@@ -632,62 +632,10 @@
             <!-- Weekly Bar Chart -->
             <div class="lg:col-span-2 bg-surface-container-lowest p-6 md:p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-fade-in-up delay-200">
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-lg md:text-xl font-bold font-headline text-on-surface">Lượng đơn hàng theo tuần</h2>
-                    <select class="text-sm bg-surface-container border-none rounded-lg focus:ring-primary cursor-pointer">
-                        <option>Tháng này</option>
-                        <option>Tháng trước</option>
-                    </select>
+                    <h2 class="text-lg md:text-xl font-bold font-headline text-on-surface">Lượng đơn hàng trong tuần</h2>
                 </div>
-                <div class="h-[250px] md:h-[300px] flex items-end justify-between gap-2 md:gap-4 px-2 md:px-4">
-                    <div class="flex flex-col items-center flex-1">
-                        <div class="w-full bg-slate-100 rounded-t-lg relative group h-40">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-32 transition-all group-hover:bg-primary/30"></div>
-                            <div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg h-20 transition-all group-hover:h-24 group-hover:bg-primary"></div>
-                        </div>
-                        <span class="mt-3 text-xs font-semibold text-on-surface-variant">T2</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-1">
-                        <div class="w-full bg-slate-100 rounded-t-lg relative group h-40">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-24 transition-all group-hover:bg-primary/30"></div>
-                            <div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg h-16 transition-all group-hover:h-20 group-hover:bg-primary"></div>
-                        </div>
-                        <span class="mt-3 text-xs font-semibold text-on-surface-variant">T3</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-1">
-                        <div class="w-full bg-slate-100 rounded-t-lg relative group h-40">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-36 transition-all group-hover:bg-primary/30"></div>
-                            <div class="absolute bottom-0 w-full bg-primary-container rounded-t-lg h-28 transition-all shadow-lg group-hover:h-32"></div>
-                        </div>
-                        <span class="mt-3 text-xs font-bold text-on-surface">T4</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-1">
-                        <div class="w-full bg-slate-100 rounded-t-lg relative group h-40">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-28 transition-all group-hover:bg-primary/30"></div>
-                            <div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg h-18 transition-all group-hover:h-22 group-hover:bg-primary"></div>
-                        </div>
-                        <span class="mt-3 text-xs font-semibold text-on-surface-variant">T5</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-1">
-                        <div class="w-full bg-slate-100 rounded-t-lg relative group h-40">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-24 transition-all group-hover:bg-primary/30"></div>
-                            <div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg h-16 transition-all group-hover:h-20 group-hover:bg-primary"></div>
-                        </div>
-                        <span class="mt-3 text-xs font-semibold text-on-surface-variant">T6</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-1">
-                        <div class="w-full bg-slate-100 rounded-t-lg relative group h-40">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-16 transition-all group-hover:bg-primary/30"></div>
-                            <div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg h-10 transition-all group-hover:h-14 group-hover:bg-primary"></div>
-                        </div>
-                        <span class="mt-3 text-xs font-semibold text-on-surface-variant">T7</span>
-                    </div>
-                    <div class="flex flex-col items-center flex-1">
-                        <div class="w-full bg-slate-100 rounded-t-lg relative group h-40">
-                            <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg h-12 transition-all group-hover:bg-primary/30"></div>
-                            <div class="absolute bottom-0 w-full bg-primary/60 rounded-t-lg h-8 transition-all group-hover:h-12 group-hover:bg-primary"></div>
-                        </div>
-                        <span class="mt-3 text-xs font-semibold text-on-surface-variant">CN</span>
-                    </div>
+                <div id="dash-weekly-chart" class="h-[250px] md:h-[300px] flex items-end justify-between gap-2 md:gap-4 px-2 md:px-4">
+                    <!-- Dynamic Weekly Chart -->
                 </div>
             </div>
             <!-- Material Distribution -->
@@ -700,21 +648,8 @@
                     </div>
                     <div class="absolute w-40 h-40 md:w-48 md:h-48 rounded-full border-[12px] border-transparent border-t-white border-r-white/60 rotate-45"></div>
                 </div>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined">movie</span>
-                            <span class="font-semibold text-sm">Video</span>
-                        </div>
-                        <span id="dash-material-video-percent" class="font-headline font-bold">0%</span>
-                    </div>
-                    <div class="flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                        <div class="flex items-center gap-3">
-                            <span class="material-symbols-outlined">image</span>
-                            <span class="font-semibold text-sm">Hình ảnh</span>
-                        </div>
-                        <span id="dash-material-image-percent" class="font-headline font-bold">0%</span>
-                    </div>
+                <div id="dash-material-list" class="space-y-3">
+                    <!-- Dynamic Material Distribution -->
                 </div>
             </div>
         </div>
@@ -4524,29 +4459,104 @@
         if (document.getElementById('dash-pending-orders')) document.getElementById('dash-pending-orders').textContent = pending.toLocaleString();
         if (document.getElementById('dash-completed-orders')) document.getElementById('dash-completed-orders').textContent = completed.toLocaleString();
         
-        // Deadline Rate (Mock calculation based on completed vs total, or just set to a high percentage if many are completed)
+        // Deadline Rate (Real calculation based on completion time vs deadline)
         if (document.getElementById('dash-deadline-rate')) {
-            const rate = total > 0 ? Math.round((completed / (total - pending)) * 100) || 0 : 0;
-            document.getElementById('dash-deadline-rate').textContent = total > 0 ? (rate > 90 ? 'Tuyệt vời' : rate + '%') : '--';
+            const completedOrders = allOrders.filter(o => o.status === 'Hoàn thành');
+            const onTimeOrders = completedOrders.filter(o => {
+                if (!o.deadline) return true;
+                const deadline = new Date(o.deadline);
+                const updated = o.updatedAt ? (o.updatedAt.toDate ? o.updatedAt.toDate() : new Date(o.updatedAt)) : new Date();
+                return updated <= deadline;
+            });
+            const rate = completedOrders.length > 0 ? Math.round((onTimeOrders.length / completedOrders.length) * 100) : 0;
+            document.getElementById('dash-deadline-rate').textContent = completedOrders.length > 0 ? (rate > 90 ? 'Tuyệt vời' : rate + '%') : '--';
         }
 
         // --- Material Distribution ---
-        const videoCount = allOrders.filter(o => o.category === 'Video').length;
-        const imageCount = allOrders.filter(o => o.category === 'Hình Ảnh').length;
-        const otherCount = total - videoCount - imageCount;
-        
         if (document.getElementById('dash-material-total')) {
             document.getElementById('dash-material-total').textContent = total >= 1000 ? (total/1000).toFixed(1) + 'K' : total;
         }
         
-        if (document.getElementById('dash-material-video-percent')) {
-            const videoPercent = total > 0 ? Math.round((videoCount / total) * 100) : 0;
-            document.getElementById('dash-material-video-percent').textContent = videoPercent + '%';
-        }
+        const categories = {};
+        allOrders.forEach(o => {
+            const cat = o.category && o.category !== '-' ? o.category : 'Khác';
+            categories[cat] = (categories[cat] || 0) + 1;
+        });
         
-        if (document.getElementById('dash-material-image-percent')) {
-            const imagePercent = total > 0 ? Math.round((imageCount / total) * 100) : 0;
-            document.getElementById('dash-material-image-percent').textContent = imagePercent + '%';
+        const dashMaterialList = document.getElementById('dash-material-list');
+        if (dashMaterialList) {
+            let materialHtml = '';
+            const sortedCats = Object.entries(categories).sort((a,b) => b[1] - a[1]);
+            
+            sortedCats.forEach(([cat, count]) => {
+                const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+                let icon = 'category';
+                const lowerCat = cat.toLowerCase();
+                if(lowerCat.includes('video')) icon = 'movie';
+                else if(lowerCat.includes('hình ảnh') || lowerCat.includes('photo')) icon = 'image';
+                else if(lowerCat.includes('design') || lowerCat.includes('thiết kế')) icon = 'draw';
+                else if(lowerCat.includes('khác')) icon = 'more_horiz';
+
+                materialHtml += `
+                <div class="flex justify-between items-center bg-white/10 p-3 rounded-lg backdrop-blur-sm mb-3 last:mb-0">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined">${icon}</span>
+                        <span class="font-semibold text-sm">${cat}</span>
+                    </div>
+                    <span class="font-headline font-bold">${percent}% <span class="text-[10px] font-normal opacity-60 ml-1">(${count})</span></span>
+                </div>
+                `;
+            });
+            dashMaterialList.innerHTML = materialHtml;
+        }
+
+        // --- Weekly Orders Chart ---
+        const now = new Date();
+        const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 = Monday
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - dayOfWeek);
+        startOfWeek.setHours(0,0,0,0);
+        
+        const weekCountsTotal = [0, 0, 0, 0, 0, 0, 0];
+        const weekCountsCompleted = [0, 0, 0, 0, 0, 0, 0];
+        
+        allOrders.forEach(o => {
+            const dateStr = o.createdAt?.seconds ? new Date(o.createdAt.seconds * 1000) : new Date(o.createdAt);
+            if (dateStr >= startOfWeek) {
+                const diffTime = dateStr.getTime() - startOfWeek.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays >= 0 && diffDays <= 6) {
+                    weekCountsTotal[diffDays]++;
+                    if (o.status === 'Hoàn thành') {
+                        weekCountsCompleted[diffDays]++;
+                    }
+                }
+            }
+        });
+        
+        const maxCount = Math.max(...weekCountsTotal, 1);
+        const chartDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+        const chartContainer = document.getElementById('dash-weekly-chart');
+        
+        if (chartContainer) {
+            let chartHtml = '';
+            weekCountsTotal.forEach((totalCount, idx) => {
+                const compCount = weekCountsCompleted[idx];
+                const heightTotal = Math.round((totalCount / maxCount) * 100);
+                const heightComp = Math.round((compCount / maxCount) * 100);
+                const isToday = idx === dayOfWeek;
+                
+                chartHtml += `
+                <div class="flex flex-col items-center flex-1">
+                    <div class="w-full bg-slate-100 rounded-t-lg relative group h-40" title="Tổng: ${totalCount} | Xong: ${compCount}">
+                        <div class="absolute bottom-0 w-full bg-primary/20 rounded-t-lg transition-all group-hover:bg-primary/30" style="height: ${heightTotal}%"></div>
+                        <div class="absolute bottom-0 w-full ${isToday ? 'bg-primary-container shadow-lg' : 'bg-primary/60'} rounded-t-lg transition-all group-hover:bg-primary" style="height: ${heightComp}%"></div>
+                    </div>
+                    <span class="mt-3 text-xs ${isToday ? 'font-bold text-on-surface' : 'font-semibold text-on-surface-variant'}">${chartDays[idx]}</span>
+                </div>
+                `;
+            });
+            chartContainer.innerHTML = chartHtml;
         }
 
         // --- Render Latest Orders Table ---
