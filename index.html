@@ -3542,6 +3542,10 @@
                     return editPerms.some(p => !!userRoleData.permissions[p]);
                 }
             }
+            // Fallback for orders_edit_any
+            if (userRoleSlug === 'user' || userRoleSlug === 'manager' || userRoleSlug === 'member' || userRoleSlug === 'thành viên') {
+                return true;
+            }
             return false;
         }
 
