@@ -3743,8 +3743,14 @@
             showToast('Từ chối!', 'Bạn không có quyền tạo đơn hàng.', 'block', 'text-error');
             return;
         }
-        // Check Order Window with selected category
+
         const category = document.getElementById('orderCategory').value;
+        if (!category || category === '- Chọn thể loại -') {
+            showToast('Lỗi!', 'Vui lòng chọn thể loại cho đơn hàng.', 'error', 'text-error');
+            return;
+        }
+
+        // Check Order Window with selected category
         const owResult = await window.checkOrderWindowOpen(category);
         if (!owResult.allowed) {
             if (owResult.categoryBlocked) {
