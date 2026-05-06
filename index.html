@@ -3568,7 +3568,7 @@
         if (userRoleSlug === 'user' || userRoleSlug === 'member' || userRoleSlug === 'thành viên') {
             // Fallback: allow basic order operations when Firestore roles haven't loaded yet
             const allowedForUser = [
-                'orders_view', 'orders_create',
+                'orders_view', 'orders_create', 'orders_delete',
                 'orders_edit_title', 'orders_edit_category', 'orders_edit_deadline',
                 'orders_edit_status', 'orders_edit_info',
                 'planning_view', 'planning_delete', 'reports_view'
