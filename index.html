@@ -1249,37 +1249,174 @@
         </div>
 
         <!-- Planning Report Tab -->
-        <div id="planningReportTab" class="hidden bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8 animate-fade-in-up delay-200 flex flex-col" style="height: 600px;">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-700">Đối soát Thực tế vs Kế hoạch</h3>
-                    <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Dữ liệu tổng hợp từ các phòng ban</p>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded bg-blue-100 border border-blue-200"></div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">Kế hoạch</span>
+        <div id="planningReportTab" class="hidden animate-fade-in-up delay-200 flex flex-col gap-6 mb-8">
+            
+            <!-- Report KPI Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <!-- Tổng KH -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-all">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full blur-2xl group-hover:bg-blue-100 transition-all"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-blue-600 text-[18px]">event_note</span>
+                            </div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tổng Kế hoạch</span>
+                        </div>
+                        <div class="text-3xl font-black text-[#1e293b] font-headline" id="reportKpiPlanned">0</div>
+                        <p class="text-[10px] text-slate-400 mt-1 font-semibold">đơn hàng dự kiến</p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded bg-rose-100 border border-rose-200"></div>
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">Thực tế</span>
+                </div>
+                <!-- Tổng TT -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-all">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-rose-50 rounded-full blur-2xl group-hover:bg-rose-100 transition-all"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-rose-600 text-[18px]">fact_check</span>
+                            </div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tổng Thực tế</span>
+                        </div>
+                        <div class="text-3xl font-black text-[#1e293b] font-headline" id="reportKpiActual">0</div>
+                        <p class="text-[10px] text-slate-400 mt-1 font-semibold">đơn hàng đã thực hiện</p>
+                    </div>
+                </div>
+                <!-- Tỷ lệ hoàn thành -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-all">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-all"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-emerald-600 text-[18px]">trending_up</span>
+                            </div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tỷ lệ hoàn thành</span>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="text-3xl font-black font-headline" id="reportKpiRate" style="color: #10b981">0%</span>
+                            <span class="text-xs font-bold mb-1" id="reportKpiRateStatus">—</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 mt-3">
+                            <div id="reportKpiRateBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-700" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Chênh lệch -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative overflow-hidden group hover:shadow-md transition-all">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-amber-50 rounded-full blur-2xl group-hover:bg-amber-100 transition-all"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-amber-600 text-[18px]">compare_arrows</span>
+                            </div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Chênh lệch</span>
+                        </div>
+                        <div class="text-3xl font-black font-headline" id="reportKpiDiff">0</div>
+                        <p class="text-[10px] mt-1 font-semibold" id="reportKpiDiffLabel">so với kế hoạch</p>
                     </div>
                 </div>
             </div>
-            <div class="overflow-auto flex-1 custom-scrollbar">
-                <table class="text-left border-separate border-spacing-0 whitespace-nowrap min-w-max">
-                    <thead class="text-[#64748b] bg-[#f8fafc] sticky top-0 z-20 text-[10px] font-extrabold uppercase tracking-widest">
-                        <tr id="planningReportHeaderRow">
-                            <th class="py-4 px-1 bg-[#f8fafc] sticky left-0 z-30 min-w-[80px] max-w-[80px] border-r border-slate-100 border-b text-[9px]">PHÒNG BAN</th>
-                            <th class="py-4 px-1 bg-[#f8fafc] sticky left-[80px] z-30 min-w-[100px] max-w-[100px] border-r border-slate-100 border-b text-[9px]">LOẠI ORDER</th>
-                            <th class="py-4 px-1 bg-[#f8fafc] sticky left-[180px] z-30 min-w-[70px] max-w-[70px] text-center border-r-2 border-slate-200 border-b text-[9px]">CHỈ SỐ</th>
-                            <!-- Dynamic Day Columns -->
-                        </tr>
-                    </thead>
-                    <tbody id="planningReportBody" class="text-sm">
-                        <!-- Report rows -->
-                    </tbody>
-                </table>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                <!-- Donut Chart - Tỷ lệ hoàn thành -->
+                <div class="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative overflow-hidden">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+                            <span class="material-symbols-outlined text-[20px]">donut_large</span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700">Tỷ lệ hoàn thành theo loại</h3>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-widest">Thực tế / Kế hoạch</p>
+                        </div>
+                    </div>
+                    <div class="relative w-full aspect-square max-w-[220px] mx-auto mb-4">
+                        <canvas id="reportDonutChart"></canvas>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span class="text-3xl font-black font-headline text-[#1e293b]" id="reportDonutCenter">0%</span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tổng tỷ lệ</span>
+                        </div>
+                    </div>
+                    <div id="reportDonutLegend" class="space-y-2"></div>
+                </div>
+
+                <!-- Bar Chart - So sánh Kế hoạch vs Thực tế theo loại -->
+                <div class="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="p-2 bg-violet-100 text-violet-600 rounded-xl">
+                            <span class="material-symbols-outlined text-[20px]">bar_chart</span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700">So sánh theo thể loại</h3>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-widest">Kế hoạch vs Thực tế</p>
+                        </div>
+                    </div>
+                    <div class="w-full h-[280px]">
+                        <canvas id="reportBarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bar Chart - So sánh theo Phòng ban -->
+                <div class="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="p-2 bg-teal-100 text-teal-600 rounded-xl">
+                            <span class="material-symbols-outlined text-[20px]">stacked_bar_chart</span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700">So sánh theo phòng ban</h3>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-widest">Kế hoạch vs Thực tế</p>
+                        </div>
+                    </div>
+                    <div class="w-full h-[280px]">
+                        <canvas id="reportDeptBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Table with Totals -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col" style="max-height: 650px;">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700">Bảng đối soát chi tiết theo ngày</h3>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Dữ liệu tổng hợp từ các phòng ban</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded bg-blue-100 border border-blue-200"></div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Kế hoạch</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded bg-rose-100 border border-rose-200"></div>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Thực tế</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded bg-emerald-100 border border-emerald-200"></div>
+                            <span class="text-[10px] font-bold text-emerald-600 uppercase">Vượt</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded bg-amber-100 border border-amber-200"></div>
+                            <span class="text-[10px] font-bold text-amber-600 uppercase">Thiếu</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-auto flex-1 custom-scrollbar">
+                    <table class="text-left border-separate border-spacing-0 whitespace-nowrap min-w-max">
+                        <thead class="text-[#64748b] bg-[#f8fafc] sticky top-0 z-20 text-[10px] font-extrabold uppercase tracking-widest">
+                            <tr id="planningReportHeaderRow">
+                                <th class="py-4 px-1 bg-[#f8fafc] sticky left-0 z-30 min-w-[80px] max-w-[80px] border-r border-slate-100 border-b text-[9px]">PHÒNG BAN</th>
+                                <th class="py-4 px-1 bg-[#f8fafc] sticky left-[80px] z-30 min-w-[100px] max-w-[100px] border-r border-slate-100 border-b text-[9px]">LOẠI ORDER</th>
+                                <th class="py-4 px-1 bg-[#f8fafc] sticky left-[180px] z-30 min-w-[70px] max-w-[70px] text-center border-r-2 border-slate-200 border-b text-[9px]">CHỈ SỐ</th>
+                                <th class="py-4 px-1 bg-[#f8fafc] min-w-[60px] max-w-[60px] text-center border-r-2 border-slate-200 border-b text-[9px] text-rose-600 font-black">TỔNG</th>
+                                <!-- Dynamic Day Columns -->
+                            </tr>
+                        </thead>
+                        <tbody id="planningReportBody" class="text-sm">
+                            <!-- Report rows -->
+                        </tbody>
+                        <tfoot class="bg-[#f8fafc] font-bold text-[#1e293b] sticky bottom-0 z-20" id="planningReportFooter">
+                            <!-- Total rows injected by JS -->
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -6773,7 +6910,7 @@
         const reportHeader = document.getElementById('planningReportHeaderRow');
         if(reportHeader) {
             const rCols = reportHeader.querySelectorAll('th');
-            for(let i=3; i<rCols.length; i++) rCols[i].remove();
+            for(let i=4; i<rCols.length; i++) rCols[i].remove();
             const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
             for(let i=1; i<=daysInMonth; i++) {
                 const date = new Date(year, month - 1, i);
@@ -6809,12 +6946,61 @@
         }
     };
 
+    // Helper: normalize any date format to YYYY-MM-DD string
+    window._normalizeDateToYMD = function(dateVal) {
+        if (!dateVal) return '';
+        // Firestore Timestamp
+        if (dateVal.toDate && typeof dateVal.toDate === 'function') {
+            const d = dateVal.toDate();
+            return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+        }
+        // Firestore Timestamp with seconds
+        if (dateVal.seconds) {
+            const d = new Date(dateVal.seconds * 1000);
+            return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+        }
+        // Already YYYY-MM-DD
+        if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+            return dateVal;
+        }
+        // ISO datetime string
+        if (typeof dateVal === 'string' && dateVal.includes('T')) {
+            return dateVal.split('T')[0];
+        }
+        // Date object
+        if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+            return `${dateVal.getFullYear()}-${(dateVal.getMonth()+1).toString().padStart(2,'0')}-${dateVal.getDate().toString().padStart(2,'0')}`;
+        }
+        // DD/MM/YYYY format
+        if (typeof dateVal === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateVal)) {
+            const parts = dateVal.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return '';
+    };
+
+    // Helper: get the best date for an order (orderDate > deployDate > createdAt)
+    window._getOrderDateYMD = function(order) {
+        return window._normalizeDateToYMD(order.orderDate) 
+            || window._normalizeDateToYMD(order.deployDate) 
+            || window._normalizeDateToYMD(order.createdAt)
+            || '';
+    };
+
+    // Chart instances for report tab
+    window._reportDonutChart = null;
+    window._reportBarChart = null;
+    window._reportDeptBarChart = null;
+
     window.renderPlanningReport = function() {
         const tbody = document.getElementById('planningReportBody');
+        const tfoot = document.getElementById('planningReportFooter');
         if(!tbody) return;
         tbody.innerHTML = '';
+        if(tfoot) tfoot.innerHTML = '';
         
         const monthFilter = document.getElementById('planningMonthFilter');
+        const deptFilter = document.getElementById('planningDepartmentFilter');
         const [year, month] = monthFilter.value.split('-').map(Number);
         const daysInMonth = new Date(year, month, 0).getDate();
 
@@ -6823,10 +7009,46 @@
             ? window.orderCategoriesData.map(c => c.name) 
             : ['Video', 'Hình Ảnh', 'Giả Live', 'Livestream', 'Thiết kế'];
 
-        depts.forEach(dept => {
+        // --- Pre-process orders: build a lookup map for fast access ---
+        const monthPrefix = `${year}-${month.toString().padStart(2,'0')}`;
+        const ordersInMonth = (window.allOrdersData || []).filter(o => {
+            const dateYMD = window._getOrderDateYMD(o);
+            return dateYMD.startsWith(monthPrefix);
+        });
+
+        // Build lookup: { "dept|category|YYYY-MM-DD": count }
+        const orderLookup = {};
+        ordersInMonth.forEach(o => {
+            const dateYMD = window._getOrderDateYMD(o);
+            const dept = o.department || '';
+            const cat = o.category || '';
+            const key = `${dept}|${cat}|${dateYMD}`;
+            orderLookup[key] = (orderLookup[key] || 0) + 1;
+        });
+
+        console.log(`[Report] Orders in month ${monthPrefix}: ${ordersInMonth.length}`, 'Lookup keys sample:', Object.keys(orderLookup).slice(0, 5));
+
+        // --- Aggregation accumulators ---
+        let grandTotalPlanned = 0;
+        let grandTotalActual = 0;
+        const grandPlanDailyTotals = Array(daysInMonth + 1).fill(0);
+        const grandActualDailyTotals = Array(daysInMonth + 1).fill(0);
+        
+        // Per-type aggregation for charts
+        const typeStats = {}; // { type: { planned, actual } }
+        // Per-dept aggregation for charts
+        const deptStats = {}; // { dept: { planned, actual } }
+
+        const filteredDepts = deptFilter && deptFilter.value ? depts.filter(d => d === deptFilter.value) : depts;
+
+        filteredDepts.forEach(dept => {
             types.forEach(type => {
-                const plans = window.planningRowsData.filter(r => r.dept === dept && r.type === type && r.month === monthFilter.value);
+                const plans = (window.planningRowsData || []).filter(r => r.dept === dept && r.type === type && r.month === monthFilter.value);
                 if(plans.length === 0) return;
+
+                // Calculate planned total for this row
+                let rowPlanTotal = 0;
+                let rowActualTotal = 0;
 
                 const trPlan = document.createElement('tr');
                 trPlan.className = "bg-blue-50/20";
@@ -6834,38 +7056,353 @@
                 for(let i=1; i<=daysInMonth; i++) {
                     let sum = 0;
                     plans.forEach(p => sum += (parseInt(p.days[`d${i}`]) || 0));
+                    rowPlanTotal += sum;
+                    grandPlanDailyTotals[i] += sum;
                     planDays += `<td class="py-2 px-0.5 text-center border-r border-b border-slate-100 text-blue-600 font-bold text-[10px]">${sum || '-'}</td>`;
                 }
+                grandTotalPlanned += rowPlanTotal;
+
                 trPlan.innerHTML = `
                     <td rowspan="2" class="py-2 px-1 font-bold text-slate-700 sticky left-0 z-10 bg-white border-r border-b border-slate-200 min-w-[80px] max-w-[80px] align-middle text-[11px]">${dept}</td>
                     <td rowspan="2" class="py-2 px-1 font-medium text-slate-600 sticky left-[80px] z-10 bg-white border-r border-b border-slate-200 min-w-[100px] max-w-[100px] align-middle text-[11px]">${type}</td>
                     <td class="py-1 px-0.5 text-center bg-blue-50 sticky left-[180px] z-10 border-r-2 border-b border-slate-200 text-[8px] font-bold text-blue-500 uppercase">KẾ HOẠCH</td>
+                    <td class="py-2 px-1 text-center border-r-2 border-b border-slate-200 bg-blue-50/50 text-blue-700 font-black text-[11px]">${rowPlanTotal}</td>
                     ${planDays}
                 `;
                 tbody.appendChild(trPlan);
 
-                // MAPPING CATEGORIES (Now synchronized)
+                // ACTUAL ROW
                 const orderCats = [type];
-
                 const trActual = document.createElement('tr');
                 trActual.className = "bg-rose-50/10";
                 let actualDays = '';
                 for(let i=1; i<=daysInMonth; i++) {
                     const dateStr = `${year}-${month.toString().padStart(2,'0')}-${i.toString().padStart(2,'0')}`;
-                    const count = (window.allOrdersData || []).filter(o => o.department === dept && orderCats.includes(o.category) && o.orderDate === dateStr).length;
-                    const diff = count - plans.reduce((acc, p) => acc + (parseInt(p.days[`d${i}`]) || 0), 0);
+                    // Use lookup for fast matching
+                    let count = 0;
+                    orderCats.forEach(cat => {
+                        count += (orderLookup[`${dept}|${cat}|${dateStr}`] || 0);
+                    });
+                    rowActualTotal += count;
+                    grandActualDailyTotals[i] += count;
+                    const planVal = plans.reduce((acc, p) => acc + (parseInt(p.days[`d${i}`]) || 0), 0);
+                    const diff = count - planVal;
+                    const diffColor = diff > 0 ? 'text-emerald-500' : diff < 0 ? 'text-amber-500' : 'text-slate-300';
                     actualDays += `<td class="py-2 px-0.5 text-center border-r border-b border-slate-100">
                         <div class="font-bold text-rose-600 text-[10px]">${count || '0'}</div>
-                        <div class="text-[8px] ${diff >= 0 ? 'text-emerald-500' : 'text-rose-400'} font-black">${diff > 0 ? '+' : ''}${diff}</div>
+                        <div class="text-[8px] ${diffColor} font-black">${diff > 0 ? '+' : ''}${diff}</div>
                     </td>`;
                 }
+                grandTotalActual += rowActualTotal;
+
+                const rowDiff = rowActualTotal - rowPlanTotal;
+                const rowDiffColor = rowDiff > 0 ? 'text-emerald-600' : rowDiff < 0 ? 'text-amber-600' : 'text-slate-400';
                 trActual.innerHTML = `
                     <td class="py-1 px-0.5 text-center bg-rose-50 sticky left-[180px] z-10 border-r-2 border-b border-slate-200 text-[8px] font-bold text-rose-500 uppercase">THỰC TẾ</td>
+                    <td class="py-2 px-1 text-center border-r-2 border-b border-slate-200 bg-rose-50/50">
+                        <div class="text-rose-700 font-black text-[11px]">${rowActualTotal}</div>
+                        <div class="text-[8px] ${rowDiffColor} font-black">${rowDiff > 0 ? '+' : ''}${rowDiff}</div>
+                    </td>
                     ${actualDays}
                 `;
                 tbody.appendChild(trActual);
+
+                // Accumulate per-type stats
+                if(!typeStats[type]) typeStats[type] = { planned: 0, actual: 0 };
+                typeStats[type].planned += rowPlanTotal;
+                typeStats[type].actual += rowActualTotal;
+
+                // Accumulate per-dept stats
+                if(!deptStats[dept]) deptStats[dept] = { planned: 0, actual: 0 };
+                deptStats[dept].planned += rowPlanTotal;
+                deptStats[dept].actual += rowActualTotal;
             });
         });
+
+        // --- FOOTER: Grand Total Rows ---
+        if(tfoot) {
+            // Plan total row
+            const trFootPlan = document.createElement('tr');
+            trFootPlan.className = "bg-blue-50/40";
+            let footPlanDays = '';
+            for(let i=1; i<=daysInMonth; i++) {
+                footPlanDays += `<td class="py-2 px-0.5 text-center border-r border-t border-slate-200 text-blue-700 font-black text-[10px]">${grandPlanDailyTotals[i] || '-'}</td>`;
+            }
+            trFootPlan.innerHTML = `
+                <td rowspan="2" colspan="2" class="py-3 px-2 text-right sticky left-0 z-20 bg-[#f1f5f9] border-r border-t border-slate-200 text-[10px] font-black text-rose-600 uppercase tracking-widest align-middle">TỔNG CỘNG</td>
+                <td class="py-2 px-0.5 text-center bg-blue-100/60 sticky left-[180px] z-20 border-r-2 border-t border-slate-200 text-[8px] font-black text-blue-600 uppercase">KẾ HOẠCH</td>
+                <td class="py-2 px-1 text-center border-r-2 border-t border-slate-200 bg-blue-100/40 text-blue-800 font-black text-[12px]">${grandTotalPlanned}</td>
+                ${footPlanDays}
+            `;
+            tfoot.appendChild(trFootPlan);
+
+            // Actual total row
+            const trFootActual = document.createElement('tr');
+            trFootActual.className = "bg-rose-50/40";
+            let footActualDays = '';
+            for(let i=1; i<=daysInMonth; i++) {
+                const diff = grandActualDailyTotals[i] - grandPlanDailyTotals[i];
+                const diffColor = diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-amber-600' : 'text-slate-300';
+                footActualDays += `<td class="py-2 px-0.5 text-center border-r border-slate-200">
+                    <div class="text-rose-700 font-black text-[10px]">${grandActualDailyTotals[i] || '0'}</div>
+                    <div class="text-[7px] ${diffColor} font-black">${diff > 0 ? '+' : ''}${diff}</div>
+                </td>`;
+            }
+            const grandDiff = grandTotalActual - grandTotalPlanned;
+            const grandDiffColor = grandDiff > 0 ? 'text-emerald-600' : grandDiff < 0 ? 'text-amber-600' : 'text-slate-400';
+            trFootActual.innerHTML = `
+                <td class="py-2 px-0.5 text-center bg-rose-100/60 sticky left-[180px] z-20 border-r-2 border-slate-200 text-[8px] font-black text-rose-600 uppercase">THỰC TẾ</td>
+                <td class="py-2 px-1 text-center border-r-2 border-slate-200 bg-rose-100/40">
+                    <div class="text-rose-800 font-black text-[12px]">${grandTotalActual}</div>
+                    <div class="text-[8px] ${grandDiffColor} font-black">${grandDiff > 0 ? '+' : ''}${grandDiff}</div>
+                </td>
+                ${footActualDays}
+            `;
+            tfoot.appendChild(trFootActual);
+        }
+
+        // --- UPDATE KPI CARDS ---
+        const rate = grandTotalPlanned > 0 ? Math.round((grandTotalActual / grandTotalPlanned) * 100) : 0;
+        const diff = grandTotalActual - grandTotalPlanned;
+        
+        const elPlanned = document.getElementById('reportKpiPlanned');
+        const elActual = document.getElementById('reportKpiActual');
+        const elRate = document.getElementById('reportKpiRate');
+        const elRateStatus = document.getElementById('reportKpiRateStatus');
+        const elRateBar = document.getElementById('reportKpiRateBar');
+        const elDiff = document.getElementById('reportKpiDiff');
+        const elDiffLabel = document.getElementById('reportKpiDiffLabel');
+
+        if(elPlanned) elPlanned.textContent = grandTotalPlanned.toLocaleString();
+        if(elActual) elActual.textContent = grandTotalActual.toLocaleString();
+        if(elRate) {
+            elRate.textContent = rate + '%';
+            elRate.style.color = rate >= 100 ? '#10b981' : rate >= 70 ? '#f59e0b' : '#ef4444';
+        }
+        if(elRateBar) {
+            elRateBar.style.width = Math.min(rate, 100) + '%';
+            elRateBar.className = `h-2 rounded-full transition-all duration-700 ${rate >= 100 ? 'bg-emerald-500' : rate >= 70 ? 'bg-amber-400' : 'bg-rose-500'}`;
+        }
+        if(elRateStatus) {
+            if(rate >= 100) { elRateStatus.textContent = '✓ Đạt mục tiêu'; elRateStatus.className = 'text-xs font-bold mb-1 text-emerald-500'; }
+            else if(rate >= 70) { elRateStatus.textContent = '⚠ Gần đạt'; elRateStatus.className = 'text-xs font-bold mb-1 text-amber-500'; }
+            else { elRateStatus.textContent = '✕ Cần cải thiện'; elRateStatus.className = 'text-xs font-bold mb-1 text-rose-500'; }
+        }
+        if(elDiff) {
+            elDiff.textContent = (diff > 0 ? '+' : '') + diff;
+            elDiff.style.color = diff >= 0 ? '#10b981' : '#ef4444';
+        }
+        if(elDiffLabel) {
+            elDiffLabel.textContent = diff >= 0 ? `vượt ${diff} đơn so với kế hoạch` : `thiếu ${Math.abs(diff)} đơn so với kế hoạch`;
+            elDiffLabel.className = `text-[10px] mt-1 font-semibold ${diff >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+        }
+
+        // --- RENDER CHARTS ---
+        window._renderReportCharts(typeStats, deptStats, rate);
+    };
+
+    window._renderReportCharts = function(typeStats, deptStats, overallRate) {
+        const chartColors = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
+        
+        // ---- DONUT CHART: Tỷ lệ hoàn thành theo loại ----
+        const donutCtx = document.getElementById('reportDonutChart');
+        if(donutCtx) {
+            if(window._reportDonutChart) window._reportDonutChart.destroy();
+            
+            const typeNames = Object.keys(typeStats);
+            const typeRates = typeNames.map(t => {
+                const s = typeStats[t];
+                return s.planned > 0 ? Math.round((s.actual / s.planned) * 100) : 0;
+            });
+            const typeRemaining = typeRates.map(r => Math.max(100 - r, 0));
+
+            // If no data, show empty state
+            if(typeNames.length === 0) {
+                window._reportDonutChart = new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Chưa có dữ liệu'], datasets: [{ data: [1], backgroundColor: ['#e2e8f0'], borderWidth: 0 }] },
+                    options: { cutout: '70%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            } else {
+                // Build stacked donut
+                const donutData = [];
+                const donutColors = [];
+                const donutLabels = [];
+                typeNames.forEach((name, idx) => {
+                    donutData.push(typeStats[name].actual);
+                    donutColors.push(chartColors[idx % chartColors.length]);
+                    donutLabels.push(name);
+                });
+
+                window._reportDonutChart = new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: donutLabels,
+                        datasets: [{
+                            data: donutData,
+                            backgroundColor: donutColors,
+                            borderWidth: 2,
+                            borderColor: '#fff',
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        cutout: '68%',
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                titleFont: { size: 11, weight: 'bold' },
+                                bodyFont: { size: 10 },
+                                cornerRadius: 10,
+                                padding: 12,
+                                callbacks: {
+                                    label: function(ctx) {
+                                        const t = typeStats[ctx.label];
+                                        const r = t.planned > 0 ? Math.round((t.actual / t.planned) * 100) : 0;
+                                        return `${ctx.label}: ${t.actual}/${t.planned} (${r}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Donut center
+            const donutCenter = document.getElementById('reportDonutCenter');
+            if(donutCenter) donutCenter.textContent = overallRate + '%';
+
+            // Donut legend
+            const legendEl = document.getElementById('reportDonutLegend');
+            if(legendEl) {
+                legendEl.innerHTML = typeNames.map((name, idx) => {
+                    const s = typeStats[name];
+                    const r = s.planned > 0 ? Math.round((s.actual / s.planned) * 100) : 0;
+                    return `<div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full" style="background:${chartColors[idx % chartColors.length]}"></div>
+                            <span class="text-[11px] font-bold text-slate-600">${name}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] text-slate-400">${s.actual}/${s.planned}</span>
+                            <span class="text-[10px] font-black ${r >= 100 ? 'text-emerald-500' : r >= 70 ? 'text-amber-500' : 'text-rose-500'}">${r}%</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        // ---- BAR CHART: So sánh theo thể loại ----
+        const barCtx = document.getElementById('reportBarChart');
+        if(barCtx) {
+            if(window._reportBarChart) window._reportBarChart.destroy();
+            
+            const typeNames = Object.keys(typeStats);
+            const plannedData = typeNames.map(t => typeStats[t].planned);
+            const actualData = typeNames.map(t => typeStats[t].actual);
+
+            window._reportBarChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: typeNames,
+                    datasets: [
+                        {
+                            label: 'Kế hoạch',
+                            data: plannedData,
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                            borderColor: '#6366f1',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        },
+                        {
+                            label: 'Thực tế',
+                            data: actualData,
+                            backgroundColor: 'rgba(244, 63, 94, 0.2)',
+                            borderColor: '#f43f5e',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 10, weight: 'bold' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 }
+                        },
+                        tooltip: { backgroundColor: '#1e293b', cornerRadius: 10, padding: 10, titleFont: { size: 11 }, bodyFont: { size: 10 } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' } },
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8', stepSize: 5 } }
+                    }
+                }
+            });
+        }
+
+        // ---- HORIZONTAL BAR CHART: So sánh theo phòng ban ----
+        const deptBarCtx = document.getElementById('reportDeptBarChart');
+        if(deptBarCtx) {
+            if(window._reportDeptBarChart) window._reportDeptBarChart.destroy();
+            
+            const deptNames = Object.keys(deptStats);
+            const deptPlanned = deptNames.map(d => deptStats[d].planned);
+            const deptActual = deptNames.map(d => deptStats[d].actual);
+
+            window._reportDeptBarChart = new Chart(deptBarCtx, {
+                type: 'bar',
+                data: {
+                    labels: deptNames,
+                    datasets: [
+                        {
+                            label: 'Kế hoạch',
+                            data: deptPlanned,
+                            backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                            borderColor: '#14b8a6',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barPercentage: 0.5,
+                            categoryPercentage: 0.7
+                        },
+                        {
+                            label: 'Thực tế',
+                            data: deptActual,
+                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                            borderColor: '#8b5cf6',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barPercentage: 0.5,
+                            categoryPercentage: 0.7
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 10, weight: 'bold' }, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 }
+                        },
+                        tooltip: { backgroundColor: '#1e293b', cornerRadius: 10, padding: 10, titleFont: { size: 11 }, bodyFont: { size: 10 } }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+                        y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#64748b' } }
+                    }
+                }
+            });
+        }
     };
 
     window.exportPlanningToExcel = function() {
