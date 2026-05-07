@@ -3409,7 +3409,7 @@
     let indexOwInterval = null;
     window.checkOrderWindowOpen = async function(category) {
         const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
-        if (role === 'admin') return { allowed: true };
+        if (role === 'admin' || role === 'manager') return { allowed: true };
         if (!window.db) return { allowed: true };
         try {
             const userId = localStorage.getItem('nevo_user_id') || localStorage.getItem('nevo_user') || '';
@@ -3492,7 +3492,7 @@
         const closedBanner = document.getElementById('indexOwClosedBanner');
         const createBtn = document.getElementById('createOrderBtn');
         if (!openBanner || !closedBanner) return;
-        if (role === 'admin') { openBanner.classList.add('hidden'); closedBanner.classList.add('hidden'); return; }
+        if (role === 'admin' || role === 'manager') { openBanner.classList.add('hidden'); closedBanner.classList.add('hidden'); return; }
 
         let upcomingText = '';
         try {
