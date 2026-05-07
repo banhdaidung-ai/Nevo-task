@@ -4165,6 +4165,17 @@
         </span>`;
     };
 
+    // Safe encode for HTML attributes - escapes quotes, ampersands, angle brackets
+    function safeAttr(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ').replace(/\r/g, '');
+    }
+
+    // Safe encode for use inside JS string in HTML attributes
+    function safeEncodeForAttr(str) {
+        return encodeURIComponent(str || '').replace(/'/g, '%27');
+    }
+
     function formatDateDisplay(dateStr) {
         if (!dateStr) return '-';
         if (dateStr.toDate) { // Check for Firestore Timestamp
@@ -4506,15 +4517,15 @@
                         </td>
                         <td class="max-w-[200px] ${checkPermission('title') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" 
                             ${checkPermission('title') ? `onclick="openEditModal('${dataStr}')"` : ''}
-                            onmouseenter="window.showPremiumTooltip(event, '${encodeURIComponent(data.title || '-')}', '${encodeURIComponent(data.content || '-')}')"
+                            onmouseenter="window.showPremiumTooltip(event, '${safeEncodeForAttr(data.title || '-')}', '${safeEncodeForAttr(data.content || '-')}')"
                             onmouseleave="window.hidePremiumTooltip()">
                             <div class="display-val">
-                                <div class="text-[13px] font-bold text-slate-700 truncate">${data.title || '-'}</div>
-                                <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${(data.content || '').replace(/<[^>]*>/g, ' ')}</div>
+                                <div class="text-[13px] font-bold text-slate-700 truncate">${safeAttr(data.title || '-')}</div>
+                                <div class="text-[11px] font-normal text-slate-500 truncate mt-0.5">${safeAttr((data.content || '').replace(/<[^>]*>/g, ' '))}</div>
                             </div>
                         </td>
                         <td class="text-[12px] text-slate-500 italic ${checkPermission('note') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('note') ? `onclick="startInlineEdit(this, '${dataStr}', 'note')"` : ''}>
-                            <span class="display-val truncate max-w-[150px] inline-block">${data.note || '-'}</span>
+                            <span class="display-val truncate max-w-[150px] inline-block">${safeAttr(data.note || '-')}</span>
                         </td>
                         <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'orderDate')">
                             <div class="display-val">${orderText}</div>
