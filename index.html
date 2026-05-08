@@ -4996,7 +4996,7 @@
         }
     };
 
-    window.openEditModal = function(dataStr) {
+    window.openEditModal = async function(dataStr) {
         if (!checkPermission('orders_edit_any')) {
             showToast('Từ chối!', 'Bạn không có quyền chỉnh sửa đơn hàng.', 'block', 'text-error');
             return;
@@ -5013,9 +5013,11 @@
         document.getElementById('editOrderDeployDate').value = data.deployDate || '';
         
         let allowedEditCats = window.orderCategoriesData ? [...window.orderCategoriesData] : [];
-        if (typeof checkOrderWindow === 'function') {
-            const result = checkOrderWindow(new Date(), window.currentUserRole);
-            if (result && !result.isOpen) {
+        if (typeof window.checkOrderWindowOpen === 'function') {
+            const result = await window.checkOrderWindowOpen();
+            if (result && !result.allowed) {
+                allowedEditCats = [];
+            } else if (result && result.openCategories && !result.openCategories.includes('all')) {
                 allowedEditCats = allowedEditCats.filter(c => result.openCategories.includes(c.name) || c.name === data.category);
             }
         }
@@ -5264,7 +5266,7 @@
     };
 
     // ===== Inline Edit =====
-    window.startInlineEdit = function(element, dataStr, field) {
+    window.startInlineEdit = async function(element, dataStr, field) {
         if (element.classList.contains('editing')) return;
 
         // RBAC Check
@@ -5313,9 +5315,11 @@
         } else if (field === 'category') {
             let optionsHtml = '';
             let allowedCats = window.orderCategoriesData ? [...window.orderCategoriesData] : [];
-            if (typeof checkOrderWindow === 'function') {
-                const result = checkOrderWindow(new Date(), window.currentUserRole);
-                if (result && !result.isOpen) {
+            if (typeof window.checkOrderWindowOpen === 'function') {
+                const result = await window.checkOrderWindowOpen();
+                if (result && !result.allowed) {
+                    allowedCats = [];
+                } else if (result && result.openCategories && !result.openCategories.includes('all')) {
                     allowedCats = allowedCats.filter(c => result.openCategories.includes(c.name) || c.name === originalVal);
                 }
             }
