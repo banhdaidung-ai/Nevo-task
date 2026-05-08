@@ -5011,6 +5011,19 @@
         document.getElementById('editOrderRequester').value = data.requester || '';
         document.getElementById('editOrderDeadline').value = data.deadline || '';
         document.getElementById('editOrderDeployDate').value = data.deployDate || '';
+        
+        let allowedEditCats = window.orderCategoriesData ? [...window.orderCategoriesData] : [];
+        if (typeof checkOrderWindow === 'function') {
+            const result = checkOrderWindow(new Date(), window.currentUserRole);
+            if (result && !result.isOpen) {
+                allowedEditCats = allowedEditCats.filter(c => result.openCategories.includes(c.name) || c.name === data.category);
+            }
+        }
+        if (data.category && !allowedEditCats.some(c => c.name === data.category)) {
+            allowedEditCats.push({ name: data.category });
+        }
+        populateDropdown('editOrderCategory', allowedEditCats, '- Chọn thể loại -');
+        
         document.getElementById('editOrderCategory').value = data.category || 'Video';
         document.getElementById('editOrderStylist').value = data.stylist || '';
         document.getElementById('editOrderVideo').value = data.assignedVideo || '';
@@ -5299,7 +5312,17 @@
             </select>`;
         } else if (field === 'category') {
             let optionsHtml = '';
-            (window.orderCategoriesData || []).forEach(c => {
+            let allowedCats = window.orderCategoriesData ? [...window.orderCategoriesData] : [];
+            if (typeof checkOrderWindow === 'function') {
+                const result = checkOrderWindow(new Date(), window.currentUserRole);
+                if (result && !result.isOpen) {
+                    allowedCats = allowedCats.filter(c => result.openCategories.includes(c.name) || c.name === originalVal);
+                }
+            }
+            if (originalVal && !allowedCats.some(c => c.name === originalVal)) {
+                allowedCats.push({ name: originalVal });
+            }
+            allowedCats.forEach(c => {
                 const catName = c.name || c;
                 optionsHtml += `<option value="${catName}" ${originalVal === catName ? 'selected' : ''}>${catName}</option>`;
             });
