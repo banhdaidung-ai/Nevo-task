@@ -6319,10 +6319,54 @@
 
     window.linkify = function(text) {
         if (!text) return text;
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const urlRegex = /(https?:\/\/[^\s]+|(?:www\.|drive\.google\.com|docs\.google\.com)[^\s]+)/gi;
         return text.replace(urlRegex, function(url) {
-            return `<a href="${url}" target="_blank" class="text-blue-500 hover:text-blue-700 underline break-all">${url}</a>`;
+            const href = url.startsWith('http') ? url : 'https://' + url;
+            return `<a href="${href}" target="_blank" class="text-blue-500 hover:text-blue-700 underline break-all">${url}</a>`;
         });
+    };
+
+    window.linkifyHTML = function(html) {
+        if (!html) return html;
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        const walk = document.createTreeWalker(div, NodeFilter.SHOW_TEXT, null, false);
+        const nodes = [];
+        let n;
+        while(n = walk.nextNode()) {
+            let p = n.parentNode;
+            let inAnchor = false;
+            while (p && p !== div) {
+                if (p.tagName === 'A') {
+                    inAnchor = true;
+                    break;
+                }
+                p = p.parentNode;
+            }
+            if (!inAnchor) nodes.push(n);
+        }
+        
+        const urlRegex = /(https?:\/\/[^\s]+|(?:www\.|drive\.google\.com|docs\.google\.com)[^\s]+)/gi;
+        nodes.forEach(node => {
+            const val = node.nodeValue;
+            const replaced = val.replace(urlRegex, function(url) {
+                const href = url.startsWith('http') ? url : 'https://' + url;
+                return `<a href="${href}" target="_blank" class="text-indigo-600 hover:text-indigo-800 underline break-all font-medium">${url}</a>`;
+            });
+            
+            if (replaced !== val) {
+                const span = document.createElement('span');
+                span.innerHTML = replaced;
+                node.parentNode.replaceChild(span, node);
+                
+                const parent = span.parentNode;
+                while (span.firstChild) {
+                    parent.insertBefore(span.firstChild, span);
+                }
+                parent.removeChild(span);
+            }
+        });
+        return div.innerHTML;
     };
 
     window.extractFirstLink = function(text) {
@@ -6347,10 +6391,10 @@
         
         try {
             header.textContent = decodeURIComponent(title);
-            body.innerHTML = decodeURIComponent(content);
+            body.innerHTML = window.linkifyHTML(decodeURIComponent(content));
         } catch (err) {
             header.textContent = title;
-            body.innerHTML = content;
+            body.innerHTML = window.linkifyHTML(content);
         }
         
         tooltip.classList.add('show');
@@ -8212,7 +8256,7 @@
         document.getElementById('viewOrderRequester').textContent = order.requester || '-';
         document.getElementById('viewOrderReqInit').textContent = (order.requester || '?').charAt(0).toUpperCase();
         document.getElementById('viewOrderDeadline').textContent = order.deadline || '-';
-        document.getElementById('viewOrderContent').innerHTML = order.content || '<span class="italic text-slate-400">Không có nội dung mô tả</span>';
+        document.getElementById('viewOrderContent').innerHTML = window.linkifyHTML(order.content) || '<span class="italic text-slate-400">Không có nội dung mô tả</span>';
         document.getElementById('viewOrderTotalCost').textContent = (order.totalCost || 0).toLocaleString() + ' VNĐ';
         
         const catBadge = document.getElementById('viewOrderCatBadge');
