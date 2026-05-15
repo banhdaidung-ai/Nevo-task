@@ -4944,9 +4944,13 @@
         const qAll = window.fsQuery(ordersRef, window.fsOrderBy("createdAt", "desc"));
         let isInitialLoadAllOrders = true;
         
-        // Request notification permission if not granted
-        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
+        // Request notification permission if not granted (Wrapped in try-catch to avoid breaking Safari/iOS)
+        try {
+            if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission().catch(e => console.warn("Notification permission error:", e));
+            }
+        } catch (err) {
+            console.warn("Could not request notification permission:", err);
         }
 
         window.fsOnSnapshot(qAll, (snapshot) => {
@@ -6486,7 +6490,7 @@
     window.linkifyHTML = function(html) {
         if (!html) return html;
         const div = document.createElement('div');
-        div.innerHTML = DOMPurify ? DOMPurify.sanitize(html) : html;
+        div.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize(html) : html;
         const walk = document.createTreeWalker(div, NodeFilter.SHOW_TEXT, null, false);
         const nodes = [];
         let n;
