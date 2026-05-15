@@ -6401,13 +6401,8 @@
                 const indicator = document.getElementById(tempId);
                 if(indicator) indicator.innerHTML = `<span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; animation:spin 1s linear infinite;">progress_activity</span> Đang kết nối máy chủ ảnh...`;
 
-                let apiKey = localStorage.getItem('imgbb_api_key');
-                if (!apiKey || apiKey.length < 10) {
-                    apiKey = prompt("Lần đầu tải ảnh: Vui lòng nhập API Key của ImgBB (lấy miễn phí tại api.imgbb.com):");
-                    if (!apiKey) {
-                        throw new Error('Chưa nhập API Key. Vui lòng tạo tài khoản ImgBB và lấy key để tải ảnh!');
-                    }
-                }
+                // Use the user's dedicated ImgBB API Key
+                const apiKey = 'b1c6cab5532d739ac0473d03c88af140';
 
                 const formData = new FormData();
                 formData.append('image', file);
@@ -6420,7 +6415,6 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    localStorage.setItem('imgbb_api_key', apiKey); // Save if successful
                     const downloadURL = result.data.url;
                     const finalIndicator = document.getElementById(tempId);
                     if(finalIndicator) {
@@ -6430,7 +6424,6 @@
                     }
                     window.showToast("Đã chèn ảnh thành công", "success");
                 } else {
-                    localStorage.removeItem('imgbb_api_key'); // Clear invalid key
                     throw new Error(result.error ? result.error.message : 'API Key không hợp lệ hoặc lỗi tải ảnh');
                 }
             } catch (err) {
