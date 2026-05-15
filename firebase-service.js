@@ -9,18 +9,14 @@ import {
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
     serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-storage.js";
 import { firebaseConfig } from "./app-config.js";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const storage = getStorage(app);
-
 // Export to window for legacy support if needed
 window.db = db;
-window.storage = storage;
 window.fsCollection = collection;
 window.fsAddDoc = addDoc;
 window.fsGetDocs = getDocs;
@@ -38,13 +34,9 @@ window.fsStartAfter = startAfter;
 window.fsSetDoc = setDoc;
 window.fsRunTransaction = runTransaction;
 window.fsTimestamp = Timestamp;
-window.fsRef = ref;
-window.fsUploadBytesResumable = uploadBytesResumable;
-window.fsGetDownloadURL = getDownloadURL;
 
 export { 
-    db, storage, collection, addDoc, getDocs, getDoc, doc, 
+    db, collection, addDoc, getDocs, getDoc, doc, 
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
-    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp,
-    ref, uploadBytesResumable, getDownloadURL
+    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
 };
