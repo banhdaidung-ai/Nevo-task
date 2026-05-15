@@ -397,6 +397,24 @@
             color: #475569;
             line-height: 1.6;
             word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            overflow-x: hidden;
+        }
+        .tooltip-body * {
+            max-width: 100%;
+        }
+        .tooltip-body table {
+            table-layout: fixed;
+            width: 100% !important;
+        }
+        .tooltip-body td, .tooltip-body th, .tooltip-body p, .tooltip-body div {
+            white-space: normal !important;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+    </style>
     <style>
         /* Only critical overrides if any */
     </style>
@@ -4822,6 +4840,23 @@
         window.fsOnSnapshot(usersRef, (snapshot) => {
             window.allUsersData = [];
             snapshot.forEach(doc => window.allUsersData.push({ id: doc.id, ...doc.data() }));
+            
+            // Sync current user's profile changes to localStorage automatically
+            const currentEmpId = localStorage.getItem('nevo_empId');
+            if (currentEmpId) {
+                const me = window.allUsersData.find(u => u.id === currentEmpId);
+                if (me) {
+                    if (me.dept && me.dept !== localStorage.getItem('nevo_dept')) {
+                        localStorage.setItem('nevo_dept', me.dept);
+                    }
+                    if (me.role && me.role !== localStorage.getItem('nevo_role')) {
+                        localStorage.setItem('nevo_role', me.role);
+                    }
+                    if (me.name && me.name !== localStorage.getItem('nevo_user')) {
+                        localStorage.setItem('nevo_user', me.name);
+                    }
+                }
+            }
             
             const staff = window.allUsersData.sort((a,b) => a.name.localeCompare(b.name));
             const creativeStaff = staff.filter(u => u.dept === 'Creative');
