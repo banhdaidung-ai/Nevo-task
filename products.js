@@ -327,7 +327,7 @@ async function init() {
         movableColumns: true, 
         movableRows: true,
         persistence: { columns: true, rows: true },
-        persistenceID: "productsTable",
+        persistenceID: "productsTable_v3",
         columns: columns,
     });
 
