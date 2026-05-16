@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sản phẩm mới — Task Manager</title>
+    <meta name="description" content="Quản lý sản phẩm mới NEVO 2026"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tabulator for Spreadsheet feel -->
+    <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+
+    <!-- SweetAlert2 for nice alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { "primary": "#b80035", "primary-dark": "#920028" },
+                    fontFamily: { headline: ["Manrope"], body: ["Inter"] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; min-height: 100vh; margin: 0; }
+        .sheet-frame {
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 8px 40px -8px rgba(0,0,0,0.1), 0 2px 12px -2px rgba(0,0,0,0.06);
+            background: #fff; border: 1px solid #e2e8f0;
+        }
+        
+        /* Tabulator Styling to look more like Google Sheets */
+        .tabulator { border: none !important; background-color: white !important; font-family: 'Inter', sans-serif; font-size: 13px; }
+        .tabulator-header { background-color: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; color: #475569; font-weight: 600; }
+        .tabulator-col { border-right: 1px solid #e2e8f0 !important; }
+        .tabulator-row { border-bottom: 1px solid #e2e8f0 !important; }
+        .tabulator-row.tabulator-row-even { background-color: #fff !important; }
+        .tabulator-cell { border-right: 1px solid #e2e8f0 !important; padding: 8px !important; }
+        .tabulator-cell.tabulator-editing { border: 2px solid #b80035 !important; padding: 6px !important; box-shadow: 0 0 5px rgba(184,0,53,0.3); }
+        .tabulator-row.tabulator-selected { background-color: #f1f5f9 !important; }
+        
+        .toolbar-btn {
+            display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px;
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            border: 1px solid #e2e8f0; background: white; color: #475569;
+        }
+        .toolbar-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .toolbar-btn.primary { background: #b80035; color: white; border-color: #b80035; }
+        .toolbar-btn.primary:hover { background: #920028; border-color: #920028; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .status-hoan-tat { background: #dcfce7; color: #166534; }
+        .status-dang-xu-ly { background: #fef08a; color: #854d0e; }
+        .status-chua-co { background: #e2e8f0; color: #475569; }
+
+        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.15); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse-glow 2s infinite; }
+    </style>
+</head>
+<body>
+
+<!-- Nav Bar -->
+<nav class="bg-white/80 backdrop-blur-xl sticky top-0 z-50 shadow-[0_8px_30px_-12px_rgba(19,27,46,0.08)]">
+    <div class="flex justify-between items-center w-full px-4 md:px-8 py-3">
+        <div class="flex items-center gap-4 md:gap-6">
+            <a href="index.html" class="text-xl font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
+                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Logo" style="width:32px;height:auto"/>
+                <span class="hidden sm:inline">Task Manager</span>
+            </a>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <div class="flex items-center gap-2 bg-primary/5 px-3 py-1.5 rounded-full">
+                <span class="material-symbols-outlined text-primary text-[18px]">inventory_2</span>
+                <span class="text-sm font-bold text-primary font-headline">Sản phẩm mới</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <select id="month-selector" class="bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-sm">
+                <!-- Dynamically populated -->
+            </select>
+            <div id="syncStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100">
+                <div class="live-dot"></div>
+                <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">Đã đồng bộ</span>
+            </div>
+            <a href="index.html" class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-semibold text-slate-700 transition-all">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span class="hidden sm:inline">Quay lại</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Main -->
+<main class="p-4 md:p-6 max-w-[1920px] mx-auto">
+    <!-- Header & Toolbar -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
+        <div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 font-headline">Dữ liệu Sản phẩm NEVO</h1>
+            <p class="text-slate-500 text-sm mt-1">Dữ liệu được lưu trực tiếp trên hệ thống. Nhấp đúp vào ô để chỉnh sửa.</p>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-add-row" class="toolbar-btn primary">
+                <span class="material-symbols-outlined text-[16px]">add</span> Thêm dòng
+            </button>
+            <div class="w-px h-6 bg-slate-200 mx-1"></div>
+            <button id="btn-delete-row" class="toolbar-btn text-red-600 hover:bg-red-50 hover:border-red-200">
+                <span class="material-symbols-outlined text-[16px]">delete</span> Xoá dòng chọn
+            </button>
+            <button id="btn-add-col" class="toolbar-btn text-blue-600 hover:bg-blue-50 border-blue-200">
+                <span class="material-symbols-outlined text-[16px]">view_column</span> Thêm cột
+            </button>
+            <button id="btn-color-row" class="toolbar-btn text-purple-600 hover:bg-purple-50 border-purple-200" title="Tô màu các dòng đang chọn">
+                <span class="material-symbols-outlined text-[16px]">format_color_fill</span> Tô màu dòng
+            </button>
+            <div class="w-px h-6 bg-slate-200 mx-1"></div>
+            <button id="btn-export-csv" class="toolbar-btn">
+                <span class="material-symbols-outlined text-[16px]">download</span> Xuất CSV
+            </button>
+            <label class="toolbar-btn cursor-pointer">
+                <span class="material-symbols-outlined text-[16px]">upload</span> Nhập CSV
+                <input type="file" id="file-import-csv" accept=".csv" class="hidden">
+            </label>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng sản phẩm</p>
+            <p id="stat-total" class="text-2xl font-black text-slate-800">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1">Hình trải sàn hoàn tất</p>
+            <p id="stat-traisan" class="text-2xl font-black text-emerald-600">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-blue-500 uppercase tracking-wider mb-1">Hình model hoàn tất</p>
+            <p id="stat-model" class="text-2xl font-black text-blue-600">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+            <p class="text-xs font-bold text-purple-500 uppercase tracking-wider mb-1">Video hoàn tất</p>
+            <p id="stat-video" class="text-2xl font-black text-purple-600">0</p>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="sheet-frame">
+        <div id="products-table" style="height: calc(100vh - 280px); min-height: 500px;"></div>
+    </div>
+</main>
+
+<script type="module" src="products.js"></script>
+</body>
+</html>

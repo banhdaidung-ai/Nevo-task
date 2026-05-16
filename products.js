@@ -1,0 +1,495 @@
+import { 
+    db, collection, addDoc, getDocs, doc, getDoc,
+    updateDoc, deleteDoc, serverTimestamp, setDoc 
+} from "./firebase-service.js";
+
+// Auth Guard
+if (localStorage.getItem('nevo_logged_in') !== 'true') {
+    window.location.replace('login.html');
+}
+
+let currentMonth = "";
+let COLLECTION_NAME = "";
+const SETTINGS_DOC = "products_table_config";
+
+let table;
+let isSyncing = false;
+let statusColors = {
+    "Hoàn tất": "#dcfce7", // green
+    "Đang xử lý": "#fef08a", // yellow
+    "Chưa có": "#ffffff" // white
+};
+
+// Custom Formatter for Status
+const statusFormatter = function(cell, formatterParams) {
+    let val = cell.getValue() || "Chưa có";
+    if (val === "Hoàn tất") return `<span class="status-badge status-hoan-tat">${val}</span>`;
+    if (val === "Đang xử lý") return `<span class="status-badge status-dang-xu-ly">${val}</span>`;
+    return `<span class="status-badge status-chua-co">${val}</span>`;
+};
+
+// Row formatter for coloring
+const rowColorFormatter = function(row) {
+    let data = row.getData();
+    // Manual row color overrides status color
+    if (data.rowColor) {
+        row.getElement().style.backgroundColor = data.rowColor;
+        return;
+    }
+    
+    // Auto status color
+    let statuses = [data.anhTraiSanTrangThai, data.anhModelTrangThai, data.videoModelTrangThai];
+    
+    if (statuses.includes("Đang xử lý")) {
+        row.getElement().style.backgroundColor = statusColors["Đang xử lý"];
+    } else if (statuses.every(s => s === "Hoàn tất")) {
+        row.getElement().style.backgroundColor = statusColors["Hoàn tất"];
+    } else {
+        row.getElement().style.backgroundColor = "#ffffff";
+    }
+};
+
+// Update Sync Status UI
+function setSyncing(status) {
+    isSyncing = status;
+    const el = document.getElementById("syncStatus");
+    if (status) {
+        el.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin text-amber-500">sync</span>
+                        <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wide">Đang lưu...</span>`;
+        el.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-100";
+    } else {
+        el.innerHTML = `<div class="live-dot"></div>
+                        <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">Đã lưu</span>`;
+        el.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100";
+    }
+}
+
+// Update Stats
+function updateStats(data) {
+    document.getElementById('stat-total').innerText = data.length;
+    document.getElementById('stat-traisan').innerText = data.filter(d => d.anhTraiSanTrangThai === 'Hoàn tất').length;
+    document.getElementById('stat-model').innerText = data.filter(d => d.anhModelTrangThai === 'Hoàn tất').length;
+    document.getElementById('stat-video').innerText = data.filter(d => d.videoModelTrangThai === 'Hoàn tất').length;
+}
+
+// Setup Months
+function setupMonths() {
+    const sel = document.getElementById('month-selector');
+    const now = new Date();
+    
+    // Generate months from 3 months ago to 3 months ahead
+    for (let i = -3; i <= 3; i++) {
+        let d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+        let m = (d.getMonth() + 1).toString().padStart(2, '0');
+        let y = d.getFullYear();
+        let val = `${m}-${y}`;
+        
+        let opt = document.createElement('option');
+        opt.value = val;
+        opt.text = `Tháng ${m}/${y}`;
+        
+        if (i === 0) {
+            opt.selected = true;
+            currentMonth = val;
+            COLLECTION_NAME = "new_products_" + val;
+        }
+        sel.appendChild(opt);
+    }
+    
+    sel.addEventListener('change', (e) => {
+        currentMonth = e.target.value;
+        COLLECTION_NAME = "new_products_" + currentMonth;
+        loadTableData();
+    });
+}
+
+// Load Data into Table
+async function loadTableData() {
+    setSyncing(true);
+    const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+    const tableData = [];
+    snapshot.forEach(doc => {
+        tableData.push({ id: doc.id, ...doc.data() });
+    });
+    
+    if (table) {
+        await table.setData(tableData);
+        updateStats(tableData);
+    }
+    setSyncing(false);
+    return tableData;
+}
+
+// Initialize App
+async function init() {
+    setupMonths();
+    setSyncing(true);
+    
+    // Fetch Settings
+    let customCols = [];
+    try {
+        const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
+        if (configSnap.exists()) {
+            customCols = configSnap.data().customColumns || [];
+            if (configSnap.data().statusColors) statusColors = configSnap.data().statusColors;
+        }
+    } catch (e) { console.log("No config found"); }
+
+    const tableData = await loadTableData();
+
+    // Base Columns
+    let columns = [
+        { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
+        { title: "Mã 10", field: "ma10", editor: "input", width: 120 },
+        { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140 },
+        { title: "Phân loại", field: "phanLoai", editor: "input", width: 120 },
+        { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100 },
+        { title: "Ngày về kho Media", field: "ngayVeKho", editor: "input", width: 140 },
+        { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 150 },
+        {
+            title: "Hình ảnh trải sàn",
+            columns: [
+                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: "input", width: 120 },
+                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
+            ]
+        },
+        {
+            title: "Hình ảnh model",
+            columns: [
+                { title: "Ngày chụp", field: "anhModelNgay", editor: "input", width: 120 },
+                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
+            ]
+        },
+        {
+            title: "Video model",
+            columns: [
+                { title: "Ngày quay", field: "videoModelNgay", editor: "input", width: 120 },
+                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
+            ]
+        }
+    ];
+
+    // Append custom columns
+    customCols.forEach(col => {
+        columns.push({ title: col.title, field: col.field, editor: "input", width: 150 });
+    });
+
+    // Setup Tabulator
+    table = new Tabulator("#products-table", {
+        data: tableData,
+        layout: "fitColumns",
+        history: true, 
+        clipboard: true, // Allow copying OUT
+        clipboardPasteAction: "replace", // Note: We override native paste below
+        selectable: true,
+        reactiveData: true,
+        rowFormatter: rowColorFormatter,
+        columns: columns,
+    });
+
+    table.on("dataLoaded", function(data) {
+        updateStats(data);
+    });
+    table.on("dataChanged", function(data) {
+        updateStats(data);
+    });
+
+    // --- FIREBASE SYNC LOGIC ---
+
+    // Single Cell Edit
+    table.on("cellEdited", async function(cell) {
+        const row = cell.getRow();
+        const data = row.getData();
+        const field = cell.getField();
+        
+        if (data.id) {
+            setSyncing(true);
+            try {
+                const docRef = doc(db, COLLECTION_NAME, data.id);
+                await updateDoc(docRef, {
+                    [field]: cell.getValue() || "",
+                    updatedAt: serverTimestamp()
+                });
+            } catch (err) { console.error(err); }
+            row.reformat();
+            setSyncing(false);
+        }
+    });
+
+    // Custom Excel Paste Handler (Cell-level pasting)
+    document.getElementById('products-table').addEventListener("paste", async function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        let text = (e.clipboardData || window.clipboardData).getData('text');
+        if (!text) return;
+        
+        let cells = table.getSelectedCells();
+        if (!cells.length) {
+            Swal.fire('Chú ý', 'Vui lòng nhấp vào 1 ô để chọn vị trí dán dữ liệu', 'warning');
+            return;
+        }
+        
+        e.preventDefault(); // Stop native Tabulator full-table replace
+        
+        let startCell = cells[0];
+        let startRow = startCell.getRow();
+        let startCol = startCell.getColumn();
+        
+        // Robust TSV Parsing (Handles newlines and tabs inside quotes)
+        let parsedRows = [];
+        let currentRow = [];
+        let currentCell = "";
+        let insideQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            if (insideQuotes) {
+                if (char === '"') {
+                    if (i + 1 < text.length && text[i + 1] === '"') {
+                        currentCell += '"'; // Escaped quote
+                        i++;
+                    } else {
+                        insideQuotes = false;
+                    }
+                } else {
+                    currentCell += char;
+                }
+            } else {
+                if (char === '"') {
+                    insideQuotes = true;
+                } else if (char === '\t') {
+                    currentRow.push(currentCell);
+                    currentCell = "";
+                } else if (char === '\n') {
+                    currentRow.push(currentCell);
+                    parsedRows.push(currentRow);
+                    currentRow = [];
+                    currentCell = "";
+                } else if (char === '\r') {
+                    // Ignore Windows carriage return
+                } else {
+                    currentCell += char;
+                }
+            }
+        }
+        if (currentCell !== "" || currentRow.length > 0) {
+            currentRow.push(currentCell);
+            parsedRows.push(currentRow);
+        }
+
+        // Clean up last empty row
+        if (parsedRows.length > 0 && parsedRows[parsedRows.length - 1].length === 1 && parsedRows[parsedRows.length - 1][0] === "") {
+            parsedRows.pop();
+        }
+        
+        let currentTableRows = table.getRows();
+        let rowIdx = currentTableRows.findIndex(r => r === startRow);
+        
+        // Flatten columns and FILTER OUT non-data columns (like rowSelection)
+        let flatCols = [];
+        table.getColumns().forEach(c => {
+            let sub = c.getSubColumns();
+            if(sub.length > 0) flatCols.push(...sub);
+            else flatCols.push(c);
+        });
+        let dataCols = flatCols.filter(c => c.getField() && c.getField() !== "rowSelection");
+        
+        let colIdx = dataCols.findIndex(c => c === startCol);
+        if (colIdx === -1) colIdx = 0; // Fallback
+        
+        setSyncing(true);
+        let promises = [];
+        
+        for (let i = 0; i < parsedRows.length; i++) {
+            let r = currentTableRows[rowIdx + i];
+            
+            // If we run out of rows, add a new one
+            if (!r) {
+                const newDocRef = await addDoc(collection(db, COLLECTION_NAME), { createdAt: serverTimestamp() });
+                await table.addRow({ id: newDocRef.id });
+                currentTableRows = table.getRows(); // refresh
+                r = currentTableRows[rowIdx + i];
+            }
+            
+            let rowPastedData = parsedRows[i];
+            let updateData = {};
+            let id = r.getData().id;
+            
+            for (let j = 0; j < rowPastedData.length; j++) {
+                let c = dataCols[colIdx + j];
+                if (!c) continue; 
+                let field = c.getField();
+                
+                updateData[field] = rowPastedData[j].trim();
+            }
+            
+            if (Object.keys(updateData).length > 0) {
+                r.update(updateData);
+                updateData.updatedAt = serverTimestamp();
+                promises.push(updateDoc(doc(db, COLLECTION_NAME, id), updateData));
+            }
+        }
+        
+        try {
+            await Promise.all(promises);
+            table.redraw(true); 
+            Swal.fire('Thành công', `Đã dán và cập nhật ${parsedRows.length} dòng`, 'success');
+        } catch(err) {
+            console.error("Paste Error", err);
+            Swal.fire('Lỗi', 'Có lỗi khi lưu dữ liệu', 'error');
+        }
+        setSyncing(false);
+    });
+
+    // Add Row
+    document.getElementById("btn-add-row").addEventListener("click", async () => {
+        setSyncing(true);
+        try {
+            const newDoc = {
+                ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
+                ngayVeKho: "", linkAnh: "",
+                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa có",
+                anhModelNgay: "", anhModelTrangThai: "Chưa có",
+                videoModelNgay: "", videoModelTrangThai: "Chưa có",
+                createdAt: serverTimestamp()
+            };
+            const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
+            table.addRow({ id: docRef.id, ...newDoc }, true);
+        } catch (err) { console.error(err); }
+        setSyncing(false);
+    });
+
+    // Delete Row
+    document.getElementById("btn-delete-row").addEventListener("click", async () => {
+        const selectedRows = table.getSelectedRows();
+        if (selectedRows.length === 0) return Swal.fire('Chú ý', 'Chọn ít nhất 1 dòng', 'warning');
+
+        const result = await Swal.fire({
+            title: 'Xác nhận xoá?',
+            text: `Bạn muốn xoá ${selectedRows.length} dòng ở tháng này?`,
+            icon: 'warning',
+            showCancelButton: true
+        });
+
+        if (result.isConfirmed) {
+            setSyncing(true);
+            for (let row of selectedRows) {
+                const id = row.getData().id;
+                if (id) await deleteDoc(doc(db, COLLECTION_NAME, id));
+                row.delete();
+            }
+            setSyncing(false);
+        }
+    });
+
+    // Add Custom Column
+    document.getElementById("btn-add-col").addEventListener("click", async () => {
+        const { value: colName } = await Swal.fire({
+            title: 'Thêm cột mới',
+            input: 'text',
+            inputLabel: 'Tên cột',
+            inputPlaceholder: 'Nhập tên cột...',
+            showCancelButton: true
+        });
+
+        if (colName) {
+            setSyncing(true);
+            const field = "custom_" + Date.now();
+            const newColDef = { title: colName, field: field, editor: "input", width: 150 };
+            
+            table.addColumn(newColDef);
+            try {
+                const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
+                let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
+                cols.push(newColDef);
+                await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
+                Swal.fire('Thành công', 'Đã thêm cột mới. Cột này áp dụng cho mọi tháng.', 'success');
+            } catch (e) { console.error(e); }
+            setSyncing(false);
+        }
+    });
+
+    // Manually Color Rows
+    document.getElementById("btn-color-row").addEventListener("click", async () => {
+        const selectedRows = table.getSelectedRows();
+        if (selectedRows.length === 0) return Swal.fire('Chú ý', 'Click vào các ô vuông ở cột đầu tiên để chọn dòng cần tô màu.', 'warning');
+
+        const { value: color } = await Swal.fire({
+            title: 'Chọn màu nền',
+            input: 'select',
+            inputOptions: {
+                '#ffffff': 'Trắng (Xoá màu)',
+                '#dcfce7': 'Xanh nhạt (Hoàn tất)',
+                '#fef08a': 'Vàng nhạt (Đang xử lý)',
+                '#fecaca': 'Đỏ nhạt (Lỗi/Khẩn cấp)',
+                '#e2e8f0': 'Xám (Bỏ qua)'
+            },
+            inputPlaceholder: 'Chọn màu',
+            showCancelButton: true
+        });
+
+        if (color) {
+            setSyncing(true);
+            let promises = [];
+            for (let row of selectedRows) {
+                const data = row.getData();
+                if (data.id) {
+                    promises.push(updateDoc(doc(db, COLLECTION_NAME, data.id), { rowColor: color }));
+                    row.update({ rowColor: color });
+                }
+            }
+            await Promise.all(promises);
+            table.redraw(true); // Re-run formatters
+            setSyncing(false);
+        }
+    });
+
+    // Export CSV (with UTF-8 BOM)
+    document.getElementById("btn-export-csv").addEventListener("click", () => {
+        table.download("csv", `SanPham_${currentMonth}.csv`, { bom: true });
+    });
+
+    // Import CSV (File listener)
+    document.getElementById("file-import-csv").addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const result = await Swal.fire({
+            title: 'Nhập dữ liệu',
+            text: `Dữ liệu sẽ được đẩy vào ${currentMonth}. Tiếp tục?`,
+            icon: 'info',
+            showCancelButton: true
+        });
+
+        if (result.isConfirmed) {
+            setSyncing(true);
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const text = event.target.result;
+                const rows = text.split('\n').filter(r => r.trim().length > 0);
+                const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
+                
+                let addedCount = 0;
+                for (let i = 1; i < rows.length; i++) {
+                    const values = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || rows[i].split(',');
+                    const rowData = {};
+                    headers.forEach((h, index) => {
+                        let val = values[index] ? values[index].replace(/"/g, '').trim() : "";
+                        rowData[h] = val;
+                    });
+                    try {
+                        delete rowData.id; 
+                        const docRef = await addDoc(collection(db, COLLECTION_NAME), rowData);
+                        table.addRow({ id: docRef.id, ...rowData });
+                        addedCount++;
+                    } catch (e) { console.error(e); }
+                }
+                Swal.fire('Thành công', `Đã nhập ${addedCount} dòng mới`, 'success');
+                setSyncing(false);
+            };
+            reader.readAsText(file);
+        }
+        e.target.value = ''; 
+    });
+}
+
+init();
