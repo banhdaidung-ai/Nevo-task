@@ -56,7 +56,13 @@ const dateEditor = function(cell, onRendered, success, cancel) {
             let p = input.value.split("-");
             success(`${p[2]}/${p[1]}/${p[0]}`); // Save as DD/MM/YYYY
         } else {
-            success("");
+            // If empty, and we had a value before, maybe keep it or cancel?
+            // To prevent data loss on accidental click, we keep old value if empty
+            if (cellValue) {
+                success(cellValue);
+            } else {
+                success("");
+            }
         }
     }
     
@@ -530,7 +536,8 @@ async function init() {
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
-            table.addRow({ id: docRef.id, ...newDoc }, true);
+            const row = await table.addRow({ id: docRef.id, ...newDoc }, false); // Add to BOTTOM
+            table.scrollToRow(row, "bottom", false); // Scroll to it
         } catch (err) { console.error(err); }
         setSyncing(false);
     });
