@@ -550,24 +550,17 @@ async function init() {
                     statusColors: statusColors 
                 }, { merge: true });
 
-                // Update column definitions more robustly
-                const currentCols = table.getColumnDefinitions();
-                currentCols.forEach(col => {
-                    if (col.columns) {
-                        col.columns.forEach(subCol => {
-                            if (["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"].includes(subCol.field)) {
-                                subCol.editorParams = { values: statusOptions };
-                                subCol.headerFilterParams = { values: ["", ...statusOptions] };
-                            }
+                // Update each status column definition directly using Column Component
+                table.getColumns(true).forEach(col => {
+                    const field = col.getField();
+                    if (["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"].includes(field)) {
+                        col.updateDefinition({
+                            editorParams: { values: [...statusOptions] },
+                            headerFilterParams: { values: ["", ...statusOptions] }
                         });
-                    }
-                    if (["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"].includes(col.field)) {
-                        col.editorParams = { values: statusOptions };
-                        col.headerFilterParams = { values: ["", ...statusOptions] };
                     }
                 });
                 
-                table.setColumns(currentCols);
                 table.redraw(true);
                 Swal.fire('Thành công', 'Đã cập nhật danh sách trạng thái.', 'success');
             } catch (e) {
