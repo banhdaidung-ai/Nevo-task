@@ -272,7 +272,7 @@ async function init() {
             // Disable Tabulator's native paste so our custom DOM handler takes full control
             return false;
         },
-        selectable: true,
+        selectable: "highlight", // Only select on click, prevents some accidental selections during edit
         reactiveData: true,
         rowFormatter: rowColorFormatter,
         movableColumns: true, // Allow reordering columns
@@ -286,6 +286,11 @@ async function init() {
     let lastClickedCell = null;
     table.on("cellClick", function(e, cell) {
         lastClickedCell = cell;
+    });
+
+    // Deselect row when editing starts to avoid the "select on edit" behavior
+    table.on("cellEditing", function(cell) {
+        cell.getRow().deselect();
     });
 
     table.on("dataLoaded", function(data) {
@@ -605,9 +610,12 @@ async function init() {
         }
     });
 
-    // Export CSV (with UTF-8 BOM)
+    // Export CSV (with UTF-8 BOM for Excel compatibility)
     document.getElementById("btn-export-csv").addEventListener("click", () => {
-        table.download("csv", `SanPham_${currentMonth}.csv`, { bom: true });
+        table.download("csv", `SanPham_${currentMonth}.csv`, { 
+            bom: true,
+            delimiter: ",",
+        });
     });
 
     // Import CSV (File listener)
