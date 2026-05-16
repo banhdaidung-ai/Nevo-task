@@ -227,6 +227,11 @@ async function init() {
         columns: columns,
     });
 
+    let lastClickedCell = null;
+    table.on("cellClick", function(e, cell) {
+        lastClickedCell = cell;
+    });
+
     table.on("dataLoaded", function(data) {
         updateStats(data);
     });
@@ -263,15 +268,14 @@ async function init() {
         let text = (e.clipboardData || window.clipboardData).getData('text');
         if (!text) return;
         
-        let cells = table.getSelectedCells();
-        if (!cells.length) {
-            Swal.fire('Chú ý', 'Vui lòng nhấp vào 1 ô để chọn vị trí dán dữ liệu', 'warning');
+        if (!lastClickedCell) {
+            Swal.fire('Chú ý', 'Vui lòng nhấp chuột vào 1 ô trên bảng để chọn vị trí bắt đầu dán', 'warning');
             return;
         }
         
         e.preventDefault(); // Stop native Tabulator full-table replace
         
-        let startCell = cells[0];
+        let startCell = lastClickedCell;
         let startRow = startCell.getRow();
         let startCol = startCell.getColumn();
         
