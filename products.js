@@ -219,16 +219,17 @@ async function init() {
         { rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30 },
         { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
         { title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false },
-        { title: "Mã 10", field: "ma10", editor: "input", width: 120 },
-        { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140 },
-        { title: "Phân loại", field: "phanLoai", editor: "input", width: 120 },
-        { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100 },
-        { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, formatter: dateDisplayFormatter, width: 110 },
+        { title: "Mã 10", field: "ma10", editor: "input", width: 120, headerFilter: "input" },
+        { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, headerFilter: "input" },
+        { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, headerFilter: "input" },
+        { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, headerFilter: "input" },
+        { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, formatter: dateDisplayFormatter, width: 110, headerFilter: "input" },
         { 
             title: "Link Ảnh", 
             field: "linkAnh", 
             editor: "input", 
             width: 150, 
+            headerFilter: "input",
             formatter: function(cell) {
                 let val = cell.getValue();
                 if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
@@ -248,25 +249,25 @@ async function init() {
         {
             title: "Hình ảnh trải sàn",
             columns: [
-                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
-                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
+                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
+                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", "Hoàn tất", "Đang xử lý", "Chưa có"]} }
             ]
         },
         {
             title: "Hình ảnh model",
             columns: [
-                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
-                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
+                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
+                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", "Hoàn tất", "Đang xử lý", "Chưa có"]} }
             ]
         },
         {
             title: "Video model",
             columns: [
-                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
-                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
+                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
+                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", "Hoàn tất", "Đang xử lý", "Chưa có"]} }
             ]
         },
-        { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250 }
+        { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, headerFilter: "input" }
     ];
 
     // Define Header Menu for Custom Columns
