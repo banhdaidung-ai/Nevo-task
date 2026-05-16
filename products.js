@@ -322,7 +322,7 @@ async function init() {
     table = new Tabulator("#products-table", {
         data: tableData,
         layout: "fitColumns",
-        height: "calc(100vh - 160px)", // Dynamic full height
+        height: "100%", // Fill flex container
         history: true, 
         clipboard: true, // Allow copying OUT
         clipboardPasteParser: function(clipboard) {
