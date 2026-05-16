@@ -538,7 +538,10 @@ async function init() {
 
         if (confirmed) {
             setSyncing(true);
-            statusOptions = tempStatuses;
+            
+            // Update in-place to maintain references if any, but also re-assign for safety
+            statusOptions.length = 0;
+            statusOptions.push(...tempStatuses);
             statusColors = tempColors;
 
             try {
@@ -547,15 +550,24 @@ async function init() {
                     statusColors: statusColors 
                 }, { merge: true });
 
-                // Update column definitions
-                const statusCols = ["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"];
-                statusCols.forEach(field => {
-                    table.updateColumnDefinition(field, {
-                        editorParams: { values: statusOptions },
-                        headerFilterParams: { values: ["", ...statusOptions] }
-                    });
+                // Update column definitions more robustly
+                const currentCols = table.getColumnDefinitions();
+                currentCols.forEach(col => {
+                    if (col.columns) {
+                        col.columns.forEach(subCol => {
+                            if (["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"].includes(subCol.field)) {
+                                subCol.editorParams = { values: statusOptions };
+                                subCol.headerFilterParams = { values: ["", ...statusOptions] };
+                            }
+                        });
+                    }
+                    if (["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"].includes(col.field)) {
+                        col.editorParams = { values: statusOptions };
+                        col.headerFilterParams = { values: ["", ...statusOptions] };
+                    }
                 });
-
+                
+                table.setColumns(currentCols);
                 table.redraw(true);
                 Swal.fire('Thành công', 'Đã cập nhật danh sách trạng thái.', 'success');
             } catch (e) {
