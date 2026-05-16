@@ -117,7 +117,14 @@ function setSyncing(status) {
 
 // Update Stats
 function updateStats(data) {
-    document.getElementById('stat-total').innerText = data.length;
+    // Tổng số lượng = sum of soLuongVe
+    let totalQty = data.reduce((sum, item) => sum + (parseInt(item.soLuongVe) || 0), 0);
+    document.getElementById('stat-total').innerText = totalQty;
+    
+    // Tổng mã SP = count rows with non-empty ma10
+    let totalMa10 = data.filter(d => d.ma10 && d.ma10.trim() !== '').length;
+    document.getElementById('stat-ma10').innerText = totalMa10;
+
     document.getElementById('stat-traisan').innerText = data.filter(d => d.anhTraiSanTrangThai === 'Hoàn tất').length;
     document.getElementById('stat-model').innerText = data.filter(d => d.anhModelTrangThai === 'Hoàn tất').length;
     document.getElementById('stat-video').innerText = data.filter(d => d.videoModelTrangThai === 'Hoàn tất').length;
@@ -219,7 +226,22 @@ async function init() {
                 { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
                 { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
-        }
+        },
+        { 
+            title: "Link Ảnh", 
+            field: "linkAnh", 
+            editor: "input", 
+            width: 150, 
+            formatter: function(cell) {
+                let val = cell.getValue();
+                if (val && (val.startsWith("http") || val.startsWith("www"))) {
+                    let url = val.startsWith("http") ? val : "https://" + val;
+                    return `<a href="${url}" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
+                }
+                return val || "";
+            }
+        },
+        { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250 }
     ];
 
     // Define Header Menu for Custom Columns
