@@ -15,6 +15,7 @@ const SETTINGS_DOC = "products_table_config";
 
 let table;
 let isSyncing = false;
+let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa có"];
 let statusColors = {
     "Hoàn tất": "#dcfce7", // green
     "Đang xử lý": "#fef08a", // yellow
@@ -24,9 +25,14 @@ let statusColors = {
 // Custom Formatter for Status
 const statusFormatter = function(cell, formatterParams) {
     let val = cell.getValue() || "Chưa có";
+    let color = statusColors[val] || "#e2e8f0";
+    
+    // Use predefined classes for legacy statuses if they match, otherwise use inline styles
     if (val === "Hoàn tất") return `<span class="status-badge status-hoan-tat">${val}</span>`;
     if (val === "Đang xử lý") return `<span class="status-badge status-dang-xu-ly">${val}</span>`;
-    return `<span class="status-badge status-chua-co">${val}</span>`;
+    if (val === "Chưa có") return `<span class="status-badge status-chua-co">${val}</span>`;
+    
+    return `<span class="status-badge" style="background-color: ${color}; color: #475569; border: 1px solid rgba(0,0,0,0.05)">${val}</span>`;
 };
 
 // Better Date Editor: Allows typing and validates format
@@ -209,6 +215,7 @@ async function init() {
         if (configSnap.exists()) {
             customCols = configSnap.data().customColumns || [];
             if (configSnap.data().statusColors) statusColors = configSnap.data().statusColors;
+            if (configSnap.data().statusOptions) statusOptions = configSnap.data().statusOptions;
         }
     } catch (e) { console.log("No config found"); }
 
@@ -250,21 +257,21 @@ async function init() {
             title: "Hình ảnh trải sàn",
             columns: [
                 { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", "Hoàn tất", "Đang xử lý", "Chưa có"]} }
+                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         {
             title: "Hình ảnh model",
             columns: [
                 { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", "Hoàn tất", "Đang xử lý", "Chưa có"]} }
+                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         {
             title: "Video model",
             columns: [
                 { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", "Hoàn tất", "Đang xử lý", "Chưa có"]} }
+                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, headerFilter: "input" }
@@ -399,6 +406,162 @@ async function init() {
                 await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
                 Swal.fire('Thành công', 'Đã thêm cột mới. Cột này áp dụng cho mọi tháng.', 'success');
             } catch (e) { console.error(e); }
+            setSyncing(false);
+        }
+    });
+
+    // Manage Statuses
+    document.getElementById("btn-manage-status").addEventListener("click", async () => {
+        let tempStatuses = [...statusOptions];
+        let tempColors = {...statusColors};
+
+        const renderList = () => {
+            let html = '<div class="space-y-3 max-h-[60vh] overflow-y-auto px-1">';
+            tempStatuses.forEach((s, i) => {
+                html += `
+                    <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100 mb-2">
+                        <div class="flex flex-col">
+                            <button class="btn-move-up text-slate-400 hover:text-indigo-600 disabled:opacity-30" data-index="${i}" ${i === 0 ? 'disabled' : ''}>
+                                <span class="material-symbols-outlined text-[20px]">expand_less</span>
+                            </button>
+                            <button class="btn-move-down text-slate-400 hover:text-indigo-600 disabled:opacity-30" data-index="${i}" ${i === tempStatuses.length - 1 ? 'disabled' : ''}>
+                                <span class="material-symbols-outlined text-[20px]">expand_more</span>
+                            </button>
+                        </div>
+                        <input type="text" value="${s}" class="status-name-input flex-grow px-3 py-1.5 rounded border border-slate-200 text-sm font-medium" data-index="${i}" placeholder="Tên trạng thái">
+                        <input type="color" value="${tempColors[s] || '#e2e8f0'}" class="status-color-input w-10 h-8 p-0 border-none cursor-pointer rounded" data-index="${i}">
+                        <button class="btn-remove-status text-rose-500 hover:bg-rose-50 p-1.5 rounded transition-all flex items-center justify-center" data-index="${i}">
+                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            html += `
+                <button id="btn-add-status-item" class="mt-4 w-full py-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition-all font-bold flex items-center justify-center gap-2 text-sm">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    Thêm trạng thái mới
+                </button>
+            `;
+            return html;
+        };
+
+        const { value: confirmed } = await Swal.fire({
+            title: 'Quản lý Trạng thái',
+            html: `<div id="status-manager-container">${renderList()}</div>`,
+            showCancelButton: true,
+            confirmButtonText: 'Lưu thay đổi',
+            cancelButtonText: 'Hủy',
+            width: '480px',
+            focusConfirm: false,
+            didOpen: () => {
+                const container = document.getElementById('status-manager-container');
+                
+                const attachEvents = () => {
+                    // Name change
+                    container.querySelectorAll('.status-name-input').forEach(input => {
+                        input.addEventListener('change', (e) => {
+                            const idx = e.target.dataset.index;
+                            const oldName = tempStatuses[idx];
+                            const newName = e.target.value.trim();
+                            if (newName && !tempStatuses.includes(newName)) {
+                                tempStatuses[idx] = newName;
+                                if (tempColors[oldName]) {
+                                    tempColors[newName] = tempColors[oldName];
+                                    delete tempColors[oldName];
+                                }
+                            } else if (newName !== oldName) {
+                                Swal.fire('Lỗi', 'Tên trạng thái đã tồn tại hoặc không hợp lệ', 'error');
+                                e.target.value = oldName;
+                            }
+                        });
+                    });
+
+                    // Color change
+                    container.querySelectorAll('.status-color-input').forEach(input => {
+                        input.addEventListener('change', (e) => {
+                            const idx = e.target.dataset.index;
+                            const name = tempStatuses[idx];
+                            tempColors[name] = e.target.value;
+                        });
+                    });
+
+                    // Move Up
+                    container.querySelectorAll('.btn-move-up').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const idx = parseInt(e.currentTarget.dataset.index);
+                            if (idx > 0) {
+                                [tempStatuses[idx], tempStatuses[idx-1]] = [tempStatuses[idx-1], tempStatuses[idx]];
+                                container.innerHTML = renderList();
+                                attachEvents();
+                            }
+                        });
+                    });
+
+                    // Move Down
+                    container.querySelectorAll('.btn-move-down').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const idx = parseInt(e.currentTarget.dataset.index);
+                            if (idx < tempStatuses.length - 1) {
+                                [tempStatuses[idx], tempStatuses[idx+1]] = [tempStatuses[idx+1], tempStatuses[idx]];
+                                container.innerHTML = renderList();
+                                attachEvents();
+                            }
+                        });
+                    });
+
+                    // Remove
+                    container.querySelectorAll('.btn-remove-status').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const idx = e.currentTarget.dataset.index;
+                            const name = tempStatuses[idx];
+                            tempStatuses.splice(idx, 1);
+                            delete tempColors[name];
+                            container.innerHTML = renderList();
+                            attachEvents();
+                        });
+                    });
+
+                    // Add button
+                    document.getElementById('btn-add-status-item').onclick = () => {
+                        const newName = "Trạng thái mới " + (tempStatuses.length + 1);
+                        tempStatuses.push(newName);
+                        tempColors[newName] = "#e2e8f0";
+                        container.innerHTML = renderList();
+                        attachEvents();
+                    };
+                };
+
+                attachEvents();
+            }
+        });
+
+        if (confirmed) {
+            setSyncing(true);
+            statusOptions = tempStatuses;
+            statusColors = tempColors;
+
+            try {
+                await setDoc(doc(db, "settings", SETTINGS_DOC), { 
+                    statusOptions: statusOptions,
+                    statusColors: statusColors 
+                }, { merge: true });
+
+                // Update column definitions
+                const statusCols = ["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"];
+                statusCols.forEach(field => {
+                    table.updateColumnDefinition(field, {
+                        editorParams: { values: statusOptions },
+                        headerFilterParams: { values: ["", ...statusOptions] }
+                    });
+                });
+
+                table.redraw(true);
+                Swal.fire('Thành công', 'Đã cập nhật danh sách trạng thái.', 'success');
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Lỗi', 'Không thể lưu cài đặt.', 'error');
+            }
             setSyncing(false);
         }
     });
