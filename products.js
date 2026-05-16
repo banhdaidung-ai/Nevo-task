@@ -28,6 +28,43 @@ const statusFormatter = function(cell, formatterParams) {
     return `<span class="status-badge status-chua-co">${val}</span>`;
 };
 
+// Date Editor (Native HTML5 converted to DD/MM/YYYY)
+const dateEditor = function(cell, onRendered, success, cancel) {
+    let cellValue = cell.getValue() || "";
+    let input = document.createElement("input");
+    input.type = "date";
+    input.style.cssText = "padding:4px; width:100%; box-sizing:border-box; border:none; outline:none; background:transparent; font-family:inherit; font-size:inherit;";
+    
+    // Parse DD/MM/YYYY or similar to YYYY-MM-DD for HTML5 input
+    if (cellValue) {
+        let parts = cellValue.split(/[-/]/);
+        if (parts.length === 3) {
+            // Assume DD/MM/YYYY
+            if (parts[0].length <= 2 && parts[2].length === 4) {
+                input.value = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            } else if (parts[0].length === 4) {
+                // Assume YYYY-MM-DD
+                input.value = cellValue;
+            }
+        }
+    }
+
+    onRendered(() => { input.focus(); });
+
+    function onChange() {
+        if (input.value) {
+            let p = input.value.split("-");
+            success(`${p[2]}/${p[1]}/${p[0]}`); // Save as DD/MM/YYYY
+        } else {
+            success("");
+        }
+    }
+    
+    input.addEventListener("blur", onChange);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") onChange(); if (e.key === "Escape") cancel(); });
+    return input;
+};
+
 // Row formatter for coloring
 const rowColorFormatter = function(row) {
     let data = row.getData();
@@ -144,26 +181,26 @@ async function init() {
         { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140 },
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120 },
         { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100 },
-        { title: "Ngày về kho Media", field: "ngayVeKho", editor: "input", width: 140 },
+        { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, width: 140 },
         { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 150 },
         {
             title: "Hình ảnh trải sàn",
             columns: [
-                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: "input", width: 120 },
+                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, width: 120 },
                 { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
         },
         {
             title: "Hình ảnh model",
             columns: [
-                { title: "Ngày chụp", field: "anhModelNgay", editor: "input", width: 120 },
+                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, width: 120 },
                 { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
         },
         {
             title: "Video model",
             columns: [
-                { title: "Ngày quay", field: "videoModelNgay", editor: "input", width: 120 },
+                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, width: 120 },
                 { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
         }
@@ -283,18 +320,12 @@ async function init() {
         
         let currentTableRows = table.getRows();
         let rowIdx = currentTableRows.findIndex(r => r === startRow);
+        if (rowIdx === -1) return;
         
-        // Flatten columns and FILTER OUT non-data columns (like rowSelection)
-        let flatCols = [];
-        table.getColumns().forEach(c => {
-            let sub = c.getSubColumns();
-            if(sub.length > 0) flatCols.push(...sub);
-            else flatCols.push(c);
-        });
-        let dataCols = flatCols.filter(c => c.getField() && c.getField() !== "rowSelection");
-        
-        let colIdx = dataCols.findIndex(c => c === startCol);
-        if (colIdx === -1) colIdx = 0; // Fallback
+        // Find the index of the startCell within its row's cells (Visual Order)
+        let rowCells = startRow.getCells();
+        let cellIdx = rowCells.findIndex(c => c === startCell);
+        if (cellIdx === -1) cellIdx = 0;
         
         setSyncing(true);
         let promises = [];
@@ -314,10 +345,14 @@ async function init() {
             let updateData = {};
             let id = r.getData().id;
             
+            let cells = r.getCells(); // Cells in visual order
+            
             for (let j = 0; j < rowPastedData.length; j++) {
-                let c = dataCols[colIdx + j];
-                if (!c) continue; 
-                let field = c.getField();
+                let cell = cells[cellIdx + j];
+                if (!cell) continue; 
+                
+                let field = cell.getField();
+                if (!field || field === "rowSelection") continue;
                 
                 updateData[field] = rowPastedData[j].trim();
             }
