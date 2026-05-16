@@ -158,18 +158,32 @@
                    class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-sm shadow-sm font-medium">
         </div>
 
-        <div class="flex gap-2">
-            <button id="btn-add-row" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold flex items-center gap-2 shadow-lg shadow-indigo-200">
-                <span class="material-symbols-outlined text-[20px]">add_circle</span>
+        <div class="flex flex-wrap gap-2">
+            <button id="btn-add-row" class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold flex items-center gap-2 shadow-lg shadow-indigo-200 text-sm">
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
                 Dòng mới
             </button>
-            <button id="btn-delete-rows" class="px-5 py-2.5 bg-white border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-50 transition-all font-bold flex items-center gap-2">
-                <span class="material-symbols-outlined text-[20px]">delete_sweep</span>
-                Xóa chọn
+            <button id="btn-add-col" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-[18px]">view_column</span>
+                Thêm cột
             </button>
-            <button id="btn-export" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2">
-                <span class="material-symbols-outlined text-[20px]">download</span>
+            <button id="btn-color-row" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-[18px]">palette</span>
+                Tô màu
+            </button>
+            <button id="btn-import-trigger" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                Nhập Excel
+            </button>
+            <input type="file" id="file-import-csv" class="hidden" accept=".csv, .xlsx">
+            
+            <button id="btn-export" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-[18px]">download</span>
                 Xuất Excel
+            </button>
+            <button id="btn-delete-rows" class="px-4 py-2 bg-white border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-50 transition-all font-bold flex items-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+                Xóa chọn
             </button>
         </div>
     </div>

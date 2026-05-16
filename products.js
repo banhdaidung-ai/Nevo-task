@@ -376,6 +376,116 @@ async function init() {
         setSyncing(false);
     });
 
+    // Add Custom Column
+    document.getElementById("btn-add-col").addEventListener("click", async () => {
+        const { value: colName } = await Swal.fire({
+            title: 'Thêm cột mới',
+            input: 'text',
+            inputLabel: 'Tên cột',
+            inputPlaceholder: 'Nhập tên cột...',
+            showCancelButton: true
+        });
+
+        if (colName) {
+            setSyncing(true);
+            const field = "custom_" + Date.now();
+            const newColDef = { title: colName, field: field, editor: "input", width: 150, headerMenu: headerMenu };
+            
+            table.addColumn(newColDef);
+            try {
+                const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
+                let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
+                cols.push(newColDef);
+                await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
+                Swal.fire('Thành công', 'Đã thêm cột mới. Cột này áp dụng cho mọi tháng.', 'success');
+            } catch (e) { console.error(e); }
+            setSyncing(false);
+        }
+    });
+
+    // Manually Color Rows
+    document.getElementById("btn-color-row").addEventListener("click", async () => {
+        const selectedRows = table.getSelectedRows();
+        if (selectedRows.length === 0) return Swal.fire('Chú ý', 'Chọn các dòng (ô vuông đầu dòng) để tô màu.', 'warning');
+
+        const { value: color } = await Swal.fire({
+            title: 'Chọn màu nền',
+            input: 'select',
+            inputOptions: {
+                '#ffffff': 'Trắng (Xoá màu)',
+                '#dcfce7': 'Xanh nhạt (Hoàn tất)',
+                '#fef08a': 'Vàng nhạt (Đang xử lý)',
+                '#fecaca': 'Đỏ nhạt (Lỗi/Khẩn cấp)',
+                '#e2e8f0': 'Xám (Bỏ qua)'
+            },
+            inputPlaceholder: 'Chọn màu',
+            showCancelButton: true
+        });
+
+        if (color) {
+            setSyncing(true);
+            let promises = [];
+            for (let row of selectedRows) {
+                const data = row.getData();
+                if (data.id) {
+                    promises.push(updateDoc(doc(db, COLLECTION_NAME, data.id), { rowColor: color }));
+                    row.update({ rowColor: color });
+                }
+            }
+            await Promise.all(promises);
+            table.deselectRow(); 
+            table.redraw(true); 
+            setSyncing(false);
+        }
+    });
+
+    // Import Logic
+    document.getElementById("btn-import-trigger").addEventListener("click", () => {
+        document.getElementById("file-import-csv").click();
+    });
+
+    document.getElementById("file-import-csv").addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const result = await Swal.fire({
+            title: 'Nhập dữ liệu',
+            text: `Bạn muốn nhập dữ liệu vào tháng ${currentMonth}?`,
+            icon: 'question',
+            showCancelButton: true
+        });
+
+        if (result.isConfirmed) {
+            setSyncing(true);
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const text = event.target.result;
+                const rows = text.split('\n').filter(r => r.trim().length > 0);
+                const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
+                
+                let addedCount = 0;
+                for (let i = 1; i < rows.length; i++) {
+                    const values = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || rows[i].split(',');
+                    const rowData = { createdAt: serverTimestamp() };
+                    headers.forEach((h, index) => {
+                        let val = values[index] ? values[index].replace(/"/g, '').trim() : "";
+                        rowData[h] = val;
+                    });
+                    try {
+                        delete rowData.id; 
+                        const docRef = await addDoc(collection(db, COLLECTION_NAME), rowData);
+                        table.addRow({ id: docRef.id, ...rowData }, true);
+                        addedCount++;
+                    } catch (e) { console.error(e); }
+                }
+                Swal.fire('Thành công', `Đã nhập ${addedCount} dòng mới`, 'success');
+                setSyncing(false);
+            };
+            reader.readAsText(file);
+        }
+        e.target.value = ''; 
+    });
+
     // Delete Rows
     document.getElementById("btn-delete-rows").addEventListener("click", async () => {
         const selectedRows = table.getSelectedRows();
