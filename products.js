@@ -232,10 +232,17 @@ async function init() {
             formatter: function(cell) {
                 let val = cell.getValue();
                 if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
-                    let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
-                    return `<a href="${url}" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
+                    return `<div class="text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</div>`;
                 }
                 return val || "";
+            },
+            cellClick: function(e, cell) {
+                let val = cell.getValue();
+                if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
+                    let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
+                    window.open(url, "_blank");
+                    e.stopPropagation(); // Prevent editor activation
+                }
             }
         },
         {
