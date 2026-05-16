@@ -28,46 +28,43 @@ const statusFormatter = function(cell, formatterParams) {
     return `<span class="status-badge status-chua-co">${val}</span>`;
 };
 
-// Date Editor (Native HTML5 converted to DD/MM/YYYY)
+// Better Date Editor: Allows typing and validates format
 const dateEditor = function(cell, onRendered, success, cancel) {
     let cellValue = cell.getValue() || "";
     let input = document.createElement("input");
-    input.type = "date";
+    input.type = "text";
+    input.placeholder = "DD/MM/YYYY";
+    input.value = cellValue;
     input.style.cssText = "padding:4px; width:100%; box-sizing:border-box; border:none; outline:none; background:transparent; font-family:inherit; font-size:inherit;";
     
-    // Parse DD/MM/YYYY or similar to YYYY-MM-DD for HTML5 input
-    if (cellValue) {
-        let parts = cellValue.split(/[-/]/);
-        if (parts.length === 3) {
-            // Assume DD/MM/YYYY
-            if (parts[0].length <= 2 && parts[2].length === 4) {
-                input.value = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-            } else if (parts[0].length === 4) {
-                // Assume YYYY-MM-DD
-                input.value = cellValue;
-            }
-        }
-    }
-
     onRendered(() => { input.focus(); });
 
     function onChange() {
-        if (input.value) {
-            let p = input.value.split("-");
-            success(`${p[2]}/${p[1]}/${p[0]}`); // Save as DD/MM/YYYY
-        } else {
-            // If empty, and we had a value before, maybe keep it or cancel?
-            // To prevent data loss on accidental click, we keep old value if empty
-            if (cellValue) {
-                success(cellValue);
-            } else {
-                success("");
-            }
+        let val = input.value.trim();
+        if (!val) return success("");
+        
+        // Simple parser
+        let parts = val.split(/[-/.]/);
+        if (parts.length === 1 && parts[0].length <= 2) {
+            let now = new Date();
+            val = `${parts[0].padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+        } else if (parts.length === 2) {
+            let now = new Date();
+            val = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${now.getFullYear()}`;
+        } else if (parts.length === 3) {
+            let year = parts[2];
+            if (year.length === 2) year = "20" + year;
+            val = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${year}`;
         }
+        
+        success(val);
     }
     
     input.addEventListener("blur", onChange);
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") onChange(); if (e.key === "Escape") cancel(); });
+    input.addEventListener("keydown", (e) => { 
+        if (e.key === "Enter") onChange(); 
+        if (e.key === "Escape") cancel(); 
+    });
     return input;
 };
 
@@ -193,7 +190,9 @@ async function init() {
 
     // Base Columns
     let columns = [
+        { rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30 },
         { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
+        { title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false },
         { title: "Mã 10", field: "ma10", editor: "input", width: 120 },
         { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140 },
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120 },
@@ -283,18 +282,20 @@ async function init() {
     table = new Tabulator("#products-table", {
         data: tableData,
         layout: "fitColumns",
+        height: "calc(100vh - 160px)", // Dynamic full height
         history: true, 
         clipboard: true, // Allow copying OUT
         clipboardPasteParser: function(clipboard) {
-            // Disable Tabulator's native paste so our custom DOM handler takes full control
             return false;
         },
-        selectable: "highlight", // Only select on click, prevents some accidental selections during edit
+        selectable: "highlight",
         reactiveData: true,
         rowFormatter: rowColorFormatter,
-        movableColumns: true, // Allow reordering columns
+        movableColumns: true, 
+        movableRows: true, // Enable row reordering
         persistence: {
-            columns: true, // persist column layout (order, width, visibility)
+            columns: true,
+            rows: true, // Persist row order
         },
         persistenceID: "productsTable",
         columns: columns,
@@ -536,8 +537,7 @@ async function init() {
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
-            const row = await table.addRow({ id: docRef.id, ...newDoc }, false); // Add to BOTTOM
-            table.scrollToRow(row, "bottom", false); // Scroll to it
+            table.addRow({ id: docRef.id, ...newDoc }, true); // Add to TOP
         } catch (err) { console.error(err); }
         setSyncing(false);
     });
