@@ -39,19 +39,24 @@
             background: #fff; border: 1px solid #e2e8f0;
         }
         
-        /* Tabulator Styling to look more like Google Sheets */
+        /* Tabulator Styling */
         .tabulator { border: none !important; background-color: white !important; font-family: 'Inter', sans-serif; font-size: 13px; }
-        .tabulator-header { background-color: #b80035 !important; border-bottom: 2px solid #920028 !important; color: #ffffff !important; font-weight: 700; }
-        .tabulator-header .tabulator-col { background-color: transparent !important; }
-        .tabulator-header .tabulator-col-title { color: #ffffff !important; }
-        .tabulator-header .tabulator-arrow { border-bottom-color: #ffffff !important; border-top-color: #ffffff !important; }
+        .tabulator-header { 
+            background-color: #f8fafc !important; 
+            border-bottom: 2px solid #e2e8f0 !important; 
+            color: #475569 !important; 
+            font-weight: 700; 
+        }
+        .tabulator-header .tabulator-col { background-color: #f8fafc !important; border-right: 1px solid #e2e8f0 !important; }
+        .tabulator-header .tabulator-col-title { color: #475569 !important; }
+        .tabulator-header .tabulator-arrow { border-bottom-color: #475569 !important; border-top-color: #475569 !important; }
         .tabulator-col { border-right: 1px solid #e2e8f0 !important; }
         .tabulator-row { border-bottom: 1px solid #e2e8f0 !important; }
         .tabulator-row.tabulator-row-even { background-color: #fff; }
         .tabulator-cell { border-right: 1px solid #e2e8f0 !important; padding: 8px !important; }
-        .tabulator-cell.tabulator-editing { border: 2px solid #b80035 !important; padding: 6px !important; box-shadow: 0 0 5px rgba(184,0,53,0.3); }
-        .tabulator-row.tabulator-selected { background-color: #fef9c3 !important; }
-        .tabulator-row.tabulator-selected .tabulator-cell { border-right: 1px solid #fde047 !important; }
+        .tabulator-cell.tabulator-editing { border: 2px solid #6366f1 !important; padding: 6px !important; box-shadow: 0 0 5px rgba(99,102,241,0.2); }
+        .tabulator-row.tabulator-selected { background-color: #f1f5f9 !important; }
+        .tabulator-row.tabulator-selected .tabulator-cell { border-right: 1px solid #e2e8f0 !important; }
         
         .toolbar-btn {
             display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px;
@@ -100,13 +105,6 @@
             text-transform: uppercase !important;
             font-size: 11px !important;
             letter-spacing: 0.05em !important;
-        }
-        .tabulator-col {
-            background-color: #f8fafc !important;
-            border-bottom: 1px solid #e2e8f0 !important;
-        }
-        .tabulator-header {
-            border-bottom: 2px solid #e2e8f0 !important;
         }
     </style>
 </head>
