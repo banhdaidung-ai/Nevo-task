@@ -117,12 +117,13 @@ function setSyncing(status) {
 
 // Update Stats
 function updateStats(data) {
-    // Tổng số lượng = sum of soLuongVe
+    // 1. Tổng số lượng = SUM of soLuongVe (as requested)
     let totalQty = data.reduce((sum, item) => sum + (parseInt(item.soLuongVe) || 0), 0);
     document.getElementById('stat-total').innerText = totalQty;
     
-    // Tổng mã SP = count rows with non-empty ma10
-    let totalMa10 = data.filter(d => d.ma10 && d.ma10.trim() !== '').length;
+    // 2. Tổng Mã SP = COUNT of rows where Ma 10 is NOT empty
+    // Use toString() to handle numbers/objects and trim() to handle spaces
+    let totalMa10 = data.filter(d => d.ma10 && d.ma10.toString().trim() !== '').length;
     document.getElementById('stat-ma10').innerText = totalMa10;
 
     document.getElementById('stat-traisan').innerText = data.filter(d => d.anhTraiSanTrangThai === 'Hoàn tất').length;
@@ -205,7 +206,20 @@ async function init() {
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120 },
         { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100 },
         { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, formatter: dateDisplayFormatter, width: 110 },
-        { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 150 },
+        { 
+            title: "Link Ảnh", 
+            field: "linkAnh", 
+            editor: "input", 
+            width: 150, 
+            formatter: function(cell) {
+                let val = cell.getValue();
+                if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
+                    let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
+                    return `<a href="${url}" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
+                }
+                return val || "";
+            }
+        },
         {
             title: "Hình ảnh trải sàn",
             columns: [
@@ -226,20 +240,6 @@ async function init() {
                 { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
                 { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
-        },
-        { 
-            title: "Link Ảnh", 
-            field: "linkAnh", 
-            editor: "input", 
-            width: 150, 
-            formatter: function(cell) {
-                let val = cell.getValue();
-                if (val && (val.startsWith("http") || val.startsWith("www"))) {
-                    let url = val.startsWith("http") ? val : "https://" + val;
-                    return `<a href="${url}" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
-                }
-                return val || "";
-            }
         },
         { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250 }
     ];
