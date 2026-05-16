@@ -219,6 +219,66 @@ async function init() {
         }
     } catch (e) { console.log("No config found"); }
 
+    const SCRIPT_URL = "https://script.google.com/a/macros/yody.vn/s/AKfycby_5EqEPWQpkR7CA4mdDn018y9qk8hlZT6aN9Eg1wr7L1wsKdLxWNWgyJ3yResqH6oY/exec";
+
+    function hideImagePreview() {
+        const card = document.getElementById("hover-preview-card");
+        if (card) {
+            card.style.display = "none";
+            document.getElementById("preview-img").style.display = "none";
+            document.getElementById("preview-img").src = "";
+            document.getElementById("preview-title").innerText = "";
+            const spinner = card.querySelector(".loading-spinner");
+            if (spinner) spinner.style.display = "block";
+        }
+    }
+
+    async function showImagePreview(e, cell) {
+        const rowData = cell.getRow().getData();
+        const ma10 = rowData.ma10;
+        const linkAnh = rowData.linkAnh;
+
+        if (!ma10 || !linkAnh || !linkAnh.includes("drive.google.com")) return;
+
+        const card = document.getElementById("hover-preview-card");
+        const previewImg = document.getElementById("preview-img");
+        const previewTitle = document.getElementById("preview-title");
+        const spinner = card.querySelector(".loading-spinner");
+
+        // Position card relative to cursor
+        let x = e.clientX + 20;
+        let y = e.clientY - 150;
+        
+        // Adjust if off screen
+        if (x + 350 > window.innerWidth) x = e.clientX - 340;
+        if (y < 10) y = 10;
+        if (y + 450 > window.innerHeight) y = window.innerHeight - 460;
+
+        card.style.left = x + "px";
+        card.style.top = y + "px";
+        card.style.display = "block";
+
+        try {
+            const resp = await fetch(`${SCRIPT_URL}?ma10=${encodeURIComponent(ma10)}&folderLink=${encodeURIComponent(linkAnh)}`);
+            const data = await resp.json();
+
+            if (data.success) {
+                previewImg.src = data.imageUrl;
+                previewImg.onload = () => {
+                    previewImg.style.display = "block";
+                    spinner.style.display = "none";
+                };
+                previewTitle.innerText = "Mã: " + ma10;
+            } else {
+                previewTitle.innerText = "⚠️ " + (data.error || "Không thấy ảnh");
+                spinner.style.display = "none";
+            }
+        } catch (err) {
+            previewTitle.innerText = "❌ Lỗi kết nối Drive";
+            spinner.style.display = "none";
+        }
+    }
+
     const tableData = await loadTableData();
 
     // Base Columns
@@ -226,7 +286,15 @@ async function init() {
         { rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30 },
         { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
         { title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false },
-        { title: "Mã 10", field: "ma10", editor: "input", width: 120, headerFilter: "input" },
+        { 
+            title: "Mã 10", 
+            field: "ma10", 
+            editor: "input", 
+            width: 120, 
+            headerFilter: "input",
+            cellMouseEnter: showImagePreview,
+            cellMouseLeave: hideImagePreview
+        },
         { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, headerFilter: "input" },
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, headerFilter: "input" },
         { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, headerFilter: "input" },
@@ -237,6 +305,8 @@ async function init() {
             editor: "input", 
             width: 150, 
             headerFilter: "input",
+            cellMouseEnter: showImagePreview,
+            cellMouseLeave: hideImagePreview,
             formatter: function(cell) {
                 let val = cell.getValue();
                 if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
