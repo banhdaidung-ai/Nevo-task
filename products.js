@@ -1,6 +1,7 @@
 import { 
     db, collection, addDoc, getDocs, doc, getDoc,
-    updateDoc, deleteDoc, serverTimestamp, setDoc 
+    updateDoc, deleteDoc, serverTimestamp, setDoc,
+    query, orderBy 
 } from "./firebase-service.js";
 
 // Auth Guard
@@ -117,12 +118,14 @@ function setSyncing(status) {
 
 // Update Stats
 function updateStats(data) {
+    // 0. Tổng số dòng (Rows count)
+    document.getElementById('stat-rows').innerText = data.length;
+
     // 1. Tổng số lượng = SUM of soLuongVe (as requested)
     let totalQty = data.reduce((sum, item) => sum + (parseInt(item.soLuongVe) || 0), 0);
     document.getElementById('stat-total').innerText = totalQty;
     
     // 2. Tổng Mã SP = COUNT of rows where Ma 10 is NOT empty
-    // Use toString() to handle numbers/objects and trim() to handle spaces
     let totalMa10 = data.filter(d => d.ma10 && d.ma10.toString().trim() !== '').length;
     document.getElementById('stat-ma10').innerText = totalMa10;
 
@@ -165,18 +168,33 @@ function setupMonths() {
 // Load Data into Table
 async function loadTableData() {
     setSyncing(true);
-    const snapshot = await getDocs(collection(db, COLLECTION_NAME));
-    const tableData = [];
-    snapshot.forEach(doc => {
-        tableData.push({ id: doc.id, ...doc.data() });
-    });
-    
-    if (table) {
-        await table.setData(tableData);
-        updateStats(tableData);
+    try {
+        // Sort by createdAt DESC so newest rows are at the top by default
+        const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        const tableData = [];
+        snapshot.forEach(doc => {
+            tableData.push({ id: doc.id, ...doc.data() });
+        });
+        
+        if (table) {
+            await table.setData(tableData);
+            updateStats(tableData);
+        }
+        setSyncing(false);
+        return tableData;
+    } catch (e) {
+        console.error("Error loading data:", e);
+        // Fallback: if index not created yet, load without sort
+        const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+        const tableData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (table) {
+            table.setData(tableData);
+            updateStats(tableData);
+        }
+        setSyncing(false);
+        return tableData;
     }
-    setSyncing(false);
-    return tableData;
 }
 
 // Initialize App
