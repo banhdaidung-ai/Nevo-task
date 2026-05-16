@@ -217,7 +217,10 @@ async function init() {
         layout: "fitColumns",
         history: true, 
         clipboard: true, // Allow copying OUT
-        clipboardPasteAction: "replace", // Note: We override native paste below
+        clipboardPasteParser: function(clipboard) {
+            // Disable Tabulator's native paste so our custom DOM handler takes full control
+            return false;
+        },
         selectable: true,
         reactiveData: true,
         rowFormatter: rowColorFormatter,
@@ -347,14 +350,20 @@ async function init() {
             
             let cells = r.getCells(); // Cells in visual order
             
-            for (let j = 0; j < rowPastedData.length; j++) {
-                let cell = cells[cellIdx + j];
-                if (!cell) continue; 
+            // Map the pasted data robustly
+            let pasteDataIdx = 0;
+            for (let j = 0; j < cells.length; j++) {
+                if (pasteDataIdx >= rowPastedData.length) break; // Finished parsing this row
+                if (j < cellIdx) continue; // Skip cells before the selected one
                 
+                let cell = cells[j];
                 let field = cell.getField();
+                
+                // Skip system/non-data columns
                 if (!field || field === "rowSelection") continue;
                 
-                updateData[field] = rowPastedData[j].trim();
+                updateData[field] = rowPastedData[pasteDataIdx].trim();
+                pasteDataIdx++;
             }
             
             if (Object.keys(updateData).length > 0) {
