@@ -206,9 +206,37 @@ async function init() {
         }
     ];
 
+    // Define Header Menu for Custom Columns
+    const headerMenu = [
+        {
+            label: "<span class='text-red-500 font-bold'><i class='fas fa-trash'></i> Xoá cột này</span>",
+            action: async function(e, column){
+                let field = column.getField();
+                const result = await Swal.fire({
+                    title: 'Xoá cột?',
+                    text: `Bạn muốn xoá cột "${column.getDefinition().title}" khỏi mọi tháng?`,
+                    icon: 'warning',
+                    showCancelButton: true
+                });
+                if(result.isConfirmed) {
+                    setSyncing(true);
+                    column.delete();
+                    try {
+                        const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
+                        let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
+                        cols = cols.filter(c => c.field !== field);
+                        await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
+                        Swal.fire('Thành công', 'Đã xoá cột', 'success');
+                    } catch(e) {}
+                    setSyncing(false);
+                }
+            }
+        }
+    ];
+
     // Append custom columns
     customCols.forEach(col => {
-        columns.push({ title: col.title, field: col.field, editor: "input", width: 150 });
+        columns.push({ title: col.title, field: col.field, editor: "input", width: 150, headerContextMenu: headerMenu });
     });
 
     // Setup Tabulator
@@ -224,6 +252,11 @@ async function init() {
         selectable: true,
         reactiveData: true,
         rowFormatter: rowColorFormatter,
+        movableColumns: true, // Allow reordering columns
+        persistence: {
+            columns: true, // persist column layout (order, width, visibility)
+        },
+        persistenceID: "productsTable",
         columns: columns,
     });
 
@@ -258,6 +291,41 @@ async function init() {
             } catch (err) { console.error(err); }
             row.reformat();
             setSyncing(false);
+        }
+    });
+
+    // --- DRAG TO FILL LOGIC (Kéo thả thông tin) ---
+    let isFilling = false;
+    let fillSourceValue = null;
+    let fillSourceField = null;
+
+    table.on("cellMouseDown", function(e, cell) {
+        if (e.altKey) {
+            isFilling = true;
+            fillSourceValue = cell.getValue();
+            fillSourceField = cell.getField();
+            e.preventDefault();
+        }
+    });
+
+    table.on("cellMouseEnter", function(e, cell) {
+        if (isFilling && fillSourceField === cell.getField()) {
+            let data = cell.getData();
+            if (data.id && cell.getValue() !== fillSourceValue) {
+                cell.setValue(fillSourceValue);
+                // Background sync
+                updateDoc(doc(db, COLLECTION_NAME, data.id), {
+                    [fillSourceField]: fillSourceValue || "",
+                    updatedAt: serverTimestamp()
+                }).catch(err => console.error(err));
+            }
+        }
+    });
+
+    document.addEventListener("mouseup", function() {
+        if (isFilling) {
+            isFilling = false;
+            if(table) table.redraw(true); // format colors after mass update
         }
     });
 
