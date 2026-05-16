@@ -65,6 +65,17 @@ const dateEditor = function(cell, onRendered, success, cancel) {
     return input;
 };
 
+// Formatter to show only DD/MM
+const dateDisplayFormatter = function(cell) {
+    let val = cell.getValue();
+    if (!val || typeof val !== "string") return val || "";
+    let parts = val.split("/");
+    if (parts.length >= 2) {
+        return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}`;
+    }
+    return val;
+};
+
 // Row formatter for coloring
 const rowColorFormatter = function(row) {
     let data = row.getData();
@@ -181,26 +192,26 @@ async function init() {
         { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140 },
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120 },
         { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100 },
-        { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, width: 140 },
+        { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, formatter: dateDisplayFormatter, width: 110 },
         { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 150 },
         {
             title: "Hình ảnh trải sàn",
             columns: [
-                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, width: 120 },
+                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
                 { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
         },
         {
             title: "Hình ảnh model",
             columns: [
-                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, width: 120 },
+                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
                 { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
         },
         {
             title: "Video model",
             columns: [
-                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, width: 120 },
+                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100 },
                 { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values:["Hoàn tất", "Đang xử lý", "Chưa có"]}, formatter: statusFormatter, width: 130 }
             ]
         }
