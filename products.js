@@ -209,7 +209,30 @@ async function init() {
     // Define Header Menu for Custom Columns
     const headerMenu = [
         {
-            label: "<span class='text-red-500 font-bold'><i class='fas fa-trash'></i> Xoá cột này</span>",
+            label: "<i class='fas fa-edit text-blue-500 w-4'></i> Đổi tên cột",
+            action: async function(e, column){
+                const { value: newName } = await Swal.fire({
+                    title: 'Đổi tên cột',
+                    input: 'text',
+                    inputValue: column.getDefinition().title,
+                    showCancelButton: true
+                });
+                if(newName) {
+                    setSyncing(true);
+                    column.updateDefinition({title: newName});
+                    try {
+                        const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
+                        let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
+                        let colDef = cols.find(c => c.field === column.getField());
+                        if(colDef) colDef.title = newName;
+                        await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
+                    } catch(e) {}
+                    setSyncing(false);
+                }
+            }
+        },
+        {
+            label: "<span class='text-red-500 font-bold'><i class='fas fa-trash w-4'></i> Xoá cột này</span>",
             action: async function(e, column){
                 let field = column.getField();
                 const result = await Swal.fire({
@@ -236,7 +259,7 @@ async function init() {
 
     // Append custom columns
     customCols.forEach(col => {
-        columns.push({ title: col.title, field: col.field, editor: "input", width: 150, headerContextMenu: headerMenu });
+        columns.push({ title: col.title, field: col.field, editor: "input", width: 150, headerMenu: headerMenu });
     });
 
     // Setup Tabulator
@@ -298,12 +321,27 @@ async function init() {
     let isFilling = false;
     let fillSourceValue = null;
     let fillSourceField = null;
+    let fillStartRowIndex = -1;
+
+    function incrementString(str, steps) {
+        if (!str) return str;
+        let match = str.match(/(.*?)(\d+)$/);
+        if (match) {
+            let prefix = match[1];
+            let numStr = match[2];
+            let num = parseInt(numStr, 10) + steps;
+            return prefix + num.toString().padStart(numStr.length, '0');
+        }
+        return str; // No number to increment
+    }
 
     table.on("cellMouseDown", function(e, cell) {
         if (e.altKey) {
             isFilling = true;
-            fillSourceValue = cell.getValue();
+            fillSourceValue = cell.getValue() || "";
             fillSourceField = cell.getField();
+            let rows = table.getRows();
+            fillStartRowIndex = rows.findIndex(r => r === cell.getRow());
             e.preventDefault();
         }
     });
@@ -311,13 +349,20 @@ async function init() {
     table.on("cellMouseEnter", function(e, cell) {
         if (isFilling && fillSourceField === cell.getField()) {
             let data = cell.getData();
-            if (data.id && cell.getValue() !== fillSourceValue) {
-                cell.setValue(fillSourceValue);
-                // Background sync
-                updateDoc(doc(db, COLLECTION_NAME, data.id), {
-                    [fillSourceField]: fillSourceValue || "",
-                    updatedAt: serverTimestamp()
-                }).catch(err => console.error(err));
+            if (data.id) {
+                let rows = table.getRows();
+                let currentIndex = rows.findIndex(r => r === cell.getRow());
+                let directionalSteps = currentIndex - fillStartRowIndex;
+                let newValue = incrementString(fillSourceValue, directionalSteps);
+                
+                if (cell.getValue() !== newValue) {
+                    cell.setValue(newValue);
+                    // Background sync
+                    updateDoc(doc(db, COLLECTION_NAME, data.id), {
+                        [fillSourceField]: newValue,
+                        updatedAt: serverTimestamp()
+                    }).catch(err => console.error(err));
+                }
             }
         }
     });
@@ -510,7 +555,7 @@ async function init() {
         if (colName) {
             setSyncing(true);
             const field = "custom_" + Date.now();
-            const newColDef = { title: colName, field: field, editor: "input", width: 150 };
+            const newColDef = { title: colName, field: field, editor: "input", width: 150, headerMenu: headerMenu };
             
             table.addColumn(newColDef);
             try {
@@ -554,6 +599,7 @@ async function init() {
                 }
             }
             await Promise.all(promises);
+            table.deselectRow(); // Unselect so the color is immediately visible (because selected rows have an overlay)
             table.redraw(true); // Re-run formatters
             setSyncing(false);
         }
