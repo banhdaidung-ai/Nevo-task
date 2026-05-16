@@ -242,7 +242,7 @@ async function init() {
                 if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
                     let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
                     window.open(url, "_blank");
-                    e.stopPropagation(); // Prevent editor activation
+                    e.stopPropagation(); 
                 }
             }
         },
@@ -270,17 +270,12 @@ async function init() {
         { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, headerFilter: "input" }
     ];
 
-    // Define Header Menu for Custom Columns
+    // Header Menu
     const headerMenu = [
         {
-            label: "<i class='fas fa-edit text-blue-500 w-4'></i> Đổi tên cột",
+            label: "Đổi tên cột",
             action: async function(e, column){
-                const { value: newName } = await Swal.fire({
-                    title: 'Đổi tên cột',
-                    input: 'text',
-                    inputValue: column.getDefinition().title,
-                    showCancelButton: true
-                });
+                const { value: newName } = await Swal.fire({ title: 'Đổi tên cột', input: 'text', inputValue: column.getDefinition().title, showCancelButton: true });
                 if(newName) {
                     setSyncing(true);
                     column.updateDefinition({title: newName});
@@ -296,15 +291,10 @@ async function init() {
             }
         },
         {
-            label: "<span class='text-red-500 font-bold'><i class='fas fa-trash w-4'></i> Xoá cột này</span>",
+            label: "Xoá cột",
             action: async function(e, column){
                 let field = column.getField();
-                const result = await Swal.fire({
-                    title: 'Xoá cột?',
-                    text: `Bạn muốn xoá cột "${column.getDefinition().title}" khỏi mọi tháng?`,
-                    icon: 'warning',
-                    showCancelButton: true
-                });
+                const result = await Swal.fire({ title: 'Xoá cột?', text: `Xoá "${column.getDefinition().title}"?`, icon: 'warning', showCancelButton: true });
                 if(result.isConfirmed) {
                     setSyncing(true);
                     column.delete();
@@ -313,7 +303,6 @@ async function init() {
                         let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
                         cols = cols.filter(c => c.field !== field);
                         await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
-                        Swal.fire('Thành công', 'Đã xoá cột', 'success');
                     } catch(e) {}
                     setSyncing(false);
                 }
@@ -321,7 +310,6 @@ async function init() {
         }
     ];
 
-    // Append custom columns
     customCols.forEach(col => {
         columns.push({ title: col.title, field: col.field, editor: "input", width: 150, headerMenu: headerMenu });
     });
@@ -330,55 +318,35 @@ async function init() {
     table = new Tabulator("#products-table", {
         data: tableData,
         layout: "fitColumns",
-        height: "100%", // Fill flex container
+        height: "100%", 
         history: true, 
-        clipboard: true, // Allow copying OUT
-        clipboardPasteParser: function(clipboard) {
-            return false;
-        },
+        clipboard: true,
         selectable: "highlight",
         reactiveData: true,
         rowFormatter: rowColorFormatter,
         movableColumns: true, 
-        movableRows: true, // Enable row reordering
-        persistence: {
-            columns: true,
-            rows: true, // Persist row order
-        },
+        movableRows: true,
+        persistence: { columns: true, rows: true },
         persistenceID: "productsTable",
         columns: columns,
     });
 
+    // Tracking last cell for pasting
     let lastClickedCell = null;
-    table.on("cellClick", function(e, cell) {
-        lastClickedCell = cell;
-    });
+    table.on("cellClick", function(e, cell) { lastClickedCell = cell; });
+    table.on("cellEditing", function(cell) { cell.getRow().deselect(); });
+    table.on("dataLoaded", updateStats);
+    table.on("dataChanged", updateStats);
 
-    // Deselect row when editing starts to avoid the "select on edit" behavior
-    table.on("cellEditing", function(cell) {
-        cell.getRow().deselect();
-    });
-
-    table.on("dataLoaded", function(data) {
-        updateStats(data);
-    });
-    table.on("dataChanged", function(data) {
-        updateStats(data);
-    });
-
-    // --- FIREBASE SYNC LOGIC ---
-
-    // Single Cell Edit
+    // --- FIREBASE SYNC ---
     table.on("cellEdited", async function(cell) {
         const row = cell.getRow();
         const data = row.getData();
         const field = cell.getField();
-        
         if (data.id) {
             setSyncing(true);
             try {
-                const docRef = doc(db, COLLECTION_NAME, data.id);
-                await updateDoc(docRef, {
+                await updateDoc(doc(db, COLLECTION_NAME, data.id), {
                     [field]: cell.getValue() || "",
                     updatedAt: serverTimestamp()
                 });
@@ -388,190 +356,8 @@ async function init() {
         }
     });
 
-    // --- DRAG TO FILL LOGIC (Kéo thả thông tin) ---
-    let isFilling = false;
-    let fillSourceValue = null;
-    let fillSourceField = null;
-    let fillStartRowIndex = -1;
-
-    function incrementString(str, steps) {
-        if (!str) return str;
-        let match = str.match(/(.*?)(\d+)$/);
-        if (match) {
-            let prefix = match[1];
-            let numStr = match[2];
-            let num = parseInt(numStr, 10) + steps;
-            return prefix + num.toString().padStart(numStr.length, '0');
-        }
-        return str; // No number to increment
-    }
-
-    table.on("cellMouseDown", function(e, cell) {
-        if (e.altKey) {
-            isFilling = true;
-            fillSourceValue = cell.getValue() || "";
-            fillSourceField = cell.getField();
-            let rows = table.getRows();
-            fillStartRowIndex = rows.findIndex(r => r === cell.getRow());
-            e.preventDefault();
-        }
-    });
-
-    table.on("cellMouseEnter", function(e, cell) {
-        if (isFilling && fillSourceField === cell.getField()) {
-            let data = cell.getData();
-            if (data.id) {
-                let rows = table.getRows();
-                let currentIndex = rows.findIndex(r => r === cell.getRow());
-                let directionalSteps = currentIndex - fillStartRowIndex;
-                let newValue = incrementString(fillSourceValue, directionalSteps);
-                
-                if (cell.getValue() !== newValue) {
-                    cell.setValue(newValue);
-                    // Background sync
-                    updateDoc(doc(db, COLLECTION_NAME, data.id), {
-                        [fillSourceField]: newValue,
-                        updatedAt: serverTimestamp()
-                    }).catch(err => console.error(err));
-                }
-            }
-        }
-    });
-
-    document.addEventListener("mouseup", function() {
-        if (isFilling) {
-            isFilling = false;
-            if(table) table.redraw(true); // format colors after mass update
-        }
-    });
-
-    // Custom Excel Paste Handler (Cell-level pasting)
-    document.getElementById('products-table').addEventListener("paste", async function(e) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-        
-        let text = (e.clipboardData || window.clipboardData).getData('text');
-        if (!text) return;
-        
-        if (!lastClickedCell) {
-            Swal.fire('Chú ý', 'Vui lòng nhấp chuột vào 1 ô trên bảng để chọn vị trí bắt đầu dán', 'warning');
-            return;
-        }
-        
-        e.preventDefault(); // Stop native Tabulator full-table replace
-        
-        let startCell = lastClickedCell;
-        let startRow = startCell.getRow();
-        let startCol = startCell.getColumn();
-        
-        // Robust TSV Parsing (Handles newlines and tabs inside quotes)
-        let parsedRows = [];
-        let currentRow = [];
-        let currentCell = "";
-        let insideQuotes = false;
-        for (let i = 0; i < text.length; i++) {
-            let char = text[i];
-            if (insideQuotes) {
-                if (char === '"') {
-                    if (i + 1 < text.length && text[i + 1] === '"') {
-                        currentCell += '"'; // Escaped quote
-                        i++;
-                    } else {
-                        insideQuotes = false;
-                    }
-                } else {
-                    currentCell += char;
-                }
-            } else {
-                if (char === '"') {
-                    insideQuotes = true;
-                } else if (char === '\t') {
-                    currentRow.push(currentCell);
-                    currentCell = "";
-                } else if (char === '\n') {
-                    currentRow.push(currentCell);
-                    parsedRows.push(currentRow);
-                    currentRow = [];
-                    currentCell = "";
-                } else if (char === '\r') {
-                    // Ignore Windows carriage return
-                } else {
-                    currentCell += char;
-                }
-            }
-        }
-        if (currentCell !== "" || currentRow.length > 0) {
-            currentRow.push(currentCell);
-            parsedRows.push(currentRow);
-        }
-
-        // Clean up last empty row
-        if (parsedRows.length > 0 && parsedRows[parsedRows.length - 1].length === 1 && parsedRows[parsedRows.length - 1][0] === "") {
-            parsedRows.pop();
-        }
-        
-        let currentTableRows = table.getRows();
-        let rowIdx = currentTableRows.findIndex(r => r === startRow);
-        if (rowIdx === -1) return;
-        
-        // Find the index of the startCell within its row's cells (Visual Order)
-        let rowCells = startRow.getCells();
-        let cellIdx = rowCells.findIndex(c => c === startCell);
-        if (cellIdx === -1) cellIdx = 0;
-        
-        setSyncing(true);
-        let promises = [];
-        
-        for (let i = 0; i < parsedRows.length; i++) {
-            let r = currentTableRows[rowIdx + i];
-            
-            // If we run out of rows, add a new one
-            if (!r) {
-                const newDocRef = await addDoc(collection(db, COLLECTION_NAME), { createdAt: serverTimestamp() });
-                await table.addRow({ id: newDocRef.id });
-                currentTableRows = table.getRows(); // refresh
-                r = currentTableRows[rowIdx + i];
-            }
-            
-            let rowPastedData = parsedRows[i];
-            let updateData = {};
-            let id = r.getData().id;
-            
-            let cells = r.getCells(); // Cells in visual order
-            
-            // Map the pasted data robustly
-            let pasteDataIdx = 0;
-            for (let j = 0; j < cells.length; j++) {
-                if (pasteDataIdx >= rowPastedData.length) break; // Finished parsing this row
-                if (j < cellIdx) continue; // Skip cells before the selected one
-                
-                let cell = cells[j];
-                let field = cell.getField();
-                
-                // Skip system/non-data columns
-                if (!field || field === "rowSelection") continue;
-                
-                updateData[field] = rowPastedData[pasteDataIdx].trim();
-                pasteDataIdx++;
-            }
-            
-            if (Object.keys(updateData).length > 0) {
-                r.update(updateData);
-                updateData.updatedAt = serverTimestamp();
-                promises.push(updateDoc(doc(db, COLLECTION_NAME, id), updateData));
-            }
-        }
-        
-        try {
-            await Promise.all(promises);
-            table.redraw(true); 
-            Swal.fire('Thành công', `Đã dán và cập nhật ${parsedRows.length} dòng`, 'success');
-        } catch(err) {
-            console.error("Paste Error", err);
-            Swal.fire('Lỗi', 'Có lỗi khi lưu dữ liệu', 'error');
-        }
-        setSyncing(false);
-    });
-
+    // --- BUTTON LISTENERS ---
+    
     // Add Row
     document.getElementById("btn-add-row").addEventListener("click", async () => {
         setSyncing(true);
@@ -585,147 +371,59 @@ async function init() {
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
-            table.addRow({ id: docRef.id, ...newDoc }, true); // Add to TOP
+            table.addRow({ id: docRef.id, ...newDoc }, true);
         } catch (err) { console.error(err); }
         setSyncing(false);
     });
 
-    // Delete Row
-    document.getElementById("btn-delete-row").addEventListener("click", async () => {
+    // Delete Rows
+    document.getElementById("btn-delete-rows").addEventListener("click", async () => {
         const selectedRows = table.getSelectedRows();
         if (selectedRows.length === 0) return Swal.fire('Chú ý', 'Chọn ít nhất 1 dòng', 'warning');
 
         const result = await Swal.fire({
             title: 'Xác nhận xoá?',
-            text: `Bạn muốn xoá ${selectedRows.length} dòng ở tháng này?`,
+            text: `Bạn muốn xoá ${selectedRows.length} dòng đã chọn?`,
             icon: 'warning',
             showCancelButton: true
         });
 
         if (result.isConfirmed) {
             setSyncing(true);
-            for (let row of selectedRows) {
-                const id = row.getData().id;
-                if (id) await deleteDoc(doc(db, COLLECTION_NAME, id));
-                row.delete();
-            }
-            setSyncing(false);
-        }
-    });
-
-    // Add Custom Column
-    document.getElementById("btn-add-col").addEventListener("click", async () => {
-        const { value: colName } = await Swal.fire({
-            title: 'Thêm cột mới',
-            input: 'text',
-            inputLabel: 'Tên cột',
-            inputPlaceholder: 'Nhập tên cột...',
-            showCancelButton: true
-        });
-
-        if (colName) {
-            setSyncing(true);
-            const field = "custom_" + Date.now();
-            const newColDef = { title: colName, field: field, editor: "input", width: 150, headerMenu: headerMenu };
-            
-            table.addColumn(newColDef);
             try {
-                const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
-                let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
-                cols.push(newColDef);
-                await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
-                Swal.fire('Thành công', 'Đã thêm cột mới. Cột này áp dụng cho mọi tháng.', 'success');
-            } catch (e) { console.error(e); }
+                for (let row of selectedRows) {
+                    const id = row.getData().id;
+                    if (id) await deleteDoc(doc(db, COLLECTION_NAME, id));
+                    row.delete();
+                }
+            } catch (err) { console.error(err); }
             setSyncing(false);
         }
     });
 
-    // Manually Color Rows
-    document.getElementById("btn-color-row").addEventListener("click", async () => {
-        const selectedRows = table.getSelectedRows();
-        if (selectedRows.length === 0) return Swal.fire('Chú ý', 'Click vào các ô vuông ở cột đầu tiên để chọn dòng cần tô màu.', 'warning');
-
-        const { value: color } = await Swal.fire({
-            title: 'Chọn màu nền',
-            input: 'select',
-            inputOptions: {
-                '#ffffff': 'Trắng (Xoá màu)',
-                '#dcfce7': 'Xanh nhạt (Hoàn tất)',
-                '#fef08a': 'Vàng nhạt (Đang xử lý)',
-                '#fecaca': 'Đỏ nhạt (Lỗi/Khẩn cấp)',
-                '#e2e8f0': 'Xám (Bỏ qua)'
-            },
-            inputPlaceholder: 'Chọn màu',
-            showCancelButton: true
+    // Export Excel
+    document.getElementById("btn-export").addEventListener("click", () => {
+        table.download("xlsx", `SanPham_Nevo_${currentMonth}.xlsx`, {
+            sheetName: "Data",
         });
+    });
 
-        if (color) {
-            setSyncing(true);
-            let promises = [];
-            for (let row of selectedRows) {
-                const data = row.getData();
-                if (data.id) {
-                    promises.push(updateDoc(doc(db, COLLECTION_NAME, data.id), { rowColor: color }));
-                    row.update({ rowColor: color });
-                }
-            }
-            await Promise.all(promises);
-            table.deselectRow(); // Unselect so the color is immediately visible (because selected rows have an overlay)
-            table.redraw(true); // Re-run formatters
-            setSyncing(false);
+    // Global Search Logic
+    document.getElementById("global-search").addEventListener("keyup", function(e) {
+        const value = e.target.value.toLowerCase();
+        if (!value) {
+            table.clearFilter();
+            return;
         }
-    });
 
-    // Export CSV (with UTF-8 BOM for Excel compatibility)
-    document.getElementById("btn-export-csv").addEventListener("click", () => {
-        table.download("csv", `SanPham_${currentMonth}.csv`, { 
-            bom: true,
-            delimiter: ",",
+        table.setFilter(function(data) {
+            const fields = ['ma10', 'ma16', 'phanLoai', 'ghiChu', 'linkAnh'];
+            return fields.some(f => data[f] && data[f].toString().toLowerCase().includes(value));
         });
     });
 
-    // Import CSV (File listener)
-    document.getElementById("file-import-csv").addEventListener("change", async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const result = await Swal.fire({
-            title: 'Nhập dữ liệu',
-            text: `Dữ liệu sẽ được đẩy vào ${currentMonth}. Tiếp tục?`,
-            icon: 'info',
-            showCancelButton: true
-        });
-
-        if (result.isConfirmed) {
-            setSyncing(true);
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const text = event.target.result;
-                const rows = text.split('\n').filter(r => r.trim().length > 0);
-                const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
-                
-                let addedCount = 0;
-                for (let i = 1; i < rows.length; i++) {
-                    const values = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || rows[i].split(',');
-                    const rowData = {};
-                    headers.forEach((h, index) => {
-                        let val = values[index] ? values[index].replace(/"/g, '').trim() : "";
-                        rowData[h] = val;
-                    });
-                    try {
-                        delete rowData.id; 
-                        const docRef = await addDoc(collection(db, COLLECTION_NAME), rowData);
-                        table.addRow({ id: docRef.id, ...rowData });
-                        addedCount++;
-                    } catch (e) { console.error(e); }
-                }
-                Swal.fire('Thành công', `Đã nhập ${addedCount} dòng mới`, 'success');
-                setSyncing(false);
-            };
-            reader.readAsText(file);
-        }
-        e.target.value = ''; 
-    });
+    console.log("App Initialized");
+    setSyncing(false);
 }
 
 init();
