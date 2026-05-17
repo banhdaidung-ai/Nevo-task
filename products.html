@@ -21,6 +21,9 @@
     <!-- SweetAlert2 for nice alerts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- Google Identity Services for direct Google Drive API authorization -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -217,6 +220,10 @@
             <button id="btn-manage-status" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
                 <span class="material-symbols-outlined text-[18px]">settings_suggest</span>
                 Trạng thái
+            </button>
+            <button id="btn-connect-drive" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
+                <span class="material-symbols-outlined text-[18px]">add_to_drive</span>
+                Kết nối Drive
             </button>
             <button id="btn-delete-rows" class="px-4 py-2 bg-white border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-50 transition-all font-bold flex items-center gap-2 text-sm">
                 <span class="material-symbols-outlined text-[18px]">delete_sweep</span>

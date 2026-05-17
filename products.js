@@ -219,14 +219,104 @@ async function init() {
         }
     } catch (e) { console.log("No config found"); }
 
-    const SCRIPT_URL = "https://script.google.com/a/macros/yody.vn/s/AKfycby_5EqEPWQpkR7CA4mdDn018y9qk8hlZT6aN9Eg1wr7L1wsKdLxWNWgyJ3yResqH6oY/exec";
+    function updateDriveButton() {
+        const btn = document.getElementById("btn-connect-drive");
+        if (!btn) return;
+        const token = localStorage.getItem("gdrive_access_token");
+        const expires = localStorage.getItem("gdrive_token_expires");
+        const isValid = token && expires && Date.now() < parseInt(expires);
+        
+        if (isValid) {
+            btn.innerHTML = `<span class="material-symbols-outlined text-[18px] text-emerald-600">cloud_done</span>
+                             <span class="text-emerald-700 font-bold">Đã kết nối Drive</span>`;
+            btn.className = "px-4 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl hover:bg-emerald-100 transition-all font-bold flex items-center gap-2 text-sm";
+        } else {
+            btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">add_to_drive</span>
+                             <span>Kết nối Drive</span>`;
+            btn.className = "px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm";
+        }
+    }
+
+    let tokenClient = null;
+    async function connectGoogleDrive() {
+        // Fetch googleClientId from settings document
+        let clientId = null;
+        try {
+            const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
+            clientId = configSnap.exists() ? configSnap.data().googleClientId : null;
+        } catch (err) { console.error("Error loading config for Google Drive:", err); }
+        
+        if (!clientId) {
+            const { value: newId } = await Swal.fire({
+                title: 'Cấu hình Google Client ID',
+                text: 'Hệ thống chưa có Google Client ID. Vui lòng nhập Client ID của tổ chức Yody để kết nối trực tiếp với Google Drive:',
+                input: 'text',
+                inputPlaceholder: 'Nhập Google OAuth Client ID...',
+                showCancelButton: true,
+                confirmButtonText: 'Lưu & Kết nối',
+                cancelButtonText: 'Hủy'
+            });
+            if (newId && newId.trim()) {
+                setSyncing(true);
+                try {
+                    await setDoc(doc(db, "settings", SETTINGS_DOC), { googleClientId: newId.trim() }, { merge: true });
+                    clientId = newId.trim();
+                    Swal.fire('Thành công', 'Đã lưu Google Client ID. Bắt đầu kết nối...', 'success');
+                } catch (e) {
+                    Swal.fire('Lỗi', 'Không thể lưu cài đặt.', 'error');
+                    setSyncing(false);
+                    return;
+                }
+                setSyncing(false);
+            } else {
+                return;
+            }
+        }
+        
+        // Trigger Google OAuth 2.0 Token Flow
+        if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+            Swal.fire('Lỗi thư viện', 'Thư viện Google Identity Services chưa tải xong. Vui lòng thử lại sau vài giây!', 'error');
+            return;
+        }
+        
+        try {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: 'https://www.googleapis.com/auth/drive.readonly',
+                callback: (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        localStorage.setItem("gdrive_access_token", tokenResponse.access_token);
+                        localStorage.setItem("gdrive_token_expires", (Date.now() + tokenResponse.expires_in * 1000).toString());
+                        updateDriveButton();
+                        Swal.fire('Thành công', 'Đã kết nối trực tiếp với Google Drive thành công!', 'success');
+                    } else {
+                        Swal.fire('Lỗi ủy quyền', 'Sếp đã từ chối hoặc có lỗi trong quá trình cấp quyền.', 'error');
+                    }
+                },
+            });
+            tokenClient.requestAccessToken({ prompt: 'consent' });
+        } catch (err) {
+            console.error(err);
+            Swal.fire('Lỗi kết nối', 'Có lỗi khi kết nối Google: ' + err.message, 'error');
+        }
+    }
+
+    function extractFolderId(url) {
+        if (!url) return null;
+        const match = url.match(/[-\w]{25,}/);
+        return match ? match[0] : null;
+    }
 
     function hideImagePreview() {
         const card = document.getElementById("hover-preview-card");
         if (card) {
             card.style.display = "none";
-            document.getElementById("preview-img").style.display = "none";
-            document.getElementById("preview-img").src = "";
+            const img = document.getElementById("preview-img");
+            if (img.src && img.src.startsWith("blob:")) {
+                URL.revokeObjectURL(img.src);
+            }
+            img.style.display = "none";
+            img.src = "";
             document.getElementById("preview-title").innerText = "";
             const spinner = card.querySelector(".loading-spinner");
             if (spinner) spinner.style.display = "block";
@@ -258,23 +348,70 @@ async function init() {
         card.style.top = y + "px";
         card.style.display = "block";
 
+        const token = localStorage.getItem("gdrive_access_token");
+        const expires = localStorage.getItem("gdrive_token_expires");
+        const isValid = token && expires && Date.now() < parseInt(expires);
+
+        if (!isValid) {
+            previewTitle.innerHTML = `<span class="text-rose-500 font-bold">⚠️ Chưa kết nối Drive</span><br><span class="text-[11px] text-slate-500 font-normal font-sans">Sếp nhấp nút <b>"Kết nối Drive"</b> trên thanh công cụ để xem ảnh.</span>`;
+            spinner.style.display = "none";
+            return;
+        }
+
+        const folderId = extractFolderId(linkAnh);
+        if (!folderId) {
+            previewTitle.innerText = "⚠️ Link ảnh không đúng định dạng Drive";
+            spinner.style.display = "none";
+            return;
+        }
+
         try {
-            const resp = await fetch(`${SCRIPT_URL}?ma10=${encodeURIComponent(ma10)}&folderLink=${encodeURIComponent(linkAnh)}`);
+            const q = `'${folderId}' in parents and name contains '${ma10}' and mimeType contains 'image/' and trashed = false`;
+            const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&access_token=${token}`;
+            
+            const resp = await fetch(searchUrl);
+            if (resp.status === 401) {
+                localStorage.removeItem("gdrive_access_token");
+                localStorage.removeItem("gdrive_token_expires");
+                updateDriveButton();
+                previewTitle.innerHTML = `<span class="text-rose-500 font-bold">❌ Kết nối hết hạn</span><br><span class="text-[11px] text-slate-500 font-normal">Sếp nhấp nút <b>"Kết nối Drive"</b> để làm mới phiên làm việc.</span>`;
+                spinner.style.display = "none";
+                return;
+            }
+
             const data = await resp.json();
 
-            if (data.success) {
-                previewImg.src = data.imageUrl;
-                previewImg.onload = () => {
-                    previewImg.style.display = "block";
+            if (data.files && data.files.length > 0) {
+                const file = data.files[0];
+                const fileId = file.id;
+
+                const mediaResp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (mediaResp.ok) {
+                    const blob = await mediaResp.blob();
+                    const localUrl = URL.createObjectURL(blob);
+                    
+                    previewImg.src = localUrl;
+                    previewImg.onload = () => {
+                        previewImg.style.display = "block";
+                        spinner.style.display = "none";
+                    };
+                    previewTitle.innerText = `Ảnh: ${file.name}`;
+                } else {
+                    previewTitle.innerText = "❌ Không thể tải nội dung ảnh";
                     spinner.style.display = "none";
-                };
-                previewTitle.innerText = "Mã: " + ma10;
+                }
             } else {
-                previewTitle.innerText = "⚠️ " + (data.error || "Không thấy ảnh");
+                previewTitle.innerText = `⚠️ Không thấy ảnh chứa mã: ${ma10}`;
                 spinner.style.display = "none";
             }
         } catch (err) {
-            previewTitle.innerText = "❌ Lỗi kết nối Drive";
+            console.error(err);
+            previewTitle.innerText = "❌ Lỗi kết nối API Google Drive";
             spinner.style.display = "none";
         }
     }
@@ -677,6 +814,9 @@ async function init() {
         }
     });
 
+    // Connect Drive Listener
+    document.getElementById("btn-connect-drive").addEventListener("click", connectGoogleDrive);
+
     // Import Logic
     document.getElementById("btn-import-trigger").addEventListener("click", () => {
         document.getElementById("file-import-csv").click();
@@ -769,6 +909,8 @@ async function init() {
             return fields.some(f => data[f] && data[f].toString().toLowerCase().includes(value));
         });
     });
+
+    updateDriveButton();
 
     console.log("App Initialized");
     setSyncing(false);
