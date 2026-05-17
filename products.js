@@ -533,8 +533,8 @@ async function init() {
                 let val = cell.getValue();
                 if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
                     let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
-                    // Add 'link-access' class and the URL as a tooltip for clarity
-                    return `<div class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${val}" onclick="event.stopPropagation(); window.open('${url}', '_blank');" onmousedown="event.stopPropagation();"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</div>`;
+                    // Use a standard anchor tag for reliable link opening, stop pointer/mouse events from triggering Tabulator's edit mode
+                    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${val}" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" onpointerdown="event.stopPropagation();"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
                 }
                 return val || "";
             }
