@@ -402,8 +402,25 @@ async function init() {
             return;
         }
 
+        const isFolder = linkAnh.includes("/folders/") || linkAnh.includes("/drive/folders/");
+
         try {
-            const { status, file } = await findImageInFolder(folderId, ma10, token);
+            let file = null;
+            let status = 200;
+
+            if (isFolder) {
+                const searchResult = await findImageInFolder(folderId, ma10, token);
+                status = searchResult.status;
+                file = searchResult.file;
+            } else {
+                // Direct file link case!
+                const fileUrl = `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType&access_token=${token}`;
+                const fileResp = await fetch(fileUrl);
+                status = fileResp.status;
+                if (fileResp.ok) {
+                    file = await fileResp.json();
+                }
+            }
             
             if (status === 401) {
                 localStorage.removeItem("gdrive_access_token");
@@ -415,30 +432,39 @@ async function init() {
             }
 
             if (file) {
-                const fileId = file.id;
+                if (file.mimeType && file.mimeType.startsWith('image/')) {
+                    const fileId = file.id;
 
-                const mediaResp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                    const mediaResp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
 
-                if (mediaResp.ok) {
-                    const blob = await mediaResp.blob();
-                    const localUrl = URL.createObjectURL(blob);
-                    
-                    previewImg.src = localUrl;
-                    previewImg.onload = () => {
-                        previewImg.style.display = "block";
+                    if (mediaResp.ok) {
+                        const blob = await mediaResp.blob();
+                        const localUrl = URL.createObjectURL(blob);
+                        
+                        previewImg.src = localUrl;
+                        previewImg.onload = () => {
+                            previewImg.style.display = "block";
+                            spinner.style.display = "none";
+                        };
+                        previewTitle.innerText = `Ảnh: ${file.name}`;
+                    } else {
+                        previewTitle.innerText = "❌ Không thể tải nội dung ảnh";
                         spinner.style.display = "none";
-                    };
-                    previewTitle.innerText = `Ảnh: ${file.name}`;
+                    }
                 } else {
-                    previewTitle.innerText = "❌ Không thể tải nội dung ảnh";
+                    previewTitle.innerText = "⚠️ Định dạng tệp không phải là ảnh";
                     spinner.style.display = "none";
                 }
             } else {
-                previewTitle.innerText = `⚠️ Không thấy ảnh chứa mã: ${ma10.trim()}`;
+                if (isFolder) {
+                    previewTitle.innerText = `⚠️ Không thấy ảnh chứa mã: ${ma10.trim()}`;
+                } else {
+                    previewTitle.innerText = "⚠️ Không tìm thấy tệp ảnh Drive trực tiếp";
+                }
                 spinner.style.display = "none";
             }
         } catch (err) {
