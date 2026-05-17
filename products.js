@@ -532,21 +532,11 @@ async function init() {
             formatter: function(cell) {
                 let val = cell.getValue();
                 if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
+                    let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
                     // Add 'link-access' class and the URL as a tooltip for clarity
-                    return `<div class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${val}"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</div>`;
+                    return `<div class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${val}" onclick="event.stopPropagation(); window.open('${url}', '_blank');" onmousedown="event.stopPropagation();"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</div>`;
                 }
                 return val || "";
-            },
-            cellClick: function(e, cell) {
-                // ONLY open the link if the user clicked exactly on the "Truy cập" button
-                if (!e.target.closest('.link-access')) return;
-                
-                let val = cell.getValue();
-                if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
-                    let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
-                    window.open(url, "_blank");
-                    e.stopPropagation(); 
-                }
             }
         },
         {
