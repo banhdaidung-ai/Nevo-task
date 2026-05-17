@@ -148,30 +148,37 @@
 </head>
 <body>
 
-<!-- Nav Bar -->
-<nav class="bg-white/80 backdrop-blur-xl sticky top-0 z-50 shadow-[0_8px_30px_-12px_rgba(19,27,46,0.08)]">
-    <div class="flex justify-between items-center w-full px-4 md:px-8 py-3">
-        <div class="flex items-center gap-4 md:gap-6">
-            <a href="index.html" class="text-xl font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
-                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Logo" style="width:32px;height:auto"/>
-                <span class="hidden sm:inline">Task Manager</span>
+<!-- Nav Bar & Search -->
+<nav class="bg-white/95 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-200 shadow-sm">
+    <div class="flex flex-wrap md:flex-nowrap justify-between items-center w-full px-3 py-2 gap-3">
+        <div class="flex items-center gap-3 shrink-0">
+            <a href="index.html" class="text-lg font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
+                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Logo" style="width:24px;height:auto"/>
+                <span class="hidden sm:inline">Nevo</span>
             </a>
-            <div class="h-6 w-px bg-slate-200"></div>
-            <div class="flex items-center gap-2 bg-primary/5 px-3 py-1.5 rounded-full">
-                <span class="material-symbols-outlined text-primary text-[18px]">inventory_2</span>
-                <span class="text-sm font-bold text-primary font-headline">Sản phẩm mới</span>
+            <div class="h-4 w-px bg-slate-300"></div>
+            <div class="flex items-center gap-1.5 bg-primary/5 px-2 py-1 rounded-md">
+                <span class="material-symbols-outlined text-primary text-[16px]">inventory_2</span>
+                <span class="text-xs font-bold text-primary font-headline">Sản phẩm mới</span>
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <select id="month-selector" class="bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-sm">
-                <!-- Dynamically populated -->
+
+        <!-- Global Search Bar -->
+        <div class="relative w-full md:w-auto flex-grow max-w-lg order-3 md:order-2">
+            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors text-[18px]">search</span>
+            <input type="text" id="global-search" placeholder="Tìm nhanh: Mã SP, Màu, Phân loại..." 
+                   class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-xs font-medium">
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0 order-2 md:order-3">
+            <select id="month-selector" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer">
             </select>
-            <div id="syncStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100">
-                <div class="live-dot"></div>
-                <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">Đã đồng bộ</span>
+            <div id="syncStatus" class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 hidden">
+                <div class="live-dot" style="width:6px;height:6px;"></div>
+                <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Đã đồng bộ</span>
             </div>
-            <a href="index.html" class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-semibold text-slate-700 transition-all">
-                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            <a href="index.html" class="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-all">
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
                 <span class="hidden sm:inline">Quay lại</span>
             </a>
         </div>
@@ -179,90 +186,61 @@
 </nav>
 
 <!-- Main -->
-<main class="flex-grow flex flex-col p-4 md:p-6 min-h-0">
-    <!-- Header & Toolbar -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
-        <div>
-            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 font-headline">Quản lý Sản phẩm NEVO</h1>
-            <p class="text-slate-500 text-sm mt-1">Hệ thống đồng bộ dữ liệu thời gian thực. Nhấp đúp ô để chỉnh sửa.</p>
-        </div>
-
-        <!-- Global Search Bar -->
-        <div class="relative w-full md:w-96 group">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">search</span>
-            <input type="text" id="global-search" placeholder="Tìm nhanh: Mã SP, Màu, Phân loại, Ghi chú..." 
-                   class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-sm shadow-sm font-medium">
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-            <button id="btn-add-row" class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-bold flex items-center gap-2 shadow-lg shadow-indigo-200 text-sm">
-                <span class="material-symbols-outlined text-[18px]">add_circle</span>
-                Dòng mới
+<main class="flex-grow flex flex-col p-2 min-h-0 bg-slate-50/50">
+    <!-- Compact Toolbar & Stats -->
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-2 mb-2 bg-white p-2 rounded-xl border border-slate-200 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+        
+        <!-- Toolbar -->
+        <div class="flex flex-wrap gap-1.5">
+            <button id="btn-add-row" class="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all font-bold flex items-center gap-1 text-[11px] shadow-sm">
+                <span class="material-symbols-outlined text-[14px]">add_circle</span> Dòng mới
             </button>
-            <button id="btn-add-col" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
-                <span class="material-symbols-outlined text-[18px]">view_column</span>
-                Thêm cột
+            <button id="btn-add-col" class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-200 transition-all font-bold flex items-center gap-1 text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">view_column</span> Thêm cột
             </button>
-            <button id="btn-color-row" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
-                <span class="material-symbols-outlined text-[18px]">palette</span>
-                Tô màu
+            <button id="btn-color-row" class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-200 transition-all font-bold flex items-center gap-1 text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">palette</span> Tô màu
             </button>
-            <button id="btn-import-trigger" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
-                <span class="material-symbols-outlined text-[18px]">upload_file</span>
-                Nhập Excel
+            <button id="btn-import-trigger" class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-200 transition-all font-bold flex items-center gap-1 text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">upload_file</span> Nhập Excel
             </button>
             <input type="file" id="file-import-csv" class="hidden" accept=".csv, .xlsx">
-            
-            <button id="btn-export" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
-                <span class="material-symbols-outlined text-[18px]">download</span>
-                Xuất Excel
+            <button id="btn-export" class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-200 transition-all font-bold flex items-center gap-1 text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">download</span> Xuất Excel
             </button>
-            <button id="btn-manage-status" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
-                <span class="material-symbols-outlined text-[18px]">settings_suggest</span>
-                Trạng thái
+            <button id="btn-manage-status" class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-200 transition-all font-bold flex items-center gap-1 text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">settings_suggest</span> Trạng thái
             </button>
-            <button id="btn-connect-drive" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-bold flex items-center gap-2 text-sm">
-                <span class="material-symbols-outlined text-[18px]">add_to_drive</span>
-                Kết nối Drive
+            <button id="btn-connect-drive" class="px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-all font-bold flex items-center gap-1 text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">add_to_drive</span> Kết nối Drive
             </button>
-            <button id="btn-delete-rows" class="px-4 py-2 bg-white border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-50 transition-all font-bold flex items-center gap-2 text-sm">
-                <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
-                Xóa dòng
+            <button id="btn-delete-rows" class="px-2.5 py-1.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-100 transition-all font-bold flex items-center gap-1 text-[11px]">
+                <span class="material-symbols-outlined text-[14px]">delete_sweep</span> Xóa
             </button>
         </div>
-    </div>
 
-    <!-- Stats Area -->
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng số dòng</p>
-            <p id="stat-rows" class="text-2xl font-black text-slate-800">0</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tổng số lượng</p>
-            <p id="stat-total" class="text-2xl font-black text-slate-800">0</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <p class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">Mã sản phẩm</p>
-            <p id="stat-ma10" class="text-2xl font-black text-indigo-600">0</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <p class="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1">Hoàn tất ảnh trải sàn</p>
-            <p id="stat-traisan" class="text-2xl font-black text-emerald-600">0</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <p class="text-xs font-bold text-blue-500 uppercase tracking-wider mb-1">Hoàn tất ảnh model</p>
-            <p id="stat-model" class="text-2xl font-black text-blue-600">0</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <p class="text-xs font-bold text-purple-500 uppercase tracking-wider mb-1">Hoàn tất video Model</p>
-            <p id="stat-video" class="text-2xl font-black text-purple-600">0</p>
+        <!-- Stats Line -->
+        <div class="flex flex-wrap items-center gap-3 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100 text-[11px] whitespace-nowrap">
+            <div class="flex items-center gap-1"><span class="text-slate-500 font-bold uppercase text-[9px]">Dòng:</span> <span id="stat-rows" class="font-black text-slate-700 text-xs">0</span></div>
+            <div class="w-px h-3 bg-slate-300"></div>
+            <div class="flex items-center gap-1"><span class="text-slate-500 font-bold uppercase text-[9px]">Tổng SL:</span> <span id="stat-total" class="font-black text-slate-700 text-xs">0</span></div>
+            <div class="w-px h-3 bg-slate-300"></div>
+            <div class="flex items-center gap-1"><span class="text-indigo-500 font-bold uppercase text-[9px]">Mã SP:</span> <span id="stat-ma10" class="font-black text-indigo-600 text-xs">0</span></div>
+            <div class="w-px h-3 bg-slate-300"></div>
+            <div class="flex items-center gap-1" title="Hoàn tất ảnh trải sàn"><span class="text-emerald-500 font-bold uppercase text-[9px]">Trải sàn:</span> <span id="stat-traisan" class="font-black text-emerald-600 text-xs">0</span></div>
+            <div class="w-px h-3 bg-slate-300"></div>
+            <div class="flex items-center gap-1" title="Hoàn tất ảnh Model"><span class="text-blue-500 font-bold uppercase text-[9px]">Model:</span> <span id="stat-model" class="font-black text-blue-600 text-xs">0</span></div>
+            <div class="w-px h-3 bg-slate-300"></div>
+            <div class="flex items-center gap-1" title="Hoàn tất Video"><span class="text-purple-500 font-bold uppercase text-[9px]">Video:</span> <span id="stat-video" class="font-black text-purple-600 text-xs">0</span></div>
         </div>
     </div>
     
-    <p class="text-[13px] text-slate-500 mt-2 mb-3 font-medium bg-white px-4 py-2 rounded-lg border border-slate-200 inline-block">
-        <i class="fas fa-info-circle text-blue-500 mr-1"></i> <b>Mẹo:</b> Giữ phím <kbd class="bg-slate-100 border border-slate-300 rounded px-1 text-xs">Alt</kbd> (hoặc <kbd class="bg-slate-100 border border-slate-300 rounded px-1 text-xs">Option</kbd> trên Mac) + Nhấp chuột vào 1 ô và kéo chuột để sao chép dữ liệu (Fill Down). Có thể nắm kéo tiêu đề để đổi vị trí cột. Chuột phải (hoặc nhấn biểu tượng menu) vào tiêu đề cột do bạn tạo để xoá cột.
-    </p>
+    <div class="flex justify-between items-center mb-1.5 px-1">
+        <p class="text-[10px] text-slate-500 font-medium inline-flex items-center bg-white px-2 py-0.5 rounded-md border border-slate-200">
+            <span class="material-symbols-outlined text-blue-500 text-[12px] mr-1">info</span>
+            Giữ <b>Alt</b> (hoặc <b>Option</b>) + Kéo chuột để Fill Down. Chuột phải vào tiêu đề cột để xoá. Nhấp đúp ô để sửa.
+        </p>
+    </div>
 
     <!-- Table Area -->
     <div class="flex-grow min-h-0">
