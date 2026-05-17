@@ -329,7 +329,10 @@ async function init() {
         const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&access_token=${token}`;
         
         const resp = await fetch(url);
-        if (!resp.ok) return { status: resp.status, file: null };
+        if (!resp.ok) {
+            console.error("❌ Lỗi API Google Drive khi tải danh sách file:", resp.status);
+            return { status: resp.status, file: null };
+        }
         const data = await resp.json();
         const files = data.files || [];
         
@@ -346,6 +349,11 @@ async function init() {
             searchCandidates.push(parts[0]);
         }
         
+        console.log("🔍 === HỆ THỐNG ĐANG SO KHỚP ẢNH DRIVE ===");
+        console.log("Mã sản phẩm sếp đang rê chuột:", searchCode);
+        console.log("Từ khóa tìm kiếm bắc cầu (candidates):", searchCandidates);
+        console.log("Tất cả tệp tin thực tế trong thư mục Drive của sếp:", files.map(f => `${f.name} (${f.mimeType})`));
+
         // 3. Look for matching image directly in this folder using candidate list
         let directMatch = null;
         for (const candidate of searchCandidates) {
@@ -355,17 +363,27 @@ async function init() {
             );
             if (directMatch) break;
         }
-        if (directMatch) return { status: 200, file: directMatch };
+        
+        if (directMatch) {
+            console.log("✅ Đã tìm thấy ảnh khớp trực tiếp ở thư mục cha:", directMatch.name);
+            return { status: 200, file: directMatch };
+        }
         
         // 4. Look inside subfolders (recursive search 1 level deep) using candidate list
         const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+        if (subfolders.length > 0) {
+            console.log(`📂 Không có ảnh khớp trực tiếp ở thư mục cha. Bắt đầu quét tiếp vào ${subfolders.length} thư mục con...`);
+        }
+        
         for (const folder of subfolders) {
+            console.log(`👉 Đang quét thư mục con: "${folder.name}"...`);
             const subQ = `'${folder.id}' in parents and trashed = false`;
             const subUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(subQ)}&fields=files(id,name,mimeType)&access_token=${token}`;
             const subResp = await fetch(subUrl);
             if (subResp.ok) {
                 const subData = await subResp.json();
                 const subFiles = subData.files || [];
+                console.log(`   └─ Các tệp trong thư mục con "${folder.name}":`, subFiles.map(f => f.name));
                 
                 let subMatch = null;
                 for (const candidate of searchCandidates) {
@@ -375,9 +393,14 @@ async function init() {
                     );
                     if (subMatch) break;
                 }
-                if (subMatch) return { status: 200, file: subMatch };
+                if (subMatch) {
+                    console.log(`✅ Đã tìm thấy ảnh khớp trong thư mục con "${folder.name}":`, subMatch.name);
+                    return { status: 200, file: subMatch };
+                }
             }
         }
+        
+        console.warn("❌ KHÔNG TÌM THẤY BẤT KỲ FILE ẢNH NÀO TRÙNG KHỚP!");
         return { status: 200, file: null };
     }
 
