@@ -383,10 +383,10 @@ async function init() {
 
     async function showImagePreview(e, cell) {
         const rowData = cell.getRow().getData();
-        const ma10 = rowData.ma10;
+        const searchCode = rowData.ma16 || rowData.ma10; // Prioritize Mã Màu (ma16), fallback to Mã 10
         const linkAnh = rowData.linkAnh;
 
-        if (!ma10 || !linkAnh || !linkAnh.includes("drive.google.com")) return;
+        if (!searchCode || !linkAnh || !linkAnh.includes("drive.google.com")) return;
 
         const card = document.getElementById("hover-preview-card");
         const previewImg = document.getElementById("preview-img");
@@ -430,7 +430,7 @@ async function init() {
             let status = 200;
 
             if (isFolder) {
-                const searchResult = await findImageInFolder(folderId, ma10, token);
+                const searchResult = await findImageInFolder(folderId, searchCode, token);
                 status = searchResult.status;
                 file = searchResult.file;
             } else {
@@ -482,7 +482,7 @@ async function init() {
                 }
             } else {
                 if (isFolder) {
-                    previewTitle.innerText = `⚠️ Không thấy ảnh chứa mã: ${ma10.trim()}`;
+                    previewTitle.innerText = `⚠️ Không thấy ảnh chứa mã: ${searchCode.trim()}`;
                 } else {
                     previewTitle.innerText = "⚠️ Không tìm thấy tệp ảnh Drive trực tiếp";
                 }
@@ -507,11 +507,17 @@ async function init() {
             field: "ma10", 
             editor: "input", 
             width: 120, 
+            headerFilter: "input"
+        },
+        { 
+            title: "Mã Màu (mã 16)", 
+            field: "ma16", 
+            editor: "input", 
+            width: 140, 
             headerFilter: "input",
             cellMouseEnter: showImagePreview,
             cellMouseLeave: hideImagePreview
         },
-        { title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, headerFilter: "input" },
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, headerFilter: "input" },
         { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, headerFilter: "input" },
         { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, formatter: dateDisplayFormatter, width: 110, headerFilter: "input" },
