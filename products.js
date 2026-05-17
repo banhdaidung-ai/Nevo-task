@@ -324,9 +324,9 @@ async function init() {
     }
 
     async function findImageInFolder(folderId, searchCode, token) {
-        // 1. Fetch all files and subfolders in the parent folder
+        // 1. Fetch all files and subfolders in the parent folder (with Shared Drive support)
         const q = `'${folderId}' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&access_token=${token}`;
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&access_token=${token}`;
         
         const resp = await fetch(url);
         if (!resp.ok) {
@@ -369,7 +369,7 @@ async function init() {
             return { status: 200, file: directMatch };
         }
         
-        // 4. Look inside subfolders (recursive search 1 level deep) using candidate list
+        // 4. Look inside subfolders (recursive search 1 level deep) using candidate list (with Shared Drive support)
         const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
         if (subfolders.length > 0) {
             console.log(`📂 Không có ảnh khớp trực tiếp ở thư mục cha. Bắt đầu quét tiếp vào ${subfolders.length} thư mục con...`);
@@ -378,7 +378,7 @@ async function init() {
         for (const folder of subfolders) {
             console.log(`👉 Đang quét thư mục con: "${folder.name}"...`);
             const subQ = `'${folder.id}' in parents and trashed = false`;
-            const subUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(subQ)}&fields=files(id,name,mimeType)&access_token=${token}`;
+            const subUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(subQ)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&access_token=${token}`;
             const subResp = await fetch(subUrl);
             if (subResp.ok) {
                 const subData = await subResp.json();
@@ -457,8 +457,8 @@ async function init() {
                 status = searchResult.status;
                 file = searchResult.file;
             } else {
-                // Direct file link case!
-                const fileUrl = `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType&access_token=${token}`;
+                // Direct file link case! (with Shared Drive support)
+                const fileUrl = `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType&supportsAllDrives=true&includeItemsFromAllDrives=true&access_token=${token}`;
                 const fileResp = await fetch(fileUrl);
                 status = fileResp.status;
                 if (fileResp.ok) {
@@ -479,7 +479,7 @@ async function init() {
                 if (file.mimeType && file.mimeType.startsWith('image/')) {
                     const fileId = file.id;
 
-                    const mediaResp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                    const mediaResp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
