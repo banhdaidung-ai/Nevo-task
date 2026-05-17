@@ -333,15 +333,31 @@ async function init() {
         const data = await resp.json();
         const files = data.files || [];
         
-        // 2. Look for matching image directly in this folder (case-insensitive and trimmed)
+        // 2. Prepare progressive search candidates to handle cases like product-color-size suffixes
         const targetCode = searchCode.trim().toLowerCase();
-        const directMatch = files.find(f => 
-            f.mimeType && f.mimeType.startsWith('image/') && 
-            f.name.toLowerCase().includes(targetCode)
-        );
+        const searchCandidates = [targetCode];
+        if (targetCode.includes('-')) {
+            const parts = targetCode.split('-');
+            if (parts.length > 2) {
+                // E.g., weun25a001-sk001-m -> weun25a001-sk001
+                searchCandidates.push(parts.slice(0, 2).join('-'));
+            }
+            // E.g., weun25a001-sk001-m -> weun25a001
+            searchCandidates.push(parts[0]);
+        }
+        
+        // 3. Look for matching image directly in this folder using candidate list
+        let directMatch = null;
+        for (const candidate of searchCandidates) {
+            directMatch = files.find(f => 
+                f.mimeType && f.mimeType.startsWith('image/') && 
+                f.name.toLowerCase().includes(candidate)
+            );
+            if (directMatch) break;
+        }
         if (directMatch) return { status: 200, file: directMatch };
         
-        // 3. Look inside subfolders (recursive search 1 level deep)
+        // 4. Look inside subfolders (recursive search 1 level deep) using candidate list
         const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
         for (const folder of subfolders) {
             const subQ = `'${folder.id}' in parents and trashed = false`;
@@ -350,10 +366,15 @@ async function init() {
             if (subResp.ok) {
                 const subData = await subResp.json();
                 const subFiles = subData.files || [];
-                const subMatch = subFiles.find(f => 
-                    f.mimeType && f.mimeType.startsWith('image/') && 
-                    f.name.toLowerCase().includes(targetCode)
-                );
+                
+                let subMatch = null;
+                for (const candidate of searchCandidates) {
+                    subMatch = subFiles.find(f => 
+                        f.mimeType && f.mimeType.startsWith('image/') && 
+                        f.name.toLowerCase().includes(candidate)
+                    );
+                    if (subMatch) break;
+                }
                 if (subMatch) return { status: 200, file: subMatch };
             }
         }
