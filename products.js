@@ -333,7 +333,7 @@ async function init() {
     async function findImageInFolder(folderId, searchCode, token) {
         // 1. List files in folder (Shared Drive compatible via corpora + header auth)
         const q = `'${folderId}' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&corpora=allDrives&pageSize=200`;
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=200`;
         
         const resp = await driveApiFetch(url, token);
         if (!resp.ok) {
@@ -371,7 +371,7 @@ async function init() {
         const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
         for (const folder of subfolders) {
             const subQ = `'${folder.id}' in parents and trashed = false`;
-            const subUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(subQ)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&corpora=allDrives&pageSize=200`;
+            const subUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(subQ)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=200`;
             const subResp = await driveApiFetch(subUrl, token);
             if (subResp.ok) {
                 const subData = await subResp.json();
