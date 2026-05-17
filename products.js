@@ -323,6 +323,43 @@ async function init() {
         }
     }
 
+    async function findImageInFolder(folderId, searchCode, token) {
+        // 1. Fetch all files and subfolders in the parent folder
+        const q = `'${folderId}' in parents and trashed = false`;
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&access_token=${token}`;
+        
+        const resp = await fetch(url);
+        if (!resp.ok) return { status: resp.status, file: null };
+        const data = await resp.json();
+        const files = data.files || [];
+        
+        // 2. Look for matching image directly in this folder (case-insensitive and trimmed)
+        const targetCode = searchCode.trim().toLowerCase();
+        const directMatch = files.find(f => 
+            f.mimeType && f.mimeType.startsWith('image/') && 
+            f.name.toLowerCase().includes(targetCode)
+        );
+        if (directMatch) return { status: 200, file: directMatch };
+        
+        // 3. Look inside subfolders (recursive search 1 level deep)
+        const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+        for (const folder of subfolders) {
+            const subQ = `'${folder.id}' in parents and trashed = false`;
+            const subUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(subQ)}&fields=files(id,name,mimeType)&access_token=${token}`;
+            const subResp = await fetch(subUrl);
+            if (subResp.ok) {
+                const subData = await subResp.json();
+                const subFiles = subData.files || [];
+                const subMatch = subFiles.find(f => 
+                    f.mimeType && f.mimeType.startsWith('image/') && 
+                    f.name.toLowerCase().includes(targetCode)
+                );
+                if (subMatch) return { status: 200, file: subMatch };
+            }
+        }
+        return { status: 200, file: null };
+    }
+
     async function showImagePreview(e, cell) {
         const rowData = cell.getRow().getData();
         const ma10 = rowData.ma10;
@@ -366,11 +403,9 @@ async function init() {
         }
 
         try {
-            const q = `'${folderId}' in parents and name contains '${ma10}' and mimeType contains 'image/' and trashed = false`;
-            const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&access_token=${token}`;
+            const { status, file } = await findImageInFolder(folderId, ma10, token);
             
-            const resp = await fetch(searchUrl);
-            if (resp.status === 401) {
+            if (status === 401) {
                 localStorage.removeItem("gdrive_access_token");
                 localStorage.removeItem("gdrive_token_expires");
                 updateDriveButton();
@@ -379,10 +414,7 @@ async function init() {
                 return;
             }
 
-            const data = await resp.json();
-
-            if (data.files && data.files.length > 0) {
-                const file = data.files[0];
+            if (file) {
                 const fileId = file.id;
 
                 const mediaResp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
@@ -406,7 +438,7 @@ async function init() {
                     spinner.style.display = "none";
                 }
             } else {
-                previewTitle.innerText = `⚠️ Không thấy ảnh chứa mã: ${ma10}`;
+                previewTitle.innerText = `⚠️ Không thấy ảnh chứa mã: ${ma10.trim()}`;
                 spinner.style.display = "none";
             }
         } catch (err) {
