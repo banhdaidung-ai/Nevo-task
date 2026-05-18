@@ -9,6 +9,9 @@ if (localStorage.getItem('nevo_logged_in') !== 'true') {
     window.location.replace('login.html');
 }
 
+const userRole = localStorage.getItem('nevo_role') || 'user';
+const isUser = userRole.toLowerCase() === 'user';
+
 let currentMonth = "";
 let COLLECTION_NAME = "";
 const SETTINGS_DOC = "products_table_config";
@@ -631,13 +634,27 @@ async function init() {
         columns.push({ title: col.title, field: col.field, editor: "input", width: 150, headerMenu: headerMenu });
     });
 
+    if (isUser) {
+        const disableEditing = (cols) => {
+            cols.forEach(c => {
+                if (c.columns) {
+                    disableEditing(c.columns);
+                } else {
+                    c.editor = false;
+                    c.headerMenu = [];
+                }
+            });
+        };
+        disableEditing(columns);
+    }
+
     // Setup Tabulator
     table = new Tabulator("#products-table", {
         data: tableData,
         layout: "fitColumns",
         height: "100%", 
         history: true, 
-        clipboard: true,
+        clipboard: isUser ? "copy" : true,
         selectable: "highlight",
         reactiveData: true,
         rowFormatter: rowColorFormatter,
@@ -662,6 +679,7 @@ async function init() {
     let fillTargets = [];
 
     table.on("cellMouseDown", function(e, cell) {
+        if (isUser) return;
         if (e.altKey && cell.getField()) {
             e.preventDefault();
             fillSource = cell;
@@ -1065,6 +1083,23 @@ async function init() {
     });
 
     updateDriveButton();
+
+    // RBAC: Hide editing UI for User role
+    if (isUser) {
+        const elementsToRemove = [
+            "btn-add-row", "btn-add-col", "btn-color-row", 
+            "btn-import-trigger", "btn-delete-rows", "btn-manage-status",
+            "file-import-csv"
+        ];
+        elementsToRemove.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        
+        // Hide info text about Alt+Drag
+        const infoText = document.querySelector('.text-slate-500.font-medium');
+        if (infoText) infoText.style.display = 'none';
+    }
 
     console.log("App Initialized");
     setSyncing(false);
