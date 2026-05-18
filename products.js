@@ -327,9 +327,6 @@ async function init() {
         if (card) {
             card.style.display = "none";
             const img = document.getElementById("preview-img");
-            if (img.src && img.src.startsWith("blob:")) {
-                URL.revokeObjectURL(img.src);
-            }
             img.style.display = "none";
             img.src = "";
             document.getElementById("preview-title").innerText = "";
