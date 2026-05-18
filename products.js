@@ -50,33 +50,37 @@ const statusFormatter = function(cell, formatterParams) {
     return `<span class="status-badge" style="background-color: ${color}; color: #475569; border: 1px solid rgba(0,0,0,0.05)">${val}</span>`;
 };
 
-// Better Date Editor: Allows typing and validates format
 const dateEditor = function(cell, onRendered, success, cancel) {
     let cellValue = cell.getValue() || "";
     let input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = "DD/MM/YYYY";
-    input.value = cellValue;
+    input.type = "date";
+    
+    // Convert DD/MM/YYYY to YYYY-MM-DD for native input
+    if (cellValue) {
+        let parts = cellValue.split("/");
+        if (parts.length === 3) {
+            input.value = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+    }
+    
     input.style.cssText = "padding:4px; width:100%; box-sizing:border-box; border:none; outline:none; background:transparent; font-family:inherit; font-size:inherit;";
     
-    onRendered(() => { input.focus(); });
+    onRendered(() => { 
+        input.focus(); 
+        // Auto open picker if supported by browser
+        if (typeof input.showPicker === 'function') {
+            try { input.showPicker(); } catch (e) {}
+        }
+    });
 
     function onChange() {
-        let val = input.value.trim();
+        let val = input.value;
         if (!val) return success("");
         
-        // Simple parser
-        let parts = val.split(/[-/.]/);
-        if (parts.length === 1 && parts[0].length <= 2) {
-            let now = new Date();
-            val = `${parts[0].padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-        } else if (parts.length === 2) {
-            let now = new Date();
-            val = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${now.getFullYear()}`;
-        } else if (parts.length === 3) {
-            let year = parts[2];
-            if (year.length === 2) year = "20" + year;
-            val = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${year}`;
+        // Convert YYYY-MM-DD back to DD/MM/YYYY
+        let parts = val.split("-");
+        if (parts.length === 3) {
+            val = `${parts[2]}/${parts[1]}/${parts[0]}`;
         }
         
         success(val);
