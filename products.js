@@ -356,6 +356,32 @@ async function init() {
         return entry;
     }
 
+    function findBestImageMatch(files, candidate) {
+        let matches = files.filter(f => f.mimeType && f.mimeType.startsWith('image/') && f.name.toLowerCase().includes(candidate));
+        if (matches.length === 0) return null;
+        
+        matches.sort((a, b) => {
+            const nameA = a.name.toLowerCase();
+            const nameB = b.name.toLowerCase();
+            
+            const getScore = (name) => {
+                const nameWithoutExt = name.substring(0, name.lastIndexOf('.')) || name;
+                if (nameWithoutExt === candidate) return 100;
+                if (name.includes('(1)') || name.includes('-1') || name.includes('_1') || name.includes('front')) return 80;
+                if (name.includes('(2)') || name.includes('-2') || name.includes('_2')) return 60;
+                return 40; // Other suffixes
+            };
+            
+            const scoreA = getScore(nameA);
+            const scoreB = getScore(nameB);
+            
+            if (scoreA !== scoreB) return scoreB - scoreA; 
+            return nameA.localeCompare(nameB); 
+        });
+        
+        return matches[0];
+    }
+
     async function findImageInFolder(folderId, searchCode, token) {
         const folderData = await getCachedFolderFiles(folderId, token);
         if (folderData.status !== 200) return { status: folderData.status, file: null };
@@ -371,8 +397,8 @@ async function init() {
 
         // Direct match
         for (const candidate of searchCandidates) {
-            const match = files.find(f => f.mimeType && f.mimeType.startsWith('image/') && f.name.toLowerCase().includes(candidate));
-            if (match) return { status: 200, file: match };
+            const bestMatch = findBestImageMatch(files, candidate);
+            if (bestMatch) return { status: 200, file: bestMatch };
         }
 
         // Search subfolders (1 level deep) - also cached
@@ -381,8 +407,8 @@ async function init() {
             const subData = await getCachedFolderFiles(folder.id, token);
             if (subData.status === 200) {
                 for (const candidate of searchCandidates) {
-                    const match = subData.files.find(f => f.mimeType && f.mimeType.startsWith('image/') && f.name.toLowerCase().includes(candidate));
-                    if (match) return { status: 200, file: match };
+                    const bestMatch = findBestImageMatch(subData.files, candidate);
+                    if (bestMatch) return { status: 200, file: bestMatch };
                 }
             }
         }
