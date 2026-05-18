@@ -17,9 +17,24 @@ let table;
 let isSyncing = false;
 let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa có"];
 let statusColors = {
-    "Hoàn tất": "#dcfce7", // green
-    "Đang xử lý": "#fef08a", // yellow
-    "Chưa có": "#ffffff" // white
+    "Hoàn tất": "#dcfce7",
+    "Đang xử lý": "#fef08a",
+    "Chưa có": "#ffffff"
+};
+
+// Image Cache for Drive API optimization
+const driveCache = new Map();
+const imageCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 min
+
+// Reusable Link Formatter
+const linkFormatter = function(cell) {
+    let val = cell.getValue();
+    if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
+        let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${val}" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" onpointerdown="event.stopPropagation();"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
+    }
+    return val || "";
 };
 
 // Custom Formatter for Status
@@ -330,22 +345,25 @@ async function init() {
         });
     }
 
-    async function findImageInFolder(folderId, searchCode, token) {
-        // 1. List files in folder (Shared Drive compatible via corpora + header auth)
+    // Cached folder file listing
+    async function getCachedFolderFiles(folderId, token) {
+        const cached = driveCache.get(folderId);
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) return cached;
         const q = `'${folderId}' in parents and trashed = false`;
         const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=200`;
-        
         const resp = await driveApiFetch(url, token);
-        if (!resp.ok) {
-            let errBody = '';
-            try { errBody = JSON.stringify(await resp.json()); } catch(e) {}
-            console.error(`❌ Drive API lỗi ${resp.status} khi quét folder ${folderId}:`, errBody);
-            return { status: resp.status, file: null };
-        }
+        if (!resp.ok) return { status: resp.status, files: [], timestamp: 0 };
         const data = await resp.json();
-        const files = data.files || [];
+        const entry = { status: 200, files: data.files || [], timestamp: Date.now() };
+        driveCache.set(folderId, entry);
+        return entry;
+    }
 
-        // 2. Build progressive search candidates
+    async function findImageInFolder(folderId, searchCode, token) {
+        const folderData = await getCachedFolderFiles(folderId, token);
+        if (folderData.status !== 200) return { status: folderData.status, file: null };
+        const files = folderData.files;
+
         const targetCode = searchCode.trim().toLowerCase();
         const searchCandidates = [targetCode];
         if (targetCode.includes('-')) {
@@ -354,47 +372,40 @@ async function init() {
             searchCandidates.push(parts[0]);
         }
 
-        console.log("🔍 === TÌM KIẾM ẢNH DRIVE ===");
-        console.log("📋 Mã đang tìm:", searchCode, "| Candidates:", searchCandidates);
-        console.log("📂 Files trong folder:", files.map(f => `${f.name} [${f.mimeType}]`));
-
-        // 3. Direct match
+        // Direct match
         for (const candidate of searchCandidates) {
-            const match = files.find(f =>
-                f.mimeType && f.mimeType.startsWith('image/') &&
-                f.name.toLowerCase().includes(candidate)
-            );
-            if (match) { console.log("✅ Tìm thấy:", match.name); return { status: 200, file: match }; }
+            const match = files.find(f => f.mimeType && f.mimeType.startsWith('image/') && f.name.toLowerCase().includes(candidate));
+            if (match) return { status: 200, file: match };
         }
 
-        // 4. Search subfolders (1 level deep)
+        // Search subfolders (1 level deep) - also cached
         const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
         for (const folder of subfolders) {
-            const subQ = `'${folder.id}' in parents and trashed = false`;
-            const subUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(subQ)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=200`;
-            const subResp = await driveApiFetch(subUrl, token);
-            if (subResp.ok) {
-                const subData = await subResp.json();
-                const subFiles = subData.files || [];
-                console.log(`  📁 "${folder.name}":`, subFiles.map(f => f.name));
+            const subData = await getCachedFolderFiles(folder.id, token);
+            if (subData.status === 200) {
                 for (const candidate of searchCandidates) {
-                    const match = subFiles.find(f =>
-                        f.mimeType && f.mimeType.startsWith('image/') &&
-                        f.name.toLowerCase().includes(candidate)
-                    );
-                    if (match) { console.log(`✅ Tìm thấy trong "${folder.name}":`, match.name); return { status: 200, file: match }; }
+                    const match = subData.files.find(f => f.mimeType && f.mimeType.startsWith('image/') && f.name.toLowerCase().includes(candidate));
+                    if (match) return { status: 200, file: match };
                 }
             }
         }
-
-        console.warn("❌ Không tìm thấy ảnh nào khớp!");
         return { status: 200, file: null };
     }
 
     async function showImagePreview(e, cell) {
         const rowData = cell.getRow().getData();
         const searchCode = rowData.ma16 || rowData.ma10;
-        const linkAnh = rowData.linkAnh;
+        const field = cell.getField();
+        
+        let linkAnh = "";
+        if (field === "linkAnh") {
+            linkAnh = rowData.linkAnh;
+        } else if (field === "linkAnhModel") {
+            linkAnh = rowData.linkAnhModel;
+        } else {
+            // Priority: linkAnhModel > linkAnh (trải sàn)
+            linkAnh = rowData.linkAnhModel || rowData.linkAnh;
+        }
 
         if (!searchCode || !linkAnh || !linkAnh.includes("drive.google.com")) return;
 
@@ -465,18 +476,28 @@ async function init() {
 
             if (file) {
                 if (file.mimeType && file.mimeType.startsWith('image/')) {
-                    const mediaResp = await driveApiFetch(
-                        `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`, token
-                    );
-                    if (mediaResp.ok) {
-                        const blob = await mediaResp.blob();
-                        const localUrl = URL.createObjectURL(blob);
-                        previewImg.src = localUrl;
-                        previewImg.onload = () => { previewImg.style.display = "block"; spinner.style.display = "none"; };
+                    // Check image blob cache first
+                    const cachedBlob = imageCache.get(file.id);
+                    if (cachedBlob) {
+                        previewImg.src = cachedBlob;
+                        previewImg.style.display = "block";
+                        spinner.style.display = "none";
                         previewTitle.innerText = `Ảnh: ${file.name}`;
                     } else {
-                        previewTitle.innerText = "❌ Không thể tải nội dung ảnh";
-                        spinner.style.display = "none";
+                        const mediaResp = await driveApiFetch(
+                            `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`, token
+                        );
+                        if (mediaResp.ok) {
+                            const blob = await mediaResp.blob();
+                            const localUrl = URL.createObjectURL(blob);
+                            imageCache.set(file.id, localUrl);
+                            previewImg.src = localUrl;
+                            previewImg.onload = () => { previewImg.style.display = "block"; spinner.style.display = "none"; };
+                            previewTitle.innerText = `Ảnh: ${file.name}`;
+                        } else {
+                            previewTitle.innerText = "❌ Không thể tải nội dung ảnh";
+                            spinner.style.display = "none";
+                        }
                     }
                 } else {
                     previewTitle.innerText = "⚠️ Định dạng tệp không phải là ảnh";
@@ -502,62 +523,38 @@ async function init() {
         { rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30 },
         { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
         { title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false },
+        { title: "Mã 10", field: "ma10", editor: "input", width: 120, headerFilter: "input" },
         { 
-            title: "Mã 10", 
-            field: "ma10", 
-            editor: "input", 
-            width: 120, 
-            headerFilter: "input"
-        },
-        { 
-            title: "Mã Màu (mã 16)", 
-            field: "ma16", 
-            editor: "input", 
-            width: 140, 
-            headerFilter: "input",
-            cellMouseEnter: showImagePreview,
-            cellMouseLeave: hideImagePreview
+            title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, headerFilter: "input",
+            cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview
         },
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, headerFilter: "input" },
         { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, headerFilter: "input" },
         { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, formatter: dateDisplayFormatter, width: 110, headerFilter: "input" },
-        { 
-            title: "Link Ảnh", 
-            field: "linkAnh", 
-            editor: "input", 
-            width: 150, 
-            headerFilter: "input",
-            cellMouseEnter: showImagePreview,
-            cellMouseLeave: hideImagePreview,
-            formatter: function(cell) {
-                let val = cell.getValue();
-                if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
-                    let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
-                    // Use a standard anchor tag for reliable link opening, stop pointer/mouse events from triggering Tabulator's edit mode
-                    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${val}" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" onpointerdown="event.stopPropagation();"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
-                }
-                return val || "";
-            }
-        },
         {
             title: "Hình ảnh trải sàn",
             columns: [
+                { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 130, headerFilter: "input",
+                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter },
                 { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
+                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 120, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         {
             title: "Hình ảnh model",
             columns: [
+                { title: "Link Ảnh", field: "linkAnhModel", editor: "input", width: 130, headerFilter: "input",
+                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter },
                 { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
+                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 120, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         {
             title: "Video model",
             columns: [
+                { title: "Link Video", field: "linkVideo", editor: "input", width: 130, headerFilter: "input", formatter: linkFormatter },
                 { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
+                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 120, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, headerFilter: "input" }
@@ -620,7 +617,7 @@ async function init() {
         movableColumns: true, 
         movableRows: true,
         persistence: { columns: true, rows: true },
-        persistenceID: "productsTable_v4",
+        persistenceID: "productsTable_v5",
         columns: columns,
     });
 
@@ -630,6 +627,57 @@ async function init() {
     table.on("cellEditing", function(cell) { cell.getRow().deselect(); });
     table.on("dataLoaded", updateStats);
     table.on("dataChanged", updateStats);
+
+    // --- FILL DOWN (Alt/Option + Drag) ---
+    let fillSource = null;
+    let fillField = null;
+    let fillActive = false;
+    let fillTargets = [];
+
+    table.on("cellMouseDown", function(e, cell) {
+        if (e.altKey && cell.getField()) {
+            e.preventDefault();
+            fillSource = cell;
+            fillField = cell.getField();
+            fillActive = true;
+            fillTargets = [];
+            cell.getElement().style.outline = "2px solid #6366f1";
+            cell.getElement().style.boxShadow = "0 0 8px rgba(99,102,241,0.3)";
+        }
+    });
+
+    table.on("cellMouseOver", function(e, cell) {
+        if (!fillActive || !fillSource || cell.getField() !== fillField) return;
+        if (cell === fillSource) return;
+        const already = fillTargets.find(c => c.getRow().getData().id === cell.getRow().getData().id);
+        if (!already) {
+            fillTargets.push(cell);
+            cell.getElement().style.outline = "2px dashed #6366f1";
+            cell.getElement().style.backgroundColor = "rgba(99,102,241,0.06)";
+        }
+    });
+
+    document.addEventListener("mouseup", async function() {
+        if (!fillActive || !fillSource) return;
+        const sourceValue = fillSource.getValue();
+        fillSource.getElement().style.outline = "";
+        fillSource.getElement().style.boxShadow = "";
+
+        if (fillTargets.length > 0) {
+            setSyncing(true);
+            for (const cell of fillTargets) {
+                cell.getElement().style.outline = "";
+                cell.getElement().style.backgroundColor = "";
+                cell.setValue(sourceValue);
+                // cellEdited event handles Firebase sync automatically
+            }
+            setSyncing(false);
+        }
+        fillSource = null;
+        fillField = null;
+        fillActive = false;
+        fillTargets = [];
+    });
 
     // --- FIREBASE SYNC ---
     table.on("cellEdited", async function(cell) {
@@ -657,7 +705,7 @@ async function init() {
         try {
             const newDoc = {
                 ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
-                ngayVeKho: "", linkAnh: "",
+                ngayVeKho: "", linkAnh: "", linkAnhModel: "", linkVideo: "",
                 anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa có",
                 anhModelNgay: "", anhModelTrangThai: "Chưa có",
                 videoModelNgay: "", videoModelTrangThai: "Chưa có",
@@ -984,7 +1032,7 @@ async function init() {
         }
 
         table.setFilter(function(data) {
-            const fields = ['ma10', 'ma16', 'phanLoai', 'ghiChu', 'linkAnh'];
+            const fields = ['ma10', 'ma16', 'phanLoai', 'ghiChu', 'linkAnh', 'linkAnhModel', 'linkVideo'];
             return fields.some(f => data[f] && data[f].toString().toLowerCase().includes(value));
         });
     });
