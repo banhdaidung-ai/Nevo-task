@@ -411,7 +411,7 @@ window.updateIndexOwBanner = async function() {
         }
 
         if (indexOwInterval) clearInterval(indexOwInterval);
-        function tick() {
+        const tick = function() {
             const diff = result.endTime - new Date();
             if (diff <= 0) {
                 openBanner.classList.add('hidden'); closedBanner.classList.remove('hidden'); clearInterval(indexOwInterval);
