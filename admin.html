@@ -1460,6 +1460,17 @@
       appId: "1:1031918825498:web:16f85584b81072db0be1a3"
     };
 
+    // Helper function to hash password with SHA-256 (Native Client-side)
+    async function hashPassword(password) {
+        if (!password) return "";
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+        return hashHex;
+    }
+    window.hashPassword = hashPassword;
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -1530,11 +1541,11 @@
     ];
 
     const DEFAULT_USERS = [
-        { empId: 'admin',    name: 'Admin Hệ thống', password: 'admin123', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
-        { empId: 'demo',     name: 'Người dùng Demo', password: '123456',   email: 'demo@nevosport.vn',   dept: 'Kinh doanh',    role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-01-01' },
-        { empId: 'EMP-1024', name: 'Nguyễn Văn Lam', password: '1234',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
-        { empId: 'EMP-2001', name: 'Phạm Thu Thảo',  password: 'nevo2024', email: 'thao.pt@nevosport.vn', dept: 'Kế toán',       role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-04-02' },
-        { empId: 'nevo',     name: 'Nevo Sport',     password: 'nevo',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
+        { empId: 'admin',    name: 'Admin Hệ thống', password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
+        { empId: 'demo',     name: 'Người dùng Demo', password: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',   email: 'demo@nevosport.vn',   dept: 'Kinh doanh',    role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-01-01' },
+        { empId: 'EMP-1024', name: 'Nguyễn Văn Lam', password: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
+        { empId: 'EMP-2001', name: 'Phạm Thu Thảo',  password: 'd144bff3f4702bc7447291839f41e3b74ff5b647d8c195bf9f07bd5739104e77', email: 'thao.pt@nevosport.vn', dept: 'Kế toán',       role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-04-02' },
+        { empId: 'nevo',     name: 'Nevo Sport',     password: 'bc8354cb774122cd6c6b393f6109c77147710da06c512f92a27a317f76c39bdb',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
     ];
 
     const DEFAULT_ROLES = [
@@ -1567,6 +1578,19 @@
             console.log("Initializing default users...");
             for (const u of DEFAULT_USERS) {
                 await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, u.empId), u);
+            }
+        } else {
+            console.log("Kiểm tra nâng cấp bảo mật mật khẩu...");
+            for (const docSnap of snapUsers.docs) {
+                const u = docSnap.data();
+                if (u.password && u.password.length !== 64) {
+                    console.log(`Nâng cấp mật khẩu bảo mật cho tài khoản: ${u.empId}`);
+                    const hashedPwd = await window.hashPassword(u.password);
+                    await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, u.empId), {
+                        ...u,
+                        password: hashedPwd
+                    }, { merge: true });
+                }
             }
         }
         window.fs.onSnapshot(qUsers, (snap) => {
@@ -2043,7 +2067,7 @@
                 name, empId, email, phone, dept, role, status,
                 updatedAt: new Date().toISOString()
             };
-            if (password) userData.password = password;
+            if (password) userData.password = await window.hashPassword(password);
             if (!id) userData.createdAt = new Date().toISOString().slice(0,10);
 
             if (!window.db) throw new Error("Firebase not ready");

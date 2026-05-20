@@ -499,11 +499,22 @@
       appId: "1:1031918825498:web:16f85584b81072db0be1a3"
     };
 
+    // Helper function to hash password with SHA-256 (Native Client-side)
+    async function hashPassword(password) {
+        if (!password) return "";
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+        return hashHex;
+    }
+    window.hashPassword = hashPassword;
+
     const DEFAULT_USERS = [
-        { empId: 'admin',    name: 'Admin Hệ thống', password: 'admin123', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
-        { empId: 'demo',     name: 'Người dùng Demo', password: '123456',   email: 'demo@nevosport.vn',   dept: 'Kinh doanh',    role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-01-01' },
-        { empId: 'EMP-1024', name: 'Nguyễn Văn Lam', password: '1234',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
-        { empId: 'nevo',     name: 'Nevo Sport',     password: 'nevo',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
+        { empId: 'admin',    name: 'Admin Hệ thống', password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', email: 'admin@nevosport.vn',   dept: 'IT',            role: 'admin',   status: 'active',   permissions: ['view','create','edit','delete','approve','report','admin'],  createdAt: '2024-01-01' },
+        { empId: 'demo',     name: 'Người dùng Demo', password: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',   email: 'demo@nevosport.vn',   dept: 'Kinh doanh',    role: 'user',    status: 'active',   permissions: ['view','create'],                                              createdAt: '2024-01-01' },
+        { empId: 'EMP-1024', name: 'Nguyễn Văn Lam', password: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4',     email: 'lam.nv@nevosport.vn',  dept: 'Logistics',     role: 'manager', status: 'active',   permissions: ['view','create','edit','approve','report'],                    createdAt: '2024-03-15' },
+        { empId: 'nevo',     name: 'Nevo Sport',     password: 'bc8354cb774122cd6c6b393f6109c77147710da06c512f92a27a317f76c39bdb',     email: 'nevo@nevosport.vn',    dept: 'Ban Giám Đốc',  role: 'viewer',  status: 'active',   permissions: ['view','report'],                                              createdAt: '2024-04-10' },
     ];
 
     const app = initializeApp(firebaseConfig);
@@ -514,7 +525,7 @@
     window.fsCollection = collection;
     window.fsGetDocs = getDocs;
 
-    // Tự động nạp user mặc định nếu Cloud trống
+    // Tự động nạp user mặc định nếu Cloud trống, hoặc nâng cấp bảo mật mật khẩu
     async function initDefaultUsers() {
         try {
             const q = window.fsCollection(window.db, "users");
@@ -524,9 +535,22 @@
                 for (const u of DEFAULT_USERS) {
                     await window.fsSetDoc(window.fsDoc(window.db, "users", u.empId), u);
                 }
+            } else {
+                console.log("Kiểm tra nâng cấp bảo mật mật khẩu...");
+                for (const docSnap of snap.docs) {
+                    const u = docSnap.data();
+                    if (u.password && u.password.length !== 64) {
+                        console.log(`Nâng cấp mật khẩu bảo mật cho tài khoản: ${u.empId}`);
+                        const hashedPwd = await hashPassword(u.password);
+                        await window.fsSetDoc(window.fsDoc(window.db, "users", u.empId), {
+                            ...u,
+                            password: hashedPwd
+                        }, { merge: true });
+                    }
+                }
             }
         } catch (e) {
-            console.error("Lỗi khởi tạo:", e);
+            console.error("Lỗi khởi tạo/nâng cấp mật khẩu:", e);
         }
     }
     initDefaultUsers();
@@ -610,7 +634,8 @@
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 
-                if (userData.password === password) {
+                const hashedInput = await window.hashPassword(password);
+                if (userData.password === hashedInput) {
                     if (userData.status === 'inactive') {
                         showError('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.');
                     } else {

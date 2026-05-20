@@ -10,7 +10,7 @@ if (localStorage.getItem('nevo_logged_in') !== 'true') {
 }
 
 const userRole = localStorage.getItem('nevo_role') || 'user';
-const isUser = userRole.toLowerCase() === 'user';
+const isUser = !['admin', 'manager'].includes(userRole.toLowerCase());
 
 let currentMonth = "";
 let COLLECTION_NAME = "";
@@ -726,6 +726,7 @@ async function init() {
 
     // --- FIREBASE SYNC ---
     table.on("cellEdited", async function(cell) {
+        if (isUser) return;
         const row = cell.getRow();
         const data = row.getData();
         const field = cell.getField();
@@ -746,6 +747,7 @@ async function init() {
     
     // Add Row
     document.getElementById("btn-add-row").addEventListener("click", async () => {
+        if (isUser) return;
         setSyncing(true);
         try {
             const newDoc = {
@@ -764,6 +766,7 @@ async function init() {
 
     // Add Custom Column
     document.getElementById("btn-add-col").addEventListener("click", async () => {
+        if (isUser) return;
         const { value: colName } = await Swal.fire({
             title: 'Thêm cột mới',
             input: 'text',
@@ -791,6 +794,7 @@ async function init() {
 
     // Manage Statuses
     document.getElementById("btn-manage-status").addEventListener("click", async () => {
+        if (isUser) return;
         let tempStatuses = [...statusOptions];
         let tempColors = {...statusColors};
 
@@ -952,6 +956,7 @@ async function init() {
 
     // Manually Color Rows
     document.getElementById("btn-color-row").addEventListener("click", async () => {
+        if (isUser) return;
         const selectedRows = table.getSelectedRows();
         if (selectedRows.length === 0) return Swal.fire('Chú ý', 'Chọn các dòng (ô vuông đầu dòng) để tô màu.', 'warning');
 
@@ -991,10 +996,12 @@ async function init() {
 
     // Import Logic
     document.getElementById("btn-import-trigger").addEventListener("click", () => {
+        if (isUser) return;
         document.getElementById("file-import-csv").click();
     });
 
     document.getElementById("file-import-csv").addEventListener("change", async (e) => {
+        if (isUser) return;
         const file = e.target.files[0];
         if (!file) return;
 
@@ -1038,6 +1045,7 @@ async function init() {
 
     // Delete Rows
     document.getElementById("btn-delete-rows").addEventListener("click", async () => {
+        if (isUser) return;
         const selectedRows = table.getSelectedRows();
         if (selectedRows.length === 0) return Swal.fire('Chú ý', 'Chọn ít nhất 1 dòng', 'warning');
 
