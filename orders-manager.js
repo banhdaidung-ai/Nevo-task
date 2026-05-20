@@ -1224,7 +1224,7 @@ window.renderDashboardTable = function() {
     const total = allOrders.length;
     const completed = allOrders.filter(o => o.status === 'Hoàn thành').length;
     const cancelled = allOrders.filter(o => o.status === 'Hủy').length;
-    const pending = total - completed - canceled;
+    const pending = total - completed - cancelled;
     
     // Update Stats UI
     if (document.getElementById('dash-total-orders')) document.getElementById('dash-total-orders').textContent = total.toLocaleString();
