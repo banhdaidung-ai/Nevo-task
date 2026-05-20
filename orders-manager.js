@@ -913,15 +913,15 @@ window.renderOrdersTable = function() {
     
     // Update KPI badges
     if (activeTab === 'tab-my') {
-        if (document.getElementById('kpi-total')) document.getElementById('kpi-total').textContent = myTotal;
-        if (document.getElementById('kpi-waiting')) document.getElementById('kpi-waiting').textContent = myWaiting;
-        if (document.getElementById('kpi-processing')) document.getElementById('kpi-processing').textContent = myProcessing;
-        if (document.getElementById('kpi-done')) document.getElementById('kpi-done').textContent = myDone;
+        if (document.getElementById('statTotal')) document.getElementById('statTotal').textContent = myTotal;
+        if (document.getElementById('statPending')) document.getElementById('statPending').textContent = myWaiting;
+        if (document.getElementById('statProcessing')) document.getElementById('statProcessing').textContent = myProcessing;
+        if (document.getElementById('statCompleted')) document.getElementById('statCompleted').textContent = myDone;
     } else {
-        if (document.getElementById('kpi-total')) document.getElementById('kpi-total').textContent = totalAll;
-        if (document.getElementById('kpi-waiting')) document.getElementById('kpi-waiting').textContent = waiting;
-        if (document.getElementById('kpi-processing')) document.getElementById('kpi-processing').textContent = processing;
-        if (document.getElementById('kpi-done')) document.getElementById('kpi-done').textContent = done;
+        if (document.getElementById('statTotal')) document.getElementById('statTotal').textContent = totalAll;
+        if (document.getElementById('statPending')) document.getElementById('statPending').textContent = waiting;
+        if (document.getElementById('statProcessing')) document.getElementById('statProcessing').textContent = processing;
+        if (document.getElementById('statCompleted')) document.getElementById('statCompleted').textContent = done;
     }
 
     // Filter
