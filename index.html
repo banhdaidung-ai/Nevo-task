@@ -3596,10 +3596,6 @@
             });
         }
         scheduleBody.innerHTML = scheduleHtml;
-        } catch (e) {
-            console.error("Error in renderWeeklySchedule:", e);
-            alert("Lỗi khi vẽ lịch: " + e.message + "\\n" + e.stack);
-        }
     };
 
     window.renderMonthlyCalendar = function() {
@@ -3874,7 +3870,6 @@
     };
 
     window.renderReports = function() {
-        try {
         if (!window.allOrdersData) return;
 
         // 1. Top Metrics Calculation
