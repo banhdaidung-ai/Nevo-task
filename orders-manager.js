@@ -800,6 +800,7 @@ function safeAttr(str) {
 function safeEncodeForAttr(str) {
     return encodeURIComponent(str || '').replace(/'/g, '%27');
 }
+window.safeEncodeForAttr = safeEncodeForAttr;
 
 function formatDateDisplay(dateStr) {
     if (!dateStr) return '-';

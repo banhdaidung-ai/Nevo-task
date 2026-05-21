@@ -3580,7 +3580,7 @@
                         tasksHtml += `
                             <div class="mb-3 p-3 rounded-2xl border-l-4 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer group/task ${cardClass}" 
                                  onclick="window.jumpToOrder('${o.id}')"
-                                 onmouseenter="window.showPremiumTooltip(event, '${safeEncodeForAttr(o.title || '-')}', '${safeEncodeForAttr(o.content || o.title || '-')}')"
+                                 onmouseenter="window.showPremiumTooltip(event, '${window.safeEncodeForAttr(o.title || '-')}', '${window.safeEncodeForAttr(o.content || o.title || '-')}')"
                                  onmouseleave="window.hidePremiumTooltip()">
                                 <div class="flex justify-between items-start mb-1.5">
                                     <p class="text-[9px] font-black uppercase tracking-wider ${subTextClass}">#${o.code}</p>
@@ -3647,7 +3647,7 @@
                 tasksHtml += `
                     <div class="mb-1 px-1.5 py-0.5 rounded bg-slate-50 border-l-2 border-${badgeColor.replace('bg-','')} flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 transition-all" 
                          onclick="window.jumpToOrder('${o.id}')"
-                         onmouseenter="window.showPremiumTooltip(event, '${safeEncodeForAttr(o.code + ': ' + o.title)}', '${safeEncodeForAttr(o.content || o.title || '-')}')"
+                         onmouseenter="window.showPremiumTooltip(event, '${window.safeEncodeForAttr(o.code + ': ' + o.title)}', '${window.safeEncodeForAttr(o.content || o.title || '-')}')"
                          onmouseleave="window.hidePremiumTooltip()">
                         <span class="w-1 h-1 rounded-full ${badgeColor} shrink-0"></span>
                         <span class="text-[9px] font-bold text-slate-600 truncate">${o.code || '...'}</span>
