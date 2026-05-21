@@ -2960,7 +2960,7 @@
             const endDate = new Date(now); endDate.setHours(endH, endM, 0, 0);
             if (now < startDate || now > endDate) return;
 
-            const todayStr = now.toISOString().slice(0, 10);
+            const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
             const q = window.fs.query(
                 window.fs.collection(window.db, OW_SESSIONS_COLLECTION),
                 window.fs.where('type', '==', 'scheduled'),

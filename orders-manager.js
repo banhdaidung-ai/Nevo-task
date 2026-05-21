@@ -453,8 +453,6 @@ window.updateIndexOwBanner = async function() {
 // Auto-check & create scheduled session from index page
 window.indexAutoSchedulerCheck = async function() {
     if (!db) return;
-    const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
-    if (role !== 'admin') return;
     try {
         const configSnap = await getDoc(doc(db, 'order_window_config', 'settings'));
         if (!configSnap.exists()) return;
@@ -467,7 +465,7 @@ window.indexAutoSchedulerCheck = async function() {
         const startD = new Date(now); startD.setHours(sH,sM,0,0);
         const endD = new Date(now); endD.setHours(eH,eM,0,0);
         if (now < startD || now > endD) return;
-        const todayStr = now.toISOString().slice(0,10);
+        const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
         const q = query(
             collection(db, 'order_window_sessions'),
             where('type','==','scheduled'),
