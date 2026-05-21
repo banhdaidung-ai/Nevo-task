@@ -1052,8 +1052,43 @@ window.renderOrdersTable = function() {
         return;
     }
 
+    // --- GROUPING LOGIC ---
+    let currentGroupValue = null;
+    const isGroupingActive = typeof isManualSortActive !== 'undefined' ? (isManualSortActive && !!sortConfig.key) : false; 
+    
     let fullHtml = '';
+    
+    // Pre-calculate group counts for filtered set
+    const groupCounts = {};
+    if (isGroupingActive) {
+        filtered.forEach(item => {
+            const gv = getNormalizedGroupValue(item, sortConfig.key);
+            groupCounts[gv] = (groupCounts[gv] || 0) + 1;
+        });
+    }
+
     pagedData.forEach((data) => {
+        // Check for group header
+        if (isGroupingActive) {
+            const groupValue = getNormalizedGroupValue(data, sortConfig.key);
+            if (groupValue !== currentGroupValue) {
+                currentGroupValue = groupValue;
+                const headerText = formatGroupValue(data[sortConfig.key], sortConfig.key);
+                const count = groupCounts[groupValue];
+                const icon = getGroupIcon(sortConfig.key);
+                fullHtml += `
+                    <tr class="group-header-row">
+                        <td colspan="16">
+                            <div class="group-header-content">
+                                <span class="material-symbols-outlined text-[16px] text-slate-400">${icon}</span>
+                                <span>${headerText}</span>
+                                <span class="group-badge">${count} đơn</span>
+                            </div>
+                        </td>
+                    </tr>`;
+            }
+        }
+
         const initials = (data.requester || 'NV').split(' ').map(x => x[0]).join('').toUpperCase().substring(0, 2);
         
         // Custom dates rendering
