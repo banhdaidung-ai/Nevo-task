@@ -3481,7 +3481,7 @@
         const weekDatesStr = weekDates.map(d => toLocalDateStr(d));
         const assignedStaffNames = new Set();
         (window.allOrdersData || []).forEach(o => {
-            const dateStr = o.deployDate || o.deadline;
+            const dateStr = window._normalizeDateToYMD(o.deployDate) || window._normalizeDateToYMD(o.deadline) || '';
             if (weekDatesStr.includes(dateStr)) {
                 if (o.assignedVideo && o.assignedVideo !== '-') assignedStaffNames.add(o.assignedVideo);
                 if (o.assignedPhoto && o.assignedPhoto !== '-') assignedStaffNames.add(o.assignedPhoto);
@@ -3542,10 +3542,13 @@
                     const cellBgClass = isToday ? 'bg-rose-50/20' : '';
                     const dateStr = toLocalDateStr(date);
                     
-                    const tasks = (window.allOrdersData || []).filter(o => 
-                        (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.assignedDesign === staff.name || o.stylist === staff.name) &&
-                        (o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr))
-                    );
+                    const tasks = (window.allOrdersData || []).filter(o => {
+                        const isAssigned = (o.assignedVideo === staff.name || o.assignedPhoto === staff.name || o.assignedDesign === staff.name || o.stylist === staff.name);
+                        const normDeploy = window._normalizeDateToYMD(o.deployDate);
+                        const normDeadline = window._normalizeDateToYMD(o.deadline);
+                        const isDateMatch = normDeploy === dateStr || (!normDeploy && normDeadline === dateStr);
+                        return isAssigned && isDateMatch;
+                    });
 
                     let tasksHtml = '';
                     tasks.forEach(o => {
@@ -3622,7 +3625,11 @@
             const scheduleUserFilterEl = document.getElementById('scheduleUserFilter');
             const selectedUser = scheduleUserFilterEl ? scheduleUserFilterEl.value : 'all';
 
-            let tasks = (window.allOrdersData || []).filter(o => o.deployDate === dateStr || (!o.deployDate && o.deadline === dateStr));
+            let tasks = (window.allOrdersData || []).filter(o => {
+                const normDeploy = window._normalizeDateToYMD(o.deployDate);
+                const normDeadline = window._normalizeDateToYMD(o.deadline);
+                return normDeploy === dateStr || (!normDeploy && normDeadline === dateStr);
+            });
             
             if (selectedUser !== 'all') {
                 tasks = tasks.filter(o => 
