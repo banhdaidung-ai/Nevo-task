@@ -888,29 +888,31 @@ window.renderOrdersTable = function() {
     if (!tbodyFull) return;
 
     // Update Stats based on allOrdersData (Global Totals)
+    // "Đang xử lý" = tất cả trạng thái KHÔNG PHẢI "Chờ duyệt", "Hoàn thành", "Hủy"
     let totalAll = 0, waiting = 0, processing = 0, done = 0, canceled = 0;
     let myTotal = 0, myWaiting = 0, myProcessing = 0, myDone = 0;
     const currentUserName = localStorage.getItem('nevo_user') || '';
+    const terminalStatuses = ['Chờ duyệt', 'Hoàn thành', 'Hủy'];
 
     (window.allOrdersData || []).forEach(o => {
         const isMyOrder = o.requester === currentUserName || o.stylist === currentUserName || o.assignedVideo === currentUserName || o.assignedPhoto === currentUserName || o.assignedDesign === currentUserName;
         totalAll++;
         if (o.status === 'Chờ duyệt') waiting++;
-        else if (o.status === 'Đang xử lý' || o.status === 'Triển khai') processing++;
         else if (o.status === 'Hoàn thành') done++;
         else if (o.status === 'Hủy') canceled++;
+        else processing++; // Tất cả trạng thái còn lại = Đang xử lý (Đang xử lý, Triển khai, Đang sản xuất, Đang hậu kỳ, v.v.)
 
         if (isMyOrder) {
             myTotal++;
             if (o.status === 'Chờ duyệt') myWaiting++;
-            else if (o.status === 'Đang xử lý' || o.status === 'Triển khai') myProcessing++;
             else if (o.status === 'Hoàn thành') myDone++;
+            else if (o.status !== 'Hủy') myProcessing++; // Tương tự cho "Đơn của tôi"
         }
     });
 
     const activeTab = document.querySelector('.quick-filter-tabs button.active')?.id || 'tab-all';
     
-    // Update KPI badges
+    // Update KPI badges (Thống kê tổng)
     if (activeTab === 'tab-my') {
         if (document.getElementById('statTotal')) document.getElementById('statTotal').textContent = myTotal;
         if (document.getElementById('statPending')) document.getElementById('statPending').textContent = myWaiting;
@@ -999,6 +1001,66 @@ window.renderOrdersTable = function() {
 
     // Save filtered results for Excel Export
     window.currentFilteredOrders = filtered;
+
+    // === THỐNG KÊ KẾT QUẢ LỌC ===
+    const isFilterActive = filtered.length !== (activeTab === 'tab-my' ? (window.allOrdersData || []).filter(o => {
+        return o.requester === currentUserName || o.stylist === currentUserName || o.assignedVideo === currentUserName || o.assignedPhoto === currentUserName || o.assignedDesign === currentUserName;
+    }).length : (window.allOrdersData || []).length);
+    
+    const filteredStatsBar = document.getElementById('filteredStatsBar');
+    if (filteredStatsBar) {
+        if (isFilterActive) {
+            // Đếm thống kê trên tập filtered
+            let fTotal = filtered.length;
+            let fWaiting = 0, fProcessing = 0, fDone = 0, fCanceled = 0;
+            const fStatusCounts = {}; // Đếm chi tiết theo từng trạng thái
+            filtered.forEach(o => {
+                const st = o.status || 'Không xác định';
+                fStatusCounts[st] = (fStatusCounts[st] || 0) + 1;
+                if (st === 'Chờ duyệt') fWaiting++;
+                else if (st === 'Hoàn thành') fDone++;
+                else if (st === 'Hủy') fCanceled++;
+                else fProcessing++;
+            });
+
+            // Build chi tiết từng trạng thái
+            let statusDetailsHtml = '';
+            const statusOrder = window.orderStatusesData || [];
+            if (statusOrder.length > 0) {
+                statusOrder.forEach(s => {
+                    const count = fStatusCounts[s.name] || 0;
+                    if (count > 0) {
+                        const badgeColor = s.color || 'bg-slate-100 text-slate-600 border-slate-200';
+                        statusDetailsHtml += `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${badgeColor} shadow-sm">${s.name} <span class="bg-white/80 text-slate-700 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold">${count}</span></span>`;
+                    }
+                });
+            } else {
+                // Fallback nếu chưa load orderStatusesData
+                Object.entries(fStatusCounts).forEach(([name, count]) => {
+                    statusDetailsHtml += `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-slate-100 text-slate-600 border-slate-200 shadow-sm">${name} <span class="bg-white/80 text-slate-700 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold">${count}</span></span>`;
+                });
+            }
+
+            filteredStatsBar.innerHTML = `
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-primary">filter_list</span>
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Kết quả lọc:</span>
+                        <span class="text-lg font-extrabold text-primary font-headline">${fTotal}</span>
+                        <span class="text-[11px] font-bold text-slate-400">/ ${activeTab === 'tab-my' ? myTotal : totalAll} đơn</span>
+                    </div>
+                    <div class="h-5 w-px bg-slate-200 mx-1"></div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        ${statusDetailsHtml}
+                    </div>
+                </div>
+            `;
+            filteredStatsBar.classList.remove('hidden');
+        } else {
+            filteredStatsBar.classList.add('hidden');
+            filteredStatsBar.innerHTML = '';
+        }
+    }
 
     // Sorting
     if (sortConfig.key) {
