@@ -969,10 +969,22 @@ window.renderOrdersTable = function() {
                 const startVal = columnFilters[baseKey + '_start'];
                 const endVal = columnFilters[baseKey + '_end'];
                 
-                const itemDateStr = data[baseKey];
+                // Lấy giá trị ngày từ data, fallback orderDate → createdAt
+                let itemDateStr = data[baseKey];
+                if (!itemDateStr && baseKey === 'orderDate') {
+                    itemDateStr = data['createdAt'];
+                }
                 if (!itemDateStr) return false;
                 
-                const dDate = new Date(itemDateStr);
+                // Parse ngày: xử lý Firestore Timestamp, seconds, hoặc string
+                let dDate;
+                if (itemDateStr.toDate) {
+                    dDate = itemDateStr.toDate(); // Firestore Timestamp
+                } else if (itemDateStr.seconds) {
+                    dDate = new Date(itemDateStr.seconds * 1000); // Serialized Timestamp
+                } else {
+                    dDate = new Date(itemDateStr); // String date
+                }
                 if (isNaN(dDate.getTime())) return false;
                 
                 if (startVal) {
