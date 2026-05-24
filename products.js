@@ -1076,19 +1076,97 @@ async function init() {
         });
     });
 
-    // Global Search Logic
-    document.getElementById("global-search").addEventListener("keyup", function(e) {
-        const value = e.target.value.toLowerCase();
-        if (!value) {
-            table.clearFilter();
-            return;
+    // Global Search & Quick Filters Logic
+    window.applyAllFilters = function() {
+        if (!table) return;
+        const searchVal = document.getElementById("global-search")?.value.toLowerCase().trim() || "";
+        const qStatus = document.getElementById("filterStatus")?.value || "";
+
+        // Collect current header filters
+        const headerFilters = table.getHeaderFilters();
+
+        // Clear programmatic filters
+        table.clearFilter();
+
+        // Apply custom combo filter
+        if (searchVal || qStatus) {
+            table.addFilter(function(data) {
+                let matchSearch = true;
+                if (searchVal) {
+                    const fields = ['ma10', 'ma16', 'phanLoai', 'ghiChu', 'linkAnh', 'linkAnhModel', 'linkVideo'];
+                    matchSearch = fields.some(f => data[f] && data[f].toString().toLowerCase().includes(searchVal));
+                }
+                if (!matchSearch) return false;
+
+                if (qStatus) {
+                    let statuses = [data.anhTraiSanTrangThai, data.anhModelTrangThai, data.videoModelTrangThai];
+                    if (qStatus === "Đang xử lý") {
+                        if (!statuses.includes("Đang xử lý")) return false;
+                    } else if (qStatus === "Hoàn tất") {
+                        if (!statuses.every(s => s === "Hoàn tất")) return false;
+                    } else if (qStatus === "Chưa có") {
+                        if (!statuses.includes("Chưa có")) return false;
+                    }
+                }
+                return true;
+            });
         }
 
-        table.setFilter(function(data) {
-            const fields = ['ma10', 'ma16', 'phanLoai', 'ghiChu', 'linkAnh', 'linkAnhModel', 'linkVideo'];
-            return fields.some(f => data[f] && data[f].toString().toLowerCase().includes(value));
+        // Re-apply header filters to the programmatic stack
+        headerFilters.forEach(f => table.addFilter(f.field, f.type, f.value));
+    };
+
+    document.getElementById("global-search").addEventListener("keyup", window.applyAllFilters);
+
+    window.setQuickFilter = function(status) {
+        document.getElementById("filterStatus").value = status;
+        document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-white', 'text-slate-600');
         });
-    });
+        
+        let activeId = 'qf-all';
+        if(status === 'Đang xử lý') activeId = 'qf-processing';
+        if(status === 'Hoàn tất') activeId = 'qf-completed';
+        if(status === 'Chưa có') activeId = 'qf-none';
+        
+        const activeBtn = document.getElementById(activeId);
+        if (activeBtn) {
+            activeBtn.classList.add('bg-primary', 'text-white');
+            activeBtn.classList.remove('bg-white', 'text-slate-600');
+        }
+
+        window.applyAllFilters();
+    };
+
+    window.clearAllFilters = function() {
+        document.getElementById("global-search").value = "";
+        document.getElementById("filterStatus").value = "";
+        
+        document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-white', 'text-slate-600');
+        });
+        const activeBtn = document.getElementById('qf-all');
+        if (activeBtn) {
+            activeBtn.classList.add('bg-primary', 'text-white');
+            activeBtn.classList.remove('bg-white', 'text-slate-600');
+        }
+
+        table.clearHeaderFilter();
+        table.clearFilter();
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'bottom-end',
+                showConfirmButton: false,
+                timer: 3000,
+                icon: 'success',
+                title: 'Đã xóa bộ lọc'
+            });
+        }
+    };
 
     updateDriveButton();
 
