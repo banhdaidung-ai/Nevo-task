@@ -119,9 +119,12 @@ const rowColorFormatter = function(row) {
     
     // Auto status color
     let statuses = [data.anhTraiSanTrangThai, data.anhModelTrangThai, data.videoModelTrangThai];
+    const processingStatuses = ["Đang xử lý", "Đang hậu kỳ", "Đang triển khai"];
     
-    if (statuses.includes("Đang xử lý")) {
-        row.getElement().style.backgroundColor = statusColors["Đang xử lý"];
+    if (statuses.some(s => processingStatuses.includes(s))) {
+        // Use color of first matched processing status, or fallback to yellow
+        let matchedStatus = statuses.find(s => processingStatuses.includes(s));
+        row.getElement().style.backgroundColor = statusColors[matchedStatus] || statusColors["Đang xử lý"] || "#fef08a";
     } else if (statuses.every(s => s === "Hoàn tất")) {
         row.getElement().style.backgroundColor = statusColors["Hoàn tất"];
     } else {
@@ -1101,7 +1104,8 @@ async function init() {
                 if (qStatus) {
                     let statuses = [data.anhTraiSanTrangThai, data.anhModelTrangThai, data.videoModelTrangThai];
                     if (qStatus === "Đang xử lý") {
-                        if (!statuses.includes("Đang xử lý")) return false;
+                        const processingStatuses = ["Đang xử lý", "Đang hậu kỳ", "Đang triển khai"];
+                        if (!statuses.some(s => processingStatuses.includes(s))) return false;
                     } else if (qStatus === "Hoàn tất") {
                         if (!statuses.every(s => s === "Hoàn tất")) return false;
                     } else if (qStatus === "Chưa có") {
