@@ -18,11 +18,11 @@ const SETTINGS_DOC = "products_table_config";
 
 let table;
 let isSyncing = false;
-let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa có"];
+let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa thực hiện"];
 let statusColors = {
     "Hoàn tất": "#dcfce7",
     "Đang xử lý": "#fef08a",
-    "Chưa có": "#ffffff"
+    "Chưa thực hiện": "#ffffff"
 };
 
 // Image Cache for Drive API optimization
@@ -42,13 +42,14 @@ const linkFormatter = function(cell) {
 
 // Custom Formatter for Status
 const statusFormatter = function(cell, formatterParams) {
-    let val = cell.getValue() || "Chưa có";
+    let val = cell.getValue() || "Chưa thực hiện";
+    if (val === "Chưa có") val = "Chưa thực hiện";
     let color = statusColors[val] || "#e2e8f0";
     
     // Use predefined classes for legacy statuses if they match, otherwise use inline styles
     if (val === "Hoàn tất") return `<span class="status-badge status-hoan-tat">${val}</span>`;
     if (val === "Đang xử lý") return `<span class="status-badge status-dang-xu-ly">${val}</span>`;
-    if (val === "Chưa có") return `<span class="status-badge status-chua-co">${val}</span>`;
+    if (val === "Chưa thực hiện") return `<span class="status-badge status-chua-co">${val}</span>`;
     
     return `<span class="status-badge" style="background-color: ${color}; color: #475569; border: 1px solid rgba(0,0,0,0.05)">${val}</span>`;
 };
@@ -149,6 +150,10 @@ function setSyncing(status) {
 
 // Update Stats
 function updateStats(data) {
+    if (table && typeof table.getData === 'function') {
+        data = table.getData("active"); // Only use currently filtered/active rows
+    }
+    
     // 0. Tổng số dòng (Rows count)
     document.getElementById('stat-rows').innerText = data.length;
 
@@ -674,6 +679,9 @@ async function init() {
     table.on("cellEditing", function(cell) { cell.getRow().deselect(); });
     table.on("dataLoaded", updateStats);
     table.on("dataChanged", updateStats);
+    table.on("dataFiltered", function(filters, rows) {
+        if (typeof updateStats === 'function') updateStats(rows.map(r => r.getData()));
+    });
 
     // --- FILL DOWN (Alt/Option + Drag) ---
     let fillSource = null;
@@ -756,9 +764,10 @@ async function init() {
             const newDoc = {
                 ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
                 ngayVeKho: "", linkAnh: "", linkAnhModel: "", linkVideo: "",
-                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa có",
-                anhModelNgay: "", anhModelTrangThai: "Chưa có",
-                videoModelNgay: "", videoModelTrangThai: "Chưa có",
+                ghiChu: "",
+                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa thực hiện",
+                anhModelNgay: "", anhModelTrangThai: "Chưa thực hiện",
+                videoModelNgay: "", videoModelTrangThai: "Chưa thực hiện",
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
@@ -1108,8 +1117,8 @@ async function init() {
                         if (!statuses.some(s => processingStatuses.includes(s))) return false;
                     } else if (qStatus === "Hoàn tất") {
                         if (!statuses.every(s => s === "Hoàn tất")) return false;
-                    } else if (qStatus === "Chưa có") {
-                        if (!statuses.includes("Chưa có")) return false;
+                    } else if (qStatus === "Chưa thực hiện") {
+                        if (!statuses.includes("Chưa thực hiện") && !statuses.includes("Chưa có")) return false;
                     }
                 }
                 return true;
@@ -1132,7 +1141,7 @@ async function init() {
         let activeId = 'qf-all';
         if(status === 'Đang xử lý') activeId = 'qf-processing';
         if(status === 'Hoàn tất') activeId = 'qf-completed';
-        if(status === 'Chưa có') activeId = 'qf-none';
+        if(status === 'Chưa thực hiện') activeId = 'qf-none';
         
         const activeBtn = document.getElementById(activeId);
         if (activeBtn) {
