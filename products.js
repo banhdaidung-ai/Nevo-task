@@ -18,11 +18,11 @@ const SETTINGS_DOC = "products_table_config";
 
 let table;
 let isSyncing = false;
-let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa thực hiện"];
+let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa có"];
 let statusColors = {
     "Hoàn tất": "#dcfce7",
     "Đang xử lý": "#fef08a",
-    "Chưa thực hiện": "#ffffff"
+    "Chưa có": "#ffffff"
 };
 
 // Image Cache for Drive API optimization
@@ -42,14 +42,13 @@ const linkFormatter = function(cell) {
 
 // Custom Formatter for Status
 const statusFormatter = function(cell, formatterParams) {
-    let val = cell.getValue() || "Chưa thực hiện";
-    if (val === "Chưa có") val = "Chưa thực hiện";
+    let val = cell.getValue() || "Chưa có";
     let color = statusColors[val] || "#e2e8f0";
     
     // Use predefined classes for legacy statuses if they match, otherwise use inline styles
     if (val === "Hoàn tất") return `<span class="status-badge status-hoan-tat">${val}</span>`;
     if (val === "Đang xử lý") return `<span class="status-badge status-dang-xu-ly">${val}</span>`;
-    if (val === "Chưa thực hiện") return `<span class="status-badge status-chua-co">${val}</span>`;
+    if (val === "Chưa có") return `<span class="status-badge status-chua-co">${val}</span>`;
     
     return `<span class="status-badge" style="background-color: ${color}; color: #475569; border: 1px solid rgba(0,0,0,0.05)">${val}</span>`;
 };
@@ -150,10 +149,6 @@ function setSyncing(status) {
 
 // Update Stats
 function updateStats(data) {
-    if (table && typeof table.getData === 'function') {
-        data = table.getData("active"); // Only use currently filtered/active rows
-    }
-    
     // 0. Tổng số dòng (Rows count)
     document.getElementById('stat-rows').innerText = data.length;
 
@@ -560,7 +555,24 @@ async function init() {
     let columns = [
         { rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30 },
         { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
-        { title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false },
+        { 
+            title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false,
+            headerFilter: function(cell, onRendered, success, cancel, filterParams) {
+                const container = document.createElement("div");
+                container.className = "flex justify-center items-center h-full w-full px-1";
+                const btn = document.createElement("button");
+                btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">filter_alt_off</span>`;
+                btn.className = "w-6 h-6 rounded bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm";
+                btn.title = "Xóa tất cả bộ lọc";
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    table.clearHeaderFilter();
+                    table.clearFilter();
+                };
+                container.appendChild(btn);
+                return container;
+            }
+        },
         { title: "Mã 10", field: "ma10", editor: "input", width: 120, headerFilter: "input" },
         { 
             title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, headerFilter: "input",
@@ -680,7 +692,8 @@ async function init() {
     table.on("dataLoaded", updateStats);
     table.on("dataChanged", updateStats);
     table.on("dataFiltered", function(filters, rows) {
-        if (typeof updateStats === 'function') updateStats(rows.map(r => r.getData()));
+        const data = rows.map(r => r.getData());
+        updateStats(data);
     });
 
     // --- FILL DOWN (Alt/Option + Drag) ---
@@ -764,10 +777,9 @@ async function init() {
             const newDoc = {
                 ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
                 ngayVeKho: "", linkAnh: "", linkAnhModel: "", linkVideo: "",
-                ghiChu: "",
-                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa thực hiện",
-                anhModelNgay: "", anhModelTrangThai: "Chưa thực hiện",
-                videoModelNgay: "", videoModelTrangThai: "Chưa thực hiện",
+                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa có",
+                anhModelNgay: "", anhModelTrangThai: "Chưa có",
+                videoModelNgay: "", videoModelTrangThai: "Chưa có",
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
@@ -1088,99 +1100,7 @@ async function init() {
         });
     });
 
-    // Global Search & Quick Filters Logic
-    window.applyAllFilters = function() {
-        if (!table) return;
-        const searchVal = document.getElementById("global-search")?.value.toLowerCase().trim() || "";
-        const qStatus = document.getElementById("filterStatus")?.value || "";
-
-        // Collect current header filters
-        const headerFilters = table.getHeaderFilters();
-
-        // Clear programmatic filters
-        table.clearFilter();
-
-        // Apply custom combo filter
-        if (searchVal || qStatus) {
-            table.addFilter(function(data) {
-                let matchSearch = true;
-                if (searchVal) {
-                    const fields = ['ma10', 'ma16', 'phanLoai', 'ghiChu', 'linkAnh', 'linkAnhModel', 'linkVideo'];
-                    matchSearch = fields.some(f => data[f] && data[f].toString().toLowerCase().includes(searchVal));
-                }
-                if (!matchSearch) return false;
-
-                if (qStatus) {
-                    let statuses = [data.anhTraiSanTrangThai, data.anhModelTrangThai, data.videoModelTrangThai];
-                    if (qStatus === "Đang xử lý") {
-                        const processingStatuses = ["Đang xử lý", "Đang hậu kỳ", "Đang triển khai"];
-                        if (!statuses.some(s => processingStatuses.includes(s))) return false;
-                    } else if (qStatus === "Hoàn tất") {
-                        if (!statuses.every(s => s === "Hoàn tất")) return false;
-                    } else if (qStatus === "Chưa thực hiện") {
-                        if (!statuses.includes("Chưa thực hiện") && !statuses.includes("Chưa có")) return false;
-                    }
-                }
-                return true;
-            });
-        }
-
-        // Re-apply header filters to the programmatic stack
-        headerFilters.forEach(f => table.addFilter(f.field, f.type, f.value));
-    };
-
-    document.getElementById("global-search").addEventListener("keyup", window.applyAllFilters);
-
-    window.setQuickFilter = function(status) {
-        document.getElementById("filterStatus").value = status;
-        document.querySelectorAll('.quick-filter-btn').forEach(btn => {
-            btn.classList.remove('bg-primary', 'text-white');
-            btn.classList.add('bg-white', 'text-slate-600');
-        });
-        
-        let activeId = 'qf-all';
-        if(status === 'Đang xử lý') activeId = 'qf-processing';
-        if(status === 'Hoàn tất') activeId = 'qf-completed';
-        if(status === 'Chưa thực hiện') activeId = 'qf-none';
-        
-        const activeBtn = document.getElementById(activeId);
-        if (activeBtn) {
-            activeBtn.classList.add('bg-primary', 'text-white');
-            activeBtn.classList.remove('bg-white', 'text-slate-600');
-        }
-
-        window.applyAllFilters();
-    };
-
-    window.clearAllFilters = function() {
-        document.getElementById("global-search").value = "";
-        document.getElementById("filterStatus").value = "";
-        
-        document.querySelectorAll('.quick-filter-btn').forEach(btn => {
-            btn.classList.remove('bg-primary', 'text-white');
-            btn.classList.add('bg-white', 'text-slate-600');
-        });
-        const activeBtn = document.getElementById('qf-all');
-        if (activeBtn) {
-            activeBtn.classList.add('bg-primary', 'text-white');
-            activeBtn.classList.remove('bg-white', 'text-slate-600');
-        }
-
-        table.clearHeaderFilter();
-        table.clearFilter();
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                toast: true,
-                position: 'bottom-end',
-                showConfirmButton: false,
-                timer: 3000,
-                icon: 'success',
-                title: 'Đã xóa bộ lọc'
-            });
-        }
-    };
-
+    // Removed legacy global search & quick filters logic as per request
     updateDriveButton();
 
     // RBAC: Hide editing UI for User role

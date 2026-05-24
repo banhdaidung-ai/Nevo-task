@@ -172,12 +172,7 @@
             </div>
         </div>
 
-        <!-- Global Search Bar -->
-        <div class="relative w-full md:w-auto flex-grow max-w-lg order-3 md:order-2">
-            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors text-[18px]">search</span>
-            <input type="text" id="global-search" placeholder="Tìm nhanh: Mã SP, Màu, Phân loại..." 
-                   class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-xs font-medium">
-        </div>
+        <!-- Global Search Bar (Removed as per request) -->
 
         <div class="flex items-center gap-2 shrink-0 order-2 md:order-3">
             <select id="month-selector" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer">
@@ -196,22 +191,7 @@
 
 <!-- Main -->
 <main class="flex-grow flex flex-col p-2 min-h-0 bg-slate-50/50">
-    <!-- Search & Quick Filters Row -->
-    <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center mb-2 px-1">
-        <div class="flex flex-wrap items-center gap-2 quick-filter-tabs">
-            <button id="qf-all" class="quick-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-primary text-white" onclick="setQuickFilter('')">Tất cả</button>
-            <button id="qf-processing" class="quick-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang xử lý')">Đang xử lý</button>
-            <button id="qf-completed" class="quick-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Hoàn tất')">Hoàn tất</button>
-            <button id="qf-none" class="quick-filter-btn px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Chưa có')">Chưa có</button>
-            <input type="hidden" id="filterStatus" value="">
-        </div>
-        <div class="flex items-center gap-2 ml-auto">
-            <button class="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm" onclick="clearAllFilters()">
-                <span class="material-symbols-outlined text-[16px]">filter_alt_off</span>
-                Xóa bộ lọc
-            </button>
-        </div>
-    </div>
+
 
     <!-- Compact Toolbar & Stats -->
     <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-2 mb-2 bg-white p-2 rounded-xl border border-slate-200 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
