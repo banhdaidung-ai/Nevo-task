@@ -172,7 +172,14 @@
             </div>
         </div>
 
-        <!-- Global Search Bar (Removed as per request) -->
+        <!-- Global Search Bar -->
+        <div class="flex-grow max-w-md hidden md:block">
+            <div class="relative group">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors text-[18px]">search</span>
+                <input type="text" id="global-search" placeholder="Tìm kiếm sản phẩm, mã, tag..." 
+                       class="w-full bg-slate-100 hover:bg-slate-200/80 focus:bg-white border-transparent focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 text-sm rounded-xl pl-9 pr-4 py-1.5 transition-all outline-none text-slate-700 placeholder-slate-400 font-medium">
+            </div>
+        </div>
 
         <div class="flex items-center gap-2 shrink-0 order-2 md:order-3">
             <select id="month-selector" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer">

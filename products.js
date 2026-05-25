@@ -1100,7 +1100,19 @@ async function init() {
         });
     });
 
-    // Removed legacy global search & quick filters logic as per request
+    // Global search
+    document.getElementById("global-search").addEventListener("input", function(e){
+        table.setFilter(customFilter, e.target.value);
+    });
+
+    function customFilter(data, filterParams) {
+        if (!filterParams) return true;
+        const term = filterParams.toLowerCase();
+        for (const key in data) {
+            if (data[key] && String(data[key]).toLowerCase().includes(term)) return true;
+        }
+        return false;
+    }
     updateDriveButton();
 
     // RBAC: Hide editing UI for User role
