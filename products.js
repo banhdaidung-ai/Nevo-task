@@ -18,11 +18,11 @@ const SETTINGS_DOC = "products_table_config";
 
 let table;
 let isSyncing = false;
-let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa có"];
+let statusOptions = ["Hoàn tất", "Đang xử lý", "Chưa thực hiện"];
 let statusColors = {
     "Hoàn tất": "#dcfce7",
     "Đang xử lý": "#fef08a",
-    "Chưa có": "#ffffff"
+    "Chưa thực hiện": "#ffffff"
 };
 
 // Image Cache for Drive API optimization
@@ -42,13 +42,15 @@ const linkFormatter = function(cell) {
 
 // Custom Formatter for Status
 const statusFormatter = function(cell, formatterParams) {
-    let val = cell.getValue() || "Chưa có";
+    let val = cell.getValue() || "Chưa thực hiện";
+    // Normalize legacy values
+    if (val === "Chưa có" || val === "Chưa chụp") val = "Chưa thực hiện";
     let color = statusColors[val] || "#e2e8f0";
     
     // Use predefined classes for legacy statuses if they match, otherwise use inline styles
     if (val === "Hoàn tất") return `<span class="status-badge status-hoan-tat">${val}</span>`;
     if (val === "Đang xử lý") return `<span class="status-badge status-dang-xu-ly">${val}</span>`;
-    if (val === "Chưa có") return `<span class="status-badge status-chua-co">${val}</span>`;
+    if (val === "Chưa thực hiện") return `<span class="status-badge status-chua-co">${val}</span>`;
     
     return `<span class="status-badge" style="background-color: ${color}; color: #475569; border: 1px solid rgba(0,0,0,0.05)">${val}</span>`;
 };
@@ -192,7 +194,7 @@ function setupMonths() {
     sel.addEventListener('change', (e) => {
         currentMonth = e.target.value;
         COLLECTION_NAME = "new_products_" + currentMonth;
-        loadTableData();
+        loadTableData().then(() => migrateOldStatuses());
     });
 }
 
@@ -225,6 +227,54 @@ async function loadTableData() {
         }
         setSyncing(false);
         return tableData;
+    }
+}
+
+// Migration: Update old status values in Firestore
+async function migrateOldStatuses() {
+    const migrationKey = `status_migrated_${COLLECTION_NAME}`;
+    if (localStorage.getItem(migrationKey)) return; // Already migrated this collection
+
+    console.log(`🔄 Migrating old statuses in ${COLLECTION_NAME}...`);
+    const LEGACY_VALUES = ["Chưa có", "Chưa chụp"];
+    const STATUS_FIELDS = ["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"];
+    const NEW_VALUE = "Chưa thực hiện";
+
+    try {
+        const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+        let updatedCount = 0;
+
+        const promises = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const updates = {};
+            let needsUpdate = false;
+
+            STATUS_FIELDS.forEach(field => {
+                if (LEGACY_VALUES.includes(data[field])) {
+                    updates[field] = NEW_VALUE;
+                    needsUpdate = true;
+                }
+            });
+
+            if (needsUpdate) {
+                promises.push(
+                    updateDoc(doc(db, COLLECTION_NAME, docSnap.id), updates)
+                        .then(() => { updatedCount++; })
+                );
+            }
+        });
+
+        await Promise.all(promises);
+        localStorage.setItem(migrationKey, 'true');
+        console.log(`✅ Migration done: ${updatedCount} documents updated in ${COLLECTION_NAME}`);
+
+        // Reload table data if any updates were made
+        if (updatedCount > 0 && table) {
+            await loadTableData();
+        }
+    } catch (e) {
+        console.error("Migration error:", e);
     }
 }
 
@@ -550,6 +600,8 @@ async function init() {
     }
 
     const tableData = await loadTableData();
+    // Auto-migrate old status values ("Chưa có", "Chưa chụp") → "Chưa thực hiện"
+    migrateOldStatuses();
 
     // Base Columns
     let columns = [
@@ -777,9 +829,9 @@ async function init() {
             const newDoc = {
                 ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
                 ngayVeKho: "", linkAnh: "", linkAnhModel: "", linkVideo: "",
-                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa có",
-                anhModelNgay: "", anhModelTrangThai: "Chưa có",
-                videoModelNgay: "", videoModelTrangThai: "Chưa có",
+                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa thực hiện",
+                anhModelNgay: "", anhModelTrangThai: "Chưa thực hiện",
+                videoModelNgay: "", videoModelTrangThai: "Chưa thực hiện",
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
