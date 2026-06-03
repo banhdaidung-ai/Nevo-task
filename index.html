@@ -795,9 +795,9 @@
 
 <!-- ==================== PAGE 2: ORDER MANAGEMENT ==================== -->
 <div id="page-orders" class="page">
-    <div class="p-4 md:p-8 max-w-full mx-auto">
+    <div class="p-3 md:p-5 max-w-full mx-auto">
         <!-- Order Window Countdown Banner -->
-        <div id="indexOwBanner" class="hidden mb-6 rounded-2xl p-4 shadow-lg animate-fade-in-up" style="background:linear-gradient(135deg,#0d9488,#06b6d4)">
+        <div id="indexOwBanner" class="hidden mb-3 rounded-xl p-3 shadow-lg animate-fade-in-up" style="background:linear-gradient(135deg,#0d9488,#06b6d4)">
             <div class="flex items-center justify-between flex-wrap gap-3">
                 <div class="flex items-center gap-3 text-white">
                     <span class="material-symbols-outlined text-[28px] animate-pulse">timer</span>
@@ -813,7 +813,7 @@
                 </div>
             </div>
         </div>
-        <div id="indexOwClosedBanner" class="hidden mb-6 rounded-2xl p-4 border border-slate-200 bg-white shadow-sm animate-fade-in-up">
+        <div id="indexOwClosedBanner" class="hidden mb-3 rounded-xl p-3 border border-slate-200 bg-white shadow-sm animate-fade-in-up">
             <div class="flex items-center justify-between flex-wrap gap-3">
                 <div class="flex items-center gap-3 text-slate-500">
                     <span class="material-symbols-outlined text-[28px] text-red-400">lock</span>
@@ -824,75 +824,62 @@
                 </div>
             </div>
         </div>
-        <!-- Header & Stats -->
-        <!-- Top Stats Row -->
-        <div class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fade-in-up">
-            <div>
-                <nav class="flex items-center gap-2 text-[10px] text-slate-400 mb-2 font-bold tracking-widest uppercase">
+        <!-- Header: Compact Title + Inline Stats -->
+        <div class="mb-3 flex items-center justify-between gap-3 animate-fade-in-up flex-wrap">
+            <div class="shrink-0">
+                <nav class="flex items-center gap-1.5 text-[9px] text-slate-400 mb-0.5 font-bold tracking-widest uppercase">
                     <span>Hệ thống</span>
-                    <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+                    <span class="material-symbols-outlined text-[9px]">chevron_right</span>
                     <span class="text-primary">Quản lý Đơn hàng</span>
                 </nav>
-                <h1 class="font-headline font-extrabold text-3xl tracking-tight text-[#1e293b] dark:text-white">Danh sách Đơn hàng <span class="text-primary">.</span></h1>
+                <h1 class="font-headline font-extrabold text-xl tracking-tight text-[#1e293b] dark:text-white leading-tight">Đơn hàng <span class="text-primary">.</span></h1>
             </div>
-            <div class="flex flex-wrap gap-4">
-                <!-- Tổng đơn hàng -->
-                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0"></span>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tổng đơn hàng</span>
-                    </div>
-                    <span id="statTotal" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Tổng</span>
+                    <span id="statTotal" class="font-headline font-extrabold text-sm text-[#1e293b] dark:text-white leading-none">0</span>
                 </div>
-                <!-- Đang xử lý -->
-                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Đang xử lý</span>
-                    </div>
-                    <span id="statProcessing" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
+                <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Xử lý</span>
+                    <span id="statProcessing" class="font-headline font-extrabold text-sm text-primary leading-none">0</span>
                 </div>
-                <!-- Chờ duyệt -->
-                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chờ duyệt</span>
-                    </div>
-                    <span id="statPending" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
+                <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Chờ duyệt</span>
+                    <span id="statPending" class="font-headline font-extrabold text-sm text-amber-600 leading-none">0</span>
                 </div>
-                <!-- Hoàn thành -->
-                <div class="glass-card px-8 py-4 flex flex-col gap-1 min-w-[150px]">
-                    <div class="flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hoàn thành</span>
-                    </div>
-                    <span id="statCompleted" class="font-headline font-extrabold text-3xl text-[#1e293b] dark:text-white">0</span>
+                <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Xong</span>
+                    <span id="statCompleted" class="font-headline font-extrabold text-sm text-emerald-600 leading-none">0</span>
                 </div>
             </div>
         </div>
 
-        <!-- Search & Quick Filters Row -->
-        <div class="mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4 animate-fade-in-up delay-100">
-            <div class="relative w-full xl:max-w-2xl">
-                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                <input id="filterSearch" type="text" placeholder="Tìm kiếm mã đơn, tên người yêu cầu hoặc nội dung công việc..." class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all shadow-sm" onkeyup="if(window.renderOrdersTable) window.renderOrdersTable()">
+        <!-- Search & Quick Filters: Compact Single Row -->
+        <div class="mb-3 flex flex-col lg:flex-row lg:items-center justify-between gap-2 animate-fade-in-up delay-100">
+            <div class="relative w-full lg:max-w-md">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                <input id="filterSearch" type="text" placeholder="Tìm kiếm mã đơn, người yêu cầu, nội dung..." class="w-full pl-10 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium focus:ring-2 focus:ring-primary/20 transition-all shadow-sm" onkeyup="if(window.renderOrdersTable) window.renderOrdersTable()">
             </div>
-            <div class="flex flex-wrap items-center gap-3">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Lọc Nhanh:</span>
-                <button id="qf-all" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-primary text-white" onclick="setQuickFilter('')">Tất cả</button>
-                <button id="qf-production" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang sản xuất')">Đang sản xuất</button>
-                <button id="qf-postproduction" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang hậu kỳ')">Đang hậu kỳ</button>
-                <button id="qf-completed" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Hoàn thành')">Hoàn thành</button>
-                <button id="qf-pending" class="quick-filter-btn px-4 py-2 rounded-full text-xs font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Chờ duyệt')">Chờ duyệt</button>
+            <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-1">Lọc:</span>
+                <button id="qf-all" class="quick-filter-btn px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-primary text-white" onclick="setQuickFilter('')">Tất cả</button>
+                <button id="qf-production" class="quick-filter-btn px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang sản xuất')">Đang sản xuất</button>
+                <button id="qf-postproduction" class="quick-filter-btn px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Đang hậu kỳ')">Đang hậu kỳ</button>
+                <button id="qf-completed" class="quick-filter-btn px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Hoàn thành')">Hoàn thành</button>
+                <button id="qf-pending" class="quick-filter-btn px-3 py-1.5 rounded-full text-[11px] font-bold transition-all bg-white border border-slate-200 text-slate-600 hover:bg-slate-50" onclick="setQuickFilter('Chờ duyệt')">Chờ duyệt</button>
                 <!-- Hidden input to store status for renderOrdersTable -->
                 <input type="hidden" id="filterStatus" value="">
             </div>
         </div>
 
         <!-- Main Data Table Container -->
-        <div class="glass-panel rounded-2xl animate-fade-in-up delay-300 flex flex-col h-[75vh] overflow-hidden">
+        <div class="glass-panel rounded-xl animate-fade-in-up delay-300 flex flex-col h-[82vh] overflow-hidden">
             <!-- Action Row -->
-            <div class="bg-[#f8fafc] p-4 border-b border-slate-200 flex justify-between items-center rounded-t-xl shrink-0">
+            <div class="bg-[#f8fafc] dark:bg-slate-800/50 px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center rounded-t-xl shrink-0">
                 <div class="flex gap-3">
                     <button class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm" onclick="clearAllFilters()">
                         <span class="material-symbols-outlined text-[16px]">filter_alt_off</span>
