@@ -4652,9 +4652,37 @@
 
         // Update role label in dropdown if it exists
         const roleLabel = document.getElementById('dropUserRole');
+        const roleNames = { admin: 'Quản trị viên', manager: 'Quản lý', user: 'Nhân viên', viewer: 'Người xem' };
         if (roleLabel) {
-            const roleNames = { admin: 'Quản trị viên', manager: 'Quản lý', user: 'Nhân viên', viewer: 'Người xem' };
             roleLabel.textContent = roleNames[role] || 'Nhân viên';
+        }
+
+        // Populate User Profile Page (page-profile)
+        const pName = document.getElementById('profileName');
+        const pInitial = document.getElementById('profileInitial');
+        const pRoleBadge = document.getElementById('profileRoleBadge');
+        const pEmail = document.getElementById('profileEmail');
+        const pPhone = document.getElementById('profilePhone');
+        const pDept = document.getElementById('profileDept');
+        const pEmpId = document.getElementById('profileEmpId');
+
+        if (pName) pName.textContent = user;
+        if (pInitial) pInitial.textContent = initial;
+        if (pRoleBadge) pRoleBadge.textContent = roleNames[role] || 'Nhân viên';
+        
+        if (pEmail) {
+            const email = localStorage.getItem('nevo_email') || 'Chưa cập nhật';
+            pEmail.innerHTML = `<span class="material-symbols-outlined text-[16px] text-primary">mail</span> ${email}`;
+        }
+        if (pPhone) {
+            const phone = localStorage.getItem('nevo_phone') || 'Chưa cập nhật';
+            pPhone.innerHTML = `<span class="material-symbols-outlined text-[16px] text-primary">call</span> ${phone}`;
+        }
+        if (pDept) {
+            pDept.textContent = localStorage.getItem('nevo_dept') || 'Chưa phân phòng';
+        }
+        if (pEmpId) {
+            pEmpId.textContent = localStorage.getItem('nevo_empId') || '---';
         }
     })();
 
