@@ -460,6 +460,7 @@
                 <a href="#" data-page="budgetReport" onclick="navigateTo('budgetReport')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
                 <a href="#" id="navScheduleLink" data-page="reports" onclick="navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200 hidden">Lịch làm việc</a>
                 <a href="products.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Sản phẩm mới</a>
+                <a href="model.html" id="navModelLink" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200 hidden">Model</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-slate-500 hover:text-red-600 transition-all duration-200 hidden">Quản trị</a>
                 <a href="support.html" target="_blank" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
             </div>
@@ -591,6 +592,9 @@
         </a>
         <a href="products.html" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">inventory_2</span> Sản phẩm mới
+        </a>
+        <a href="model.html" id="mobileModelLink" onclick="closeMobileMenu()" class="items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold hidden">
+            <span class="material-symbols-outlined text-primary">face_3</span> Model
         </a>
         <a href="support.html" target="_blank" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">support_agent</span> Trung tâm hỗ trợ
@@ -3212,7 +3216,9 @@
             'finance_view': 'finance_view',
             'finance_edit': 'finance_edit',
             'reports_view': 'reports_view',
-            'admin_access': 'admin_access'
+            'admin_access': 'admin_access',
+            'model_view': 'model_view',
+            'model_edit': 'model_edit'
         };
 
         const permKey = permissionMap[field] || field;
@@ -3273,6 +3279,8 @@
         const adminLink = document.getElementById('navAdminLink');
         const scheduleLink = document.getElementById('navScheduleLink');
         const mobileScheduleLink = document.getElementById('mobileScheduleLink');
+        const modelLink = document.getElementById('navModelLink');
+        const mobileModelLink = document.getElementById('mobileModelLink');
         
         // Check admin_access permission
         if (adminLink) {
@@ -3280,6 +3288,24 @@
                 adminLink.classList.remove('hidden');
             } else {
                 adminLink.classList.add('hidden');
+            }
+        }
+
+        // Check model_access permission
+        if (modelLink) {
+            if (checkPermission('model_access')) {
+                modelLink.classList.remove('hidden');
+            } else {
+                modelLink.classList.add('hidden');
+            }
+        }
+        if (mobileModelLink) {
+            if (checkPermission('model_access')) {
+                mobileModelLink.classList.remove('hidden');
+                mobileModelLink.classList.add('flex');
+            } else {
+                mobileModelLink.classList.add('hidden');
+                mobileModelLink.classList.remove('flex');
             }
         }
 

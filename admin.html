@@ -202,6 +202,7 @@
                 <a href="index.html#budgetReport" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
                 <a href="index.html#reports" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Lịch làm việc</a>
                 <a href="products.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Sản phẩm mới</a>
+                <a href="model.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Model</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-red-600 border-b-2 border-red-600 pb-1 transition-all duration-200">Quản trị</a>
                 <a href="support.html" target="_blank" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
             </div>
@@ -290,6 +291,9 @@
         </a>
         <a href="products.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
             <span class="material-symbols-outlined text-primary">inventory_2</span> Sản phẩm mới
+        </a>
+        <a href="model.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">face_3</span> Model
         </a>
         <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-600 transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined">admin_panel_settings</span> Quản trị Hệ thống
@@ -1227,6 +1231,22 @@
                                     </span>
                                 </div>
                             </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="model_view">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-pink-600">face_3</span> Xem Trang Model
+                                    </span>
+                                </div>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="model_edit">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-pink-600">edit</span> Sửa Trang Model
+                                    </span>
+                                </div>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -1395,6 +1415,8 @@
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="finance_edit" disabled><span class="text-[10px] font-semibold">Sửa tài chính</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="reports_view" disabled><span class="text-[10px] font-semibold">Xem báo cáo</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="admin_access" disabled><span class="text-[10px] font-semibold">Trang quản trị</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="model_view" disabled><span class="text-[10px] font-semibold">Xem Model</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="model_edit" disabled><span class="text-[10px] font-semibold">Sửa Model</span></label>
                         </div>
                     </div>
                 </div>
@@ -1549,10 +1571,10 @@
     ];
 
     const DEFAULT_ROLES = [
-        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, admin_access:true } },
-        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, admin_access:false } },
-        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, admin_access:false } },
-        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:false, orders_edit_title:false, orders_edit_note:false, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, admin_access:false } }
+        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, admin_access:true, model_view:true, model_edit:true } },
+        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, admin_access:false, model_view:true, model_edit:true } },
+        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, admin_access:false, model_view:false, model_edit:false } },
+        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:false, orders_edit_title:false, orders_edit_note:false, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, admin_access:false, model_view:false, model_edit:false } }
     ];
 
     const DEFAULT_CATEGORIES = [

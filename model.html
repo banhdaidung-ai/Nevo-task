@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<!-- Version: 1.0.0 - Model Management Page -->
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quản lý Model — Task Manager</title>
+    <meta name="description" content="Quản lý hồ sơ người mẫu, talent cho hệ thống NEVO"/>
+    <!-- Auth + Model Guard -->
+    <script>
+        (function() {
+            if (localStorage.getItem('nevo_logged_in') !== 'true') {
+                window.location.replace('login.html'); return;
+            }
+            var role = (localStorage.getItem('nevo_role') || '').toLowerCase();
+            var hasModelView = localStorage.getItem('nevo_model_view') === 'true';
+            if (role !== 'admin' && role !== 'manager' && !hasModelView) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+    <!-- DNS Prefetch & Preconnect -->
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;600;700;800&display=swap" as="style">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#b80035',
+                        'primary-dark': '#920028',
+                        'primary-light': '#e11d48',
+                        secondary: '#565e74',
+                        tertiary: '#006855',
+                        'surface': '#FAFAFA',
+                        'surface-card': '#FFFFFF',
+                    },
+                    fontFamily: {
+                        headline: ['Manrope'],
+                        body: ['Inter'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        /* Animations */
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes modalIn { from { opacity:0; transform:translateY(-24px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes scaleIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out both; }
+        .delay-1 { animation-delay: 0.05s; }
+        .delay-2 { animation-delay: 0.1s; }
+        .delay-3 { animation-delay: 0.15s; }
+        .delay-4 { animation-delay: 0.2s; }
+
+        /* Model Card */
+        .model-card {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+        }
+        .model-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px -8px rgba(19, 27, 46, 0.15);
+        }
+        .model-card:hover .model-photo {
+            transform: scale(1.05);
+        }
+        .model-photo {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Category Tag */
+        .cat-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+            transition: all 0.2s;
+        }
+        .cat-tag:hover { transform: scale(1.05); }
+        .cat-fashion { background: #fce7f3; color: #be185d; }
+        .cat-lingerie { background: #fae8ff; color: #a21caf; }
+        .cat-sportswear { background: #dbeafe; color: #1d4ed8; }
+        .cat-beauty { background: #fef3c7; color: #b45309; }
+        .cat-default { background: #f1f5f9; color: #475569; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.55);
+            backdrop-filter: blur(6px); z-index: 1000;
+            display: flex; align-items: center; justify-content: center; padding: 1rem;
+            animation: overlayIn 0.2s ease-out;
+        }
+        .modal-box {
+            background: #fff; border-radius: 24px; width: 100%; max-width: 880px;
+            box-shadow: 0 24px 80px -12px rgba(15,23,42,0.35);
+            animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            max-height: 92vh; overflow-y: auto;
+        }
+        .modal-box::-webkit-scrollbar { width: 4px; }
+
+        /* Form inputs inside modal */
+        .form-input {
+            width: 100%; padding: 0.72rem 1rem; background: #F1F5F9;
+            border: 2px solid transparent; border-radius: 12px;
+            font-size: 0.875rem; font-family: 'Inter', sans-serif; color: #131b2e;
+            font-weight: 500; transition: all 0.2s ease; outline: none;
+        }
+        .form-input:focus { background: #E8EDF5; border-color: rgba(184,0,53,0.35); box-shadow: 0 0 0 4px rgba(184,0,53,0.08); }
+        .form-input::placeholder { color: #94A3B8; font-weight: 400; }
+        select.form-input { cursor: pointer; }
+
+        /* Photo Upload Area */
+        .photo-upload {
+            border: 2px dashed #cbd5e1; border-radius: 16px; background: #fafbfc;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 220px; cursor: pointer; transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .photo-upload:hover { border-color: #b80035; background: #fff5f7; }
+        .photo-upload.has-photo { border-style: solid; border-color: #e2e8f0; }
+        .photo-upload img {
+            width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0;
+            border-radius: 14px;
+        }
+
+        /* Toast */
+        .toast {
+            position:fixed; bottom:1.5rem; right:1.5rem; z-index: 9999;
+            display:flex; align-items:center; gap:10px;
+            padding:0.85rem 1.2rem; border-radius:14px;
+            box-shadow:0 8px 32px -8px rgba(15,23,42,0.25);
+            font-size:0.85rem; font-weight:600; font-family:'Inter',sans-serif;
+            transform:translateX(120%); transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            min-width: 240px;
+        }
+        .toast.show { transform:translateX(0); }
+        .toast-success { background:#16a34a; color:#fff; }
+        .toast-error { background:#C62828; color:#fff; }
+        .toast .material-symbols-outlined { font-variation-settings:'FILL' 1,'wght' 500; font-size:20px; }
+
+        /* Profile Section */
+        .profile-section {
+            animation: fadeInUp 0.5s ease-out both;
+        }
+        .price-card {
+            background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%);
+            border: 1px solid #fecdd3;
+            border-radius: 16px; padding: 20px;
+        }
+        .price-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid #fecdd3;
+        }
+        .price-row:last-child { border-bottom: none; }
+
+        /* View Transitions */
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        /* Premium gradient badge for price */
+        .price-badge {
+            background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+            border: 1px solid #fecdd3;
+            padding: 6px 16px;
+            border-radius: 10px;
+            font-weight: 800;
+            color: #be123c;
+            font-size: 14px;
+            min-width: 90px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- ====== TOP NAVIGATION BAR (Đồng bộ với index.html) ====== -->
+<nav id="topNav" class="bg-white/60 backdrop-blur-xl top-0 sticky z-50 shadow-[0_12px_40px_-12px_rgba(19,27,46,0.08)]">
+    <div class="flex justify-between items-center w-full px-4 md:px-8 py-3 md:py-4 max-w-full">
+        <!-- Brand & Menu Toggle -->
+        <div class="flex items-center gap-4 md:gap-8">
+            <button id="mobileMenuBtn" class="md:hidden p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <a href="index.html" class="text-xl font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
+                <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Task Manager Logo" class="w-8 h-auto object-contain"/>
+                <span class="hidden sm:inline">Task Manager</span>
+            </a>
+            <!-- Desktop Nav Links -->
+            <div id="navLinks" class="hidden md:flex items-center gap-6 font-headline tracking-tight font-semibold text-sm">
+                <a href="index.html#dashboard" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Bảng điều khiển</a>
+                <a href="index.html#orders" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
+                <a href="index.html#planning" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
+                <a href="index.html#budgetReport" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
+                <a href="index.html#reports" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Lịch làm việc</a>
+                <a href="products.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Sản phẩm mới</a>
+                <a href="model.html" class="nav-link text-primary border-b-2 border-primary pb-1 transition-all duration-200">Model</a>
+                <a href="admin.html" id="navAdminLink" class="nav-link text-slate-500 hover:text-red-600 transition-all duration-200 hidden">Quản trị</a>
+                <a href="support.html" target="_blank" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Trung tâm hỗ trợ</a>
+            </div>
+        </div>
+        <!-- Actions -->
+        <div class="flex items-center gap-2 md:gap-4">
+            <!-- Search (desktop) -->
+            <div class="relative hidden lg:block">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                <input id="globalSearch" class="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm w-64 focus:ring-2 focus:ring-red-600/20 transition-all" placeholder="Tìm kiếm nhanh..." type="text"/>
+            </div>
+            <div class="flex items-center gap-1 md:gap-2">
+                <!-- Notifications -->
+                <div class="relative">
+                    <button class="p-2 rounded-full hover:bg-slate-50 transition-all duration-200 relative">
+                        <span class="material-symbols-outlined text-slate-600">notifications</span>
+                    </button>
+                </div>
+                <button class="p-2 rounded-full hover:bg-slate-50 transition-all duration-200 hidden sm:block">
+                    <span class="material-symbols-outlined text-slate-600">settings</span>
+                </button>
+                <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+                <!-- Create Order CTA -->
+                <a href="index.html" class="bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 md:px-4 py-2 rounded-lg font-headline font-semibold text-sm flex items-center gap-2 shadow-lg shadow-red-600/20 active:scale-95 transition-transform duration-150 hover:opacity-90">
+                    <span class="material-symbols-outlined text-sm">add</span>
+                    <span class="hidden sm:inline">Tạo đơn mới</span>
+                </a>
+                <!-- Avatar + User Menu -->
+                <div class="relative ml-1 md:ml-2" id="navUserWrapper">
+                    <button onclick="toggleNavUser()" class="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-slate-50 transition-all duration-200 border border-transparent hover:border-slate-200">
+                        <div class="h-8 w-8 rounded-full bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center text-white font-bold text-xs border-2 border-white shadow-sm">
+                            <span id="navInit">AD</span>
+                        </div>
+                        <span id="navName" class="hidden md:block text-xs font-semibold text-slate-700 max-w-[80px] truncate">Admin</span>
+                        <span class="material-symbols-outlined text-slate-400 text-sm hidden md:block">expand_more</span>
+                    </button>
+                    <!-- User Dropdown -->
+                    <div id="navUserDropdown" class="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50 opacity-0 pointer-events-none translate-y-[-8px] transition-all">
+                        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                            <p class="text-xs font-bold text-slate-700 truncate" id="dropName">Admin</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5" id="dropRole">Quản trị viên hệ thống</p>
+                        </div>
+                        <div class="p-1.5">
+                            <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">account_circle</span>
+                                Hồ sơ cá nhân
+                            </a>
+                            <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">logout</span>
+                                Đăng xuất
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ====== MOBILE MENU OVERLAY ====== -->
+<div id="mobileOverlay" class="fixed inset-0 bg-black/40 z-[60] hidden" onclick="closeMobileMenu()"></div>
+<div id="mobileMenu" class="fixed top-0 left-0 w-72 h-full bg-white z-[70] shadow-2xl -translate-x-full transition-transform duration-300">
+    <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center justify-between">
+            <span class="text-lg font-bold tracking-tighter text-[#131b2e] font-headline">Menu</span>
+            <button onclick="closeMobileMenu()" class="p-2 hover:bg-slate-50 rounded-lg">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+    </div>
+    <div class="p-4 space-y-2">
+        <a href="index.html#dashboard" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">dashboard</span> Bảng điều khiển
+        </a>
+        <a href="index.html#orders" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">shopping_cart</span> Đơn hàng
+        </a>
+        <a href="index.html#planning" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">event_note</span> Kế hoạch
+        </a>
+        <a href="index.html#budgetReport" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">payments</span> Chi phí
+        </a>
+        <a href="products.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">inventory_2</span> Sản phẩm mới
+        </a>
+        <a href="model.html" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-600 transition-colors text-sm font-semibold">
+            <span class="material-symbols-outlined">face_3</span> Model
+        </a>
+        <a href="admin.html" id="mobileAdminLink" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700 hidden">
+            <span class="material-symbols-outlined">admin_panel_settings</span> Quản trị Hệ thống
+        </a>
+        <a href="support.html" target="_blank" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">support_agent</span> Trung tâm hỗ trợ
+        </a>
+    </div>
+</div>
+
+<!-- ====== MAIN CONTENT ====== -->
+<main class="max-w-[1600px] mx-auto p-4 md:p-8">
+
+    <!-- ====== VIEW: MODEL LISTING ====== -->
+    <div id="view-listing" class="view-section active">
+        <!-- Page Header -->
+        <div class="mb-8 animate-fade-in-up">
+            <p class="text-primary font-bold tracking-widest text-[11px] uppercase mb-1.5">Talent Management</p>
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 class="font-headline font-extrabold text-3xl md:text-4xl text-slate-900 tracking-tight">Quản lý Model<span class="text-primary">.</span></h1>
+                    <p class="text-slate-500 text-sm mt-1.5">Hồ sơ người mẫu, talent phục vụ sản xuất nội dung</p>
+                </div>
+                <button id="btnAddModel" onclick="openAddModal()" class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-headline font-bold text-sm rounded-xl shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/30 active:scale-95 transition-all duration-200">
+                    <span class="material-symbols-outlined text-[18px]">person_add</span>
+                    Thêm người mẫu mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-1">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 bg-rose-50 rounded-xl"><span class="material-symbols-outlined text-rose-500">face_3</span></div>
+                    <span id="statTotalModels" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng Model</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-2">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 bg-pink-50 rounded-xl"><span class="material-symbols-outlined text-pink-500">checkroom</span></div>
+                    <span id="statFashion" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fashion</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-3">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 bg-blue-50 rounded-xl"><span class="material-symbols-outlined text-blue-500">fitness_center</span></div>
+                    <span id="statSportswear" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sportswear</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/50 animate-fade-in-up delay-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 bg-amber-50 rounded-xl"><span class="material-symbols-outlined text-amber-500">spa</span></div>
+                    <span id="statBeauty" class="font-headline font-extrabold text-2xl text-slate-900">0</span>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Beauty</p>
+            </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/50 p-4 mb-6 animate-fade-in-up delay-2">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="relative flex-grow max-w-xs">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                    <input id="modelSearch" type="text" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all" placeholder="Tìm theo tên người mẫu..." oninput="renderModelGrid()"/>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="filterByCategory('')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-900 text-white" data-cat="">Tất cả</button>
+                    <button onclick="filterByCategory('Fashion')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-pink-50 hover:text-pink-600" data-cat="Fashion">Fashion</button>
+                    <button onclick="filterByCategory('Lingerie')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-purple-50 hover:text-purple-600" data-cat="Lingerie">Lingerie</button>
+                    <button onclick="filterByCategory('Sportswear')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600" data-cat="Sportswear">Sportswear</button>
+                    <button onclick="filterByCategory('Beauty')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-50 hover:text-amber-600" data-cat="Beauty">Beauty</button>
+                </div>
+                <span id="modelCount" class="ml-auto text-xs text-slate-400 font-medium"></span>
+            </div>
+        </div>
+
+        <!-- Model Grid -->
+        <div id="modelGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards rendered by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden py-20 text-center">
+            <span class="material-symbols-outlined text-[64px] text-slate-200 mb-4">face_3</span>
+            <h3 class="font-headline font-bold text-xl text-slate-400 mb-2">Chưa có Model nào</h3>
+            <p class="text-slate-400 text-sm mb-6">Bắt đầu bằng cách thêm người mẫu đầu tiên vào hệ thống</p>
+            <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-headline font-bold text-sm rounded-xl shadow-lg shadow-red-600/25 active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                Thêm người mẫu
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== VIEW: MODEL PROFILE ====== -->
+    <div id="view-profile" class="view-section">
+        <div class="profile-section">
+            <!-- Back Button -->
+            <button onclick="showListView()" class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors mb-6 group">
+                <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                Quay lại danh sách
+            </button>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left: Photo + Quick Info -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
+                        <div class="aspect-[3/4] bg-slate-100 relative overflow-hidden">
+                            <img id="profilePhoto" src="" alt="Model Photo" class="w-full h-full object-cover"/>
+                            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-6">
+                                <h2 id="profileName" class="font-headline font-extrabold text-2xl text-white"></h2>
+                                <p id="profileGenderAge" class="text-white/80 text-sm font-medium mt-1"></p>
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-slate-50 rounded-xl p-3 text-center">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chiều cao</p>
+                                    <p id="profileHeight" class="font-headline font-extrabold text-lg text-slate-900"></p>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-3 text-center">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cân nặng</p>
+                                    <p id="profileWeight" class="font-headline font-extrabold text-lg text-slate-900"></p>
+                                </div>
+                            </div>
+                            <!-- Contact Info -->
+                            <div class="space-y-3">
+                                <a id="profileFacebook" href="#" target="_blank" class="flex items-center gap-3 px-4 py-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors group">
+                                    <span class="material-symbols-outlined text-blue-600 text-[20px]">link</span>
+                                    <span class="text-sm font-semibold text-blue-700 truncate group-hover:underline">Facebook</span>
+                                </a>
+                                <div id="profilePhoneRow" class="flex items-center gap-3 px-4 py-3 bg-emerald-50 rounded-xl">
+                                    <span class="material-symbols-outlined text-emerald-600 text-[20px]">call</span>
+                                    <span id="profilePhone" class="text-sm font-semibold text-emerald-700"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Details -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Actions -->
+                    <div class="flex items-center gap-3">
+                        <button id="btnEditProfile" onclick="editCurrentModel()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary-dark transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">edit</span> Chỉnh sửa
+                        </button>
+                        <button id="btnDeleteProfile" onclick="deleteCurrentModel()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors border border-red-100">
+                            <span class="material-symbols-outlined text-[18px]">delete</span> Xóa
+                        </button>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
+                        <h3 class="font-headline font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-[18px]">description</span>
+                            Mô tả về người mẫu
+                        </h3>
+                        <p id="profileDescription" class="text-slate-600 text-sm leading-relaxed"></p>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
+                        <h3 class="font-headline font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-[18px]">sell</span>
+                            Dòng sản phẩm phù hợp
+                        </h3>
+                        <div id="profileCategories" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="price-card">
+                        <h3 class="font-headline font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            Thông tin về giá Book
+                        </h3>
+                        <div class="space-y-0">
+                            <div class="price-row">
+                                <span class="text-sm font-medium text-slate-600">Giá theo buổi</span>
+                                <span id="profilePriceSession" class="price-badge">0 VND</span>
+                            </div>
+                            <div class="price-row">
+                                <span class="text-sm font-medium text-slate-600">Giá theo ngày</span>
+                                <span id="profilePriceDay" class="price-badge">0 VND</span>
+                            </div>
+                            <div class="price-row">
+                                <span class="text-sm font-medium text-slate-600">Giá theo set đồ</span>
+                                <span id="profilePriceSet" class="price-badge">0 VND</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meta Info -->
+                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                        <div class="flex items-center gap-4 text-xs text-slate-400">
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">calendar_today</span> Tạo: <span id="profileCreatedAt"></span></span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">person</span> Bởi: <span id="profileCreatedBy"></span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- ====== ADD/EDIT MODEL MODAL ====== -->
+<div id="modelModal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+        <!-- Modal Header -->
+        <div class="px-8 pt-8 pb-4 flex items-start justify-between">
+            <div>
+                <h2 id="modalTitle" class="font-headline font-extrabold text-2xl text-slate-900 tracking-tight">THÊM NGƯỜI MẪU MỚI</h2>
+                <p class="text-slate-500 text-sm mt-1">Nhập thông tin hồ sơ và định giá cho talent mới vào hệ thống.</p>
+            </div>
+            <button onclick="closeModal()" class="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-700">
+                <span class="material-symbols-outlined text-[24px]">close</span>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="px-8 pb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
+                <!-- Left Column -->
+                <div class="space-y-5">
+                    <!-- Photo Upload -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Hồ sơ & Hình ảnh</label>
+                        <div id="photoUploadArea" class="photo-upload" onclick="document.getElementById('photoInput').click()">
+                            <span class="material-symbols-outlined text-[40px] text-slate-300 mb-2">photo_camera</span>
+                            <span class="text-sm text-slate-400 font-medium">Tải lên ảnh chân dung</span>
+                        </div>
+                        <input id="photoInput" type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)"/>
+                    </div>
+
+                    <!-- Name -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Họ tên người mẫu</label>
+                        <input id="modelName" type="text" class="form-input" placeholder="Ví dụ: Nguyễn Minh Anh"/>
+                    </div>
+
+                    <!-- Facebook Link -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Facebook Link</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">link</span>
+                            <input id="modelFacebook" type="text" class="form-input !pl-10" placeholder="facebook.com/username"/>
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Số điện thoại (SĐT)</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">call</span>
+                            <input id="modelPhone" type="text" class="form-input !pl-10" placeholder="090x xxx xxx"/>
+                        </div>
+                    </div>
+
+                    <!-- Gender + Age -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Giới tính</label>
+                            <select id="modelGender" class="form-input">
+                                <option value="Nữ">Nữ</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Độ tuổi</label>
+                            <input id="modelAge" type="number" class="form-input" value="22" min="16" max="60"/>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-5">
+                    <!-- Height + Weight -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Chiều cao (CM)</label>
+                            <input id="modelHeight" type="number" class="form-input" value="170" min="140" max="210"/>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Cân nặng (KG)</label>
+                            <input id="modelWeight" type="number" class="form-input" value="52" min="30" max="120"/>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Mô tả về người mẫu</label>
+                        <textarea id="modelDescription" class="form-input !h-[100px] resize-none" placeholder="Kinh nghiệm catwalk, phong cách sở trường..."></textarea>
+                    </div>
+
+                    <!-- Product Categories -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Dòng sản phẩm phù hợp</label>
+                        <div id="categoryTagsContainer" class="flex flex-wrap gap-2 mb-3">
+                            <button type="button" class="cat-toggle-btn cat-tag cat-fashion opacity-50" data-cat="Fashion" onclick="toggleCategoryTag(this)">Fashion</button>
+                            <button type="button" class="cat-toggle-btn cat-tag cat-lingerie opacity-50" data-cat="Lingerie" onclick="toggleCategoryTag(this)">Lingerie</button>
+                            <button type="button" class="cat-toggle-btn cat-tag cat-sportswear opacity-50" data-cat="Sportswear" onclick="toggleCategoryTag(this)">Sportswear</button>
+                            <button type="button" class="cat-toggle-btn cat-tag cat-beauty opacity-50" data-cat="Beauty" onclick="toggleCategoryTag(this)">Beauty</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input id="customCategoryInput" type="text" class="form-input !py-2 !text-xs flex-grow" placeholder="Thêm dòng khác..."/>
+                            <button type="button" onclick="addCustomCategory()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+                                <span class="material-symbols-outlined text-slate-600 text-[18px]">add</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="bg-gradient-to-br from-rose-50 to-orange-50 rounded-2xl p-5 border border-rose-100">
+                        <h4 class="font-headline font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                            Thông tin về giá Book
+                        </h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="text-sm text-slate-600 font-medium whitespace-nowrap">Giá theo buổi</span>
+                                <div class="flex items-center gap-2">
+                                    <input id="priceSession" type="text" oninput="formatCurrencyInput(this)" class="form-input !w-[120px] !py-2 !text-right !font-bold !text-primary" value="-"/>
+                                    <span class="text-xs font-bold text-slate-400 w-8">VND</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="text-sm text-slate-600 font-medium whitespace-nowrap">Giá theo ngày</span>
+                                <div class="flex items-center gap-2">
+                                    <input id="priceDay" type="text" oninput="formatCurrencyInput(this)" class="form-input !w-[120px] !py-2 !text-right !font-bold !text-primary" value="-"/>
+                                    <span class="text-xs font-bold text-slate-400 w-8">VND</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="text-sm text-slate-600 font-medium whitespace-nowrap">Giá theo set đồ</span>
+                                <div class="flex items-center gap-2">
+                                    <input id="priceSet" type="text" oninput="formatCurrencyInput(this)" class="form-input !w-[120px] !py-2 !text-right !font-bold !text-primary" value="-"/>
+                                    <span class="text-xs font-bold text-slate-400 w-8">VND</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-8 py-5 border-t border-slate-100 flex items-center justify-end gap-4 bg-slate-50/50 rounded-b-3xl">
+            <button onclick="closeModal()" class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Hủy bỏ</button>
+            <button id="btnSubmitModel" onclick="saveModel()" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-headline font-bold text-sm rounded-xl shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/30 active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                <span id="btnSubmitText">Thêm người mẫu</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== TOAST ====== -->
+<div id="toast" class="toast toast-success">
+    <span id="toastIcon" class="material-symbols-outlined">check_circle</span>
+    <div>
+        <p id="toastTitle" class="font-bold text-sm">Thành công</p>
+        <p id="toastMsg" class="text-xs opacity-90">Đã thêm model mới</p>
+    </div>
+</div>
+
+<!-- ====== JAVASCRIPT ====== -->
+<script>
+(function() {
+    'use strict';
+
+    // ===== DATA LAYER =====
+    const STORAGE_KEY = 'nevo_models';
+    let models = [];
+    let currentFilter = '';
+    let currentModelId = null;
+    let editingModelId = null;
+    let currentPhotoData = null;
+
+    function loadModels() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            models = raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            models = [];
+        }
+    }
+
+    function saveModels() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(models));
+    }
+
+    // ===== CATEGORY HELPERS =====
+    const catClassMap = {
+        'fashion': 'cat-fashion',
+        'lingerie': 'cat-lingerie',
+        'sportswear': 'cat-sportswear',
+        'beauty': 'cat-beauty'
+    };
+
+    function getCatClass(cat) {
+        return catClassMap[cat.toLowerCase()] || 'cat-default';
+    }
+
+    function formatPrice(num) {
+        if (!num || num === 0) return '-';
+        return new Intl.NumberFormat('vi-VN').format(num);
+    }
+
+    function formatPriceShort(num) {
+        if (!num || num === 0) return '-';
+        if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
+        return num.toString();
+    }
+
+    window.formatCurrencyInput = function(input) {
+        let val = input.value.replace(/[^0-9]/g, '');
+        if (val === '') {
+            input.value = '-';
+            return;
+        }
+        let num = parseInt(val, 10);
+        if (num === 0) {
+            input.value = '-';
+        } else {
+            input.value = new Intl.NumberFormat('vi-VN').format(num);
+        }
+    };
+
+    // ===== RENDER MODEL GRID =====
+    window.renderModelGrid = function() {
+        const grid = document.getElementById('modelGrid');
+        const emptyState = document.getElementById('emptyState');
+        const searchTerm = (document.getElementById('modelSearch')?.value || '').toLowerCase().trim();
+
+        let filtered = models;
+
+        // Filter by search
+        if (searchTerm) {
+            filtered = filtered.filter(m => m.name.toLowerCase().includes(searchTerm));
+        }
+
+        // Filter by category
+        if (currentFilter) {
+            filtered = filtered.filter(m => m.categories && m.categories.includes(currentFilter));
+        }
+
+        // Update stats
+        updateStats();
+        document.getElementById('modelCount').textContent = `Hiển thị ${filtered.length} / ${models.length} model`;
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+
+        grid.innerHTML = filtered.map((m, idx) => {
+            const genderIcon = m.gender === 'Nam' ? 'male' : m.gender === 'Nữ' ? 'female' : 'transgender';
+            const badge = idx === 0 ? 'TOP TALENT' : (idx % 3 === 2 ? 'EXCLUSIVE' : (m.pricePerDay >= 5000000 ? 'TOP TALENT' : ''));
+            const badgeColor = badge === 'EXCLUSIVE' ? 'bg-amber-500' : 'bg-primary';
+            const desc = m.description ? (m.description.length > 100 ? m.description.substring(0, 100) + '...' : m.description) : '';
+            const hasPrice = m.pricePerSession > 0 || m.pricePerDay > 0 || m.pricePerSet > 0;
+
+            return `
+            <div class="model-card bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up" style="animation-delay: ${idx * 0.05}s">
+                <div class="aspect-[4/5] bg-slate-100 relative overflow-hidden" onclick="openProfile('${m.id}')">
+                    ${m.photo
+                        ? `<img src="${m.photo}" alt="${m.name}" class="model-photo w-full h-full object-cover"/>`
+                        : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                               <span class="material-symbols-outlined text-[64px] text-slate-300">face_3</span>
+                           </div>`
+                    }
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                    ${badge ? `<div class="absolute top-3 left-3"><span class="px-3 py-1 ${badgeColor} text-white text-[10px] font-extrabold uppercase tracking-wider rounded-full shadow-lg">${badge}</span></div>` : ''}
+                    <button onclick="event.stopPropagation()" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:scale-110 transition-all shadow-sm">
+                        <span class="material-symbols-outlined text-slate-400 hover:text-red-500 text-[20px]">favorite</span>
+                    </button>
+                    <div class="absolute bottom-3 left-4 right-4">
+                        <h3 class="font-headline font-extrabold text-lg text-white drop-shadow-lg truncate">${m.name}</h3>
+                    </div>
+                </div>
+                <div class="p-5 space-y-3">
+                    <!-- Stats Row -->
+                    <div class="flex items-center gap-1 text-xs text-slate-500 font-semibold">
+                        <span class="material-symbols-outlined text-[16px] text-slate-400">${genderIcon}</span>
+                        <span class="flex items-center gap-0.5"><span class="text-[10px] text-slate-400 uppercase">Tuổi</span> <strong class="text-slate-700">${m.age || '--'}</strong></span>
+                        <span class="text-slate-200">|</span>
+                        <span class="flex items-center gap-0.5"><strong class="text-slate-700">${m.height || '--'}</strong><span class="text-[10px] text-slate-400">cm</span></span>
+                        <span class="text-slate-200">|</span>
+                        <span class="flex items-center gap-0.5"><strong class="text-slate-700">${m.weight || '--'}</strong><span class="text-[10px] text-slate-400">kg</span></span>
+                    </div>
+
+                    <!-- Description -->
+                    ${desc ? `<p class="text-xs text-slate-500 leading-relaxed line-clamp-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">"${desc}"</p>` : ''}
+
+                    <!-- Category Tags -->
+                    <div class="flex flex-wrap gap-1.5">
+                        ${(m.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)} !text-[10px] !px-2.5 !py-0.5">${c}</span>`).join('')}
+                    </div>
+
+                    <!-- Price Grid -->
+                    ${hasPrice ? `
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[12px]">sell</span> BẢNG GIÁ, BOOKING
+                        </p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
+                                <p class="text-[9px] text-slate-400 font-medium">Half day</p>
+                                <p class="font-headline font-extrabold text-sm text-primary">${formatPriceShort(m.pricePerSession)}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
+                                <p class="text-[9px] text-slate-400 font-medium">Full day</p>
+                                <p class="font-headline font-extrabold text-sm text-primary">${formatPriceShort(m.pricePerDay)}</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
+                                <p class="text-[9px] text-slate-400 font-medium">Per set</p>
+                                <p class="font-headline font-extrabold text-sm text-primary">${formatPriceShort(m.pricePerSet)}</p>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Phone + Profile Link -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                        ${m.phone ? `<span class="flex items-center gap-1.5 text-xs text-slate-400 font-medium"><span class="material-symbols-outlined text-[14px]">call</span> SĐT: ${m.phone}</span>` : '<span></span>'}
+                        <a onclick="openProfile('${m.id}')" class="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-dark cursor-pointer transition-colors">
+                            Xem Profile <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `}).join('');
+    };
+
+    function updateStats() {
+        document.getElementById('statTotalModels').textContent = models.length;
+        document.getElementById('statFashion').textContent = models.filter(m => m.categories && m.categories.includes('Fashion')).length;
+        document.getElementById('statSportswear').textContent = models.filter(m => m.categories && m.categories.includes('Sportswear')).length;
+        document.getElementById('statBeauty').textContent = models.filter(m => m.categories && m.categories.includes('Beauty')).length;
+    }
+
+    // ===== FILTER =====
+    window.filterByCategory = function(cat) {
+        currentFilter = cat;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            const btnCat = btn.getAttribute('data-cat');
+            if (btnCat === cat) {
+                btn.className = btn.className.replace(/bg-slate-100 text-slate-600/g, '').replace(/hover:\S+/g, '');
+                btn.classList.add('bg-slate-900', 'text-white');
+            } else {
+                btn.classList.remove('bg-slate-900', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            }
+        });
+        renderModelGrid();
+    };
+
+    // ===== PHOTO UPLOAD =====
+    window.handlePhotoUpload = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Limit 2MB
+        if (file.size > 2 * 1024 * 1024) {
+            showToast('Lỗi', 'Ảnh phải nhỏ hơn 2MB', 'error_outline', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentPhotoData = e.target.result;
+            const area = document.getElementById('photoUploadArea');
+            area.classList.add('has-photo');
+            area.innerHTML = `<img src="${currentPhotoData}" alt="Preview"/>`;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // ===== CATEGORY TAG TOGGLE =====
+    window.toggleCategoryTag = function(btn) {
+        btn.classList.toggle('opacity-50');
+        btn.classList.toggle('ring-2');
+        btn.classList.toggle('ring-offset-1');
+    };
+
+    window.addCustomCategory = function() {
+        const input = document.getElementById('customCategoryInput');
+        const val = input.value.trim();
+        if (!val) return;
+
+        const container = document.getElementById('categoryTagsContainer');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cat-toggle-btn cat-tag cat-default ring-2 ring-offset-1';
+        btn.setAttribute('data-cat', val);
+        btn.onclick = function() { toggleCategoryTag(this); };
+        btn.textContent = val;
+        container.appendChild(btn);
+        input.value = '';
+    };
+
+    function getSelectedCategories() {
+        const btns = document.querySelectorAll('.cat-toggle-btn:not(.opacity-50)');
+        return Array.from(btns).map(b => b.getAttribute('data-cat'));
+    }
+
+    // ===== MODAL =====
+    window.openAddModal = function() {
+        editingModelId = null;
+        resetModalForm();
+        document.getElementById('modalTitle').textContent = 'THÊM NGƯỜI MẪU MỚI';
+        document.getElementById('btnSubmitText').textContent = 'Thêm người mẫu';
+        document.getElementById('modelModal').style.display = '';
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeModal = function() {
+        document.getElementById('modelModal').style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
+    function resetModalForm() {
+        document.getElementById('modelName').value = '';
+        document.getElementById('modelFacebook').value = '';
+        document.getElementById('modelPhone').value = '';
+        document.getElementById('modelGender').value = 'Nữ';
+        document.getElementById('modelAge').value = '22';
+        document.getElementById('modelHeight').value = '170';
+        document.getElementById('modelWeight').value = '52';
+        document.getElementById('modelDescription').value = '';
+        document.getElementById('priceSession').value = '-';
+        document.getElementById('priceDay').value = '-';
+        document.getElementById('priceSet').value = '-';
+        currentPhotoData = null;
+
+        // Reset photo area
+        const area = document.getElementById('photoUploadArea');
+        area.classList.remove('has-photo');
+        area.innerHTML = `
+            <span class="material-symbols-outlined text-[40px] text-slate-300 mb-2">photo_camera</span>
+            <span class="text-sm text-slate-400 font-medium">Tải lên ảnh chân dung</span>
+        `;
+
+        // Reset category tags
+        document.querySelectorAll('.cat-toggle-btn').forEach(btn => {
+            btn.classList.add('opacity-50');
+            btn.classList.remove('ring-2', 'ring-offset-1');
+        });
+
+        // Remove custom tags
+        const container = document.getElementById('categoryTagsContainer');
+        container.querySelectorAll('.cat-toggle-btn[data-cat]:not([data-cat="Fashion"]):not([data-cat="Lingerie"]):not([data-cat="Sportswear"]):not([data-cat="Beauty"])').forEach(el => el.remove());
+
+        document.getElementById('photoInput').value = '';
+    }
+
+    function fillModalFromModel(m) {
+        document.getElementById('modelName').value = m.name || '';
+        document.getElementById('modelFacebook').value = m.facebookLink || '';
+        document.getElementById('modelPhone').value = m.phone || '';
+        document.getElementById('modelGender').value = m.gender || 'Nữ';
+        document.getElementById('modelAge').value = m.age || 22;
+        document.getElementById('modelHeight').value = m.height || 170;
+        document.getElementById('modelWeight').value = m.weight || 52;
+        document.getElementById('modelDescription').value = m.description || '';
+        document.getElementById('priceSession').value = formatPrice(m.pricePerSession);
+        document.getElementById('priceDay').value = formatPrice(m.pricePerDay);
+        document.getElementById('priceSet').value = formatPrice(m.pricePerSet);
+
+        if (m.photo) {
+            currentPhotoData = m.photo;
+            const area = document.getElementById('photoUploadArea');
+            area.classList.add('has-photo');
+            area.innerHTML = `<img src="${m.photo}" alt="Preview"/>`;
+        }
+
+        // Set category tags
+        document.querySelectorAll('.cat-toggle-btn').forEach(btn => {
+            const cat = btn.getAttribute('data-cat');
+            if (m.categories && m.categories.includes(cat)) {
+                btn.classList.remove('opacity-50');
+                btn.classList.add('ring-2', 'ring-offset-1');
+            } else {
+                btn.classList.add('opacity-50');
+                btn.classList.remove('ring-2', 'ring-offset-1');
+            }
+        });
+
+        // Add custom categories
+        if (m.categories) {
+            const defaults = ['Fashion', 'Lingerie', 'Sportswear', 'Beauty'];
+            const customs = m.categories.filter(c => !defaults.includes(c));
+            customs.forEach(c => {
+                const container = document.getElementById('categoryTagsContainer');
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'cat-toggle-btn cat-tag cat-default ring-2 ring-offset-1';
+                btn.setAttribute('data-cat', c);
+                btn.onclick = function() { toggleCategoryTag(this); };
+                btn.textContent = c;
+                container.appendChild(btn);
+            });
+        }
+    }
+
+    // ===== SAVE MODEL =====
+    window.saveModel = function() {
+        const name = document.getElementById('modelName').value.trim();
+        if (!name) {
+            showToast('Lỗi', 'Vui lòng nhập họ tên người mẫu', 'error_outline', 'error');
+            document.getElementById('modelName').focus();
+            return;
+        }
+
+        const modelData = {
+            name: name,
+            photo: currentPhotoData || null,
+            height: parseInt(document.getElementById('modelHeight').value) || 0,
+            weight: parseInt(document.getElementById('modelWeight').value) || 0,
+            description: document.getElementById('modelDescription').value.trim(),
+            facebookLink: document.getElementById('modelFacebook').value.trim(),
+            phone: document.getElementById('modelPhone').value.trim(),
+            gender: document.getElementById('modelGender').value,
+            age: parseInt(document.getElementById('modelAge').value) || 0,
+            categories: getSelectedCategories(),
+            pricePerSession: parseInt((document.getElementById('priceSession').value || '').replace(/\D/g, '')) || 0,
+            pricePerDay: parseInt((document.getElementById('priceDay').value || '').replace(/\D/g, '')) || 0,
+            pricePerSet: parseInt((document.getElementById('priceSet').value || '').replace(/\D/g, '')) || 0,
+        };
+
+        if (editingModelId) {
+            // Update existing
+            const idx = models.findIndex(m => m.id === editingModelId);
+            if (idx !== -1) {
+                models[idx] = { ...models[idx], ...modelData };
+                showToast('Đã cập nhật', `Hồ sơ ${name} đã được cập nhật`, 'check_circle', 'success');
+            }
+        } else {
+            // Create new
+            modelData.id = 'model_' + Date.now();
+            modelData.createdAt = new Date().toISOString();
+            modelData.createdBy = localStorage.getItem('nevo_user') || 'Admin';
+            models.unshift(modelData);
+            showToast('Thành công', `Đã thêm ${name} vào hệ thống`, 'check_circle', 'success');
+        }
+
+        saveModels();
+        closeModal();
+        renderModelGrid();
+
+        // If we were in profile view and editing, refresh profile
+        if (editingModelId && currentModelId === editingModelId) {
+            openProfile(editingModelId);
+        }
+    };
+
+    // ===== VIEW PROFILE =====
+    window.openProfile = function(id) {
+        const model = models.find(m => m.id === id);
+        if (!model) return;
+
+        currentModelId = id;
+
+        // Fill profile view
+        document.getElementById('profilePhoto').src = model.photo || '';
+        document.getElementById('profilePhoto').style.display = model.photo ? '' : 'none';
+        document.getElementById('profileName').textContent = model.name;
+        document.getElementById('profileGenderAge').textContent = `${model.gender || 'Chưa rõ'} • ${model.age || '--'} tuổi`;
+        document.getElementById('profileHeight').textContent = `${model.height || '--'} cm`;
+        document.getElementById('profileWeight').textContent = `${model.weight || '--'} kg`;
+        document.getElementById('profileDescription').textContent = model.description || 'Chưa có mô tả';
+
+        // Facebook
+        const fbEl = document.getElementById('profileFacebook');
+        if (model.facebookLink) {
+            fbEl.href = model.facebookLink.startsWith('http') ? model.facebookLink : `https://${model.facebookLink}`;
+            fbEl.querySelector('span:last-child').textContent = model.facebookLink;
+            fbEl.classList.remove('hidden');
+        } else {
+            fbEl.classList.add('hidden');
+        }
+
+        // Phone
+        const phoneEl = document.getElementById('profilePhone');
+        const phoneRow = document.getElementById('profilePhoneRow');
+        if (model.phone) {
+            phoneEl.textContent = model.phone;
+            phoneRow.classList.remove('hidden');
+        } else {
+            phoneRow.classList.add('hidden');
+        }
+
+        // Categories
+        const catContainer = document.getElementById('profileCategories');
+        catContainer.innerHTML = (model.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)}">${c}</span>`).join('');
+
+        // Pricing
+        document.getElementById('profilePriceSession').textContent = `${formatPrice(model.pricePerSession)} VND`;
+        document.getElementById('profilePriceDay').textContent = `${formatPrice(model.pricePerDay)} VND`;
+        document.getElementById('profilePriceSet').textContent = `${formatPrice(model.pricePerSet)} VND`;
+
+        // Meta
+        document.getElementById('profileCreatedAt').textContent = model.createdAt ? new Date(model.createdAt).toLocaleDateString('vi-VN') : '--';
+        document.getElementById('profileCreatedBy').textContent = model.createdBy || '--';
+
+        // Show profile view
+        showView('profile');
+    };
+
+    window.showListView = function() {
+        currentModelId = null;
+        showView('listing');
+    };
+
+    function showView(viewName) {
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewName}`).classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ===== EDIT / DELETE =====
+    window.editCurrentModel = function() {
+        if (!currentModelId) return;
+        const model = models.find(m => m.id === currentModelId);
+        if (!model) return;
+
+        editingModelId = currentModelId;
+        resetModalForm();
+        fillModalFromModel(model);
+        document.getElementById('modalTitle').textContent = 'CHỈNH SỬA NGƯỜI MẪU';
+        document.getElementById('btnSubmitText').textContent = 'Lưu thay đổi';
+        document.getElementById('modelModal').style.display = '';
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.deleteCurrentModel = function() {
+        if (!currentModelId) return;
+        const model = models.find(m => m.id === currentModelId);
+        if (!model) return;
+
+        if (!confirm(`Bạn chắc chắn muốn xóa "${model.name}" khỏi hệ thống?`)) return;
+
+        models = models.filter(m => m.id !== currentModelId);
+        saveModels();
+        showToast('Đã xóa', `${model.name} đã được xóa khỏi hệ thống`, 'delete', 'error');
+        showListView();
+        renderModelGrid();
+    };
+
+    // ===== TOAST =====
+    function showToast(title, msg, icon, type) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toastTitle').textContent = title;
+        document.getElementById('toastMsg').textContent = msg;
+        document.getElementById('toastIcon').textContent = icon || 'check_circle';
+        toast.className = `toast toast-${type || 'success'}`;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    // ===== NAV HELPERS =====
+    window.toggleNavUser = function() {
+        const dd = document.getElementById('navUserDropdown');
+        if (dd.style.opacity === '1') {
+            dd.style.opacity = '0';
+            dd.style.pointerEvents = 'none';
+            dd.style.transform = 'translateY(-8px)';
+        } else {
+            dd.style.opacity = '1';
+            dd.style.pointerEvents = 'auto';
+            dd.style.transform = 'translateY(0)';
+        }
+    };
+
+    window.handleLogout = function() {
+        localStorage.removeItem('nevo_logged_in');
+        localStorage.removeItem('nevo_user');
+        localStorage.removeItem('nevo_role');
+        window.location.replace('login.html');
+    };
+
+    // Mobile Menu
+    window.openMobileMenu = function() {
+        document.getElementById('mobileOverlay').classList.remove('hidden');
+        document.getElementById('mobileMenu').style.transform = 'translateX(0)';
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeMobileMenu = function() {
+        document.getElementById('mobileMenu').style.transform = 'translateX(-100%)';
+        document.getElementById('mobileOverlay').classList.add('hidden');
+        document.body.style.overflow = '';
+    };
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('navUserWrapper');
+        const dd = document.getElementById('navUserDropdown');
+        if (wrapper && dd && !wrapper.contains(e.target)) {
+            dd.style.opacity = '0';
+            dd.style.pointerEvents = 'none';
+            dd.style.transform = 'translateY(-8px)';
+        }
+    });
+
+    // Close modal on overlay click
+    document.getElementById('modelModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // ===== ADMIN LINK VISIBILITY =====
+    function updateNavVisibility() {
+        const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
+        const hasAdminAccess = localStorage.getItem('nevo_admin_access') === 'true';
+        const hasModelEdit = localStorage.getItem('nevo_model_edit') === 'true';
+
+        // Show/hide admin link
+        const adminLink = document.getElementById('navAdminLink');
+        const mobileAdminLink = document.getElementById('mobileAdminLink');
+        if (role === 'admin' || role === 'manager' || hasAdminAccess) {
+            if (adminLink) adminLink.classList.remove('hidden');
+            if (mobileAdminLink) mobileAdminLink.classList.remove('hidden');
+        }
+
+        // Show/hide add model button (admin/manager or users with model_edit)
+        const addBtn = document.getElementById('btnAddModel');
+        const editBtn = document.getElementById('btnEditProfile');
+        const deleteBtn = document.getElementById('btnDeleteProfile');
+        const canEdit = role === 'admin' || role === 'manager' || hasModelEdit;
+        if (!canEdit) {
+            if (addBtn) addBtn.classList.add('hidden');
+            if (editBtn) editBtn.classList.add('hidden');
+            if (deleteBtn) deleteBtn.classList.add('hidden');
+        }
+
+        // Update user info in nav
+        const userName = localStorage.getItem('nevo_user') || 'Admin';
+        const userRole = localStorage.getItem('nevo_role') || 'admin';
+        const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        const navInit = document.getElementById('navInit');
+        const navName = document.getElementById('navName');
+        const dropName = document.getElementById('dropName');
+        const dropRole = document.getElementById('dropRole');
+        
+        if (navInit) navInit.textContent = initials;
+        if (navName) navName.textContent = userName;
+        if (dropName) dropName.textContent = userName;
+        if (dropRole) dropRole.textContent = userRole.toUpperCase();
+    }
+
+    // ===== INIT =====
+    document.addEventListener('DOMContentLoaded', function() {
+        loadModels();
+        renderModelGrid();
+        updateNavVisibility();
+
+        // Mobile menu button
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        if (mobileBtn) mobileBtn.addEventListener('click', openMobileMenu);
+
+        // Global search
+        const globalSearch = document.getElementById('globalSearch');
+        if (globalSearch) {
+            globalSearch.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('modelSearch').value = this.value;
+                    showListView();
+                    renderModelGrid();
+                }
+            });
+        }
+    });
+
+})();
+</script>
+
+</body>
+</html>
