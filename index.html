@@ -7098,7 +7098,7 @@
     };
 
     window.unformatCurrencyValue = function(str) {
-        return Number(str.replace(/,/g, '')) || 0;
+        return Number(String(str).replace(/[^0-9]/g, '')) || 0;
     };
 
     window.focusNextPlanInput = function(currentInput) {
