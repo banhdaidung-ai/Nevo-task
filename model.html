@@ -673,29 +673,99 @@
 </div>
 
 <!-- ====== JAVASCRIPT ====== -->
-<script>
+<script type="module">
+import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from './firebase-service.js';
+
 (function() {
     'use strict';
 
-    // ===== DATA LAYER =====
-    const STORAGE_KEY = 'nevo_models';
+    // ===== DATA LAYER (FIRESTORE REALTIME) =====
+    const COLLECTION_NAME = 'models';
     let models = [];
     let currentFilter = '';
     let currentModelId = null;
     let editingModelId = null;
     let currentPhotoData = null;
+    let migrationChecked = false;
 
-    function loadModels() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            models = raw ? JSON.parse(raw) : [];
-        } catch (e) {
+    function initFirestoreListener() {
+        const modelsRef = collection(db, COLLECTION_NAME);
+        onSnapshot(modelsRef, (snapshot) => {
             models = [];
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                models.push({ id: docSnap.id, ...data });
+            });
+            // Sort newest first
+            models.sort((a, b) => {
+                const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (typeof a.createdAt === 'string' ? new Date(a.createdAt).getTime() : 0);
+                const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (typeof b.createdAt === 'string' ? new Date(b.createdAt).getTime() : 0);
+                return tb - ta;
+            });
+            renderModelGrid();
+
+            // One-time migration from localStorage
+            if (!migrationChecked) {
+                migrationChecked = true;
+                migrateLocalStorageToFirestore();
+            }
+        }, (error) => {
+            console.error('Firestore listener error:', error);
+            showToast('Lỗi kết nối', 'Không thể kết nối cơ sở dữ liệu', 'cloud_off', 'error');
+        });
+    }
+
+    // One-time migration from localStorage to Firestore
+    async function migrateLocalStorageToFirestore() {
+        const raw = localStorage.getItem('nevo_models');
+        if (!raw) return;
+        try {
+            const localModels = JSON.parse(raw);
+            if (!localModels || localModels.length === 0) {
+                localStorage.removeItem('nevo_models');
+                return;
+            }
+            // Only migrate if Firestore has no models yet
+            if (models.length > 0) {
+                localStorage.removeItem('nevo_models');
+                return;
+            }
+            for (const m of localModels) {
+                const { id, ...data } = m;
+                if (data.createdAt && typeof data.createdAt === 'string') {
+                    data.createdAt = new Date(data.createdAt);
+                }
+                await addDoc(collection(db, COLLECTION_NAME), data);
+            }
+            localStorage.removeItem('nevo_models');
+            showToast('Đồng bộ', 'Đã chuyển dữ liệu model lên cloud', 'cloud_done', 'success');
+        } catch (e) {
+            console.error('Migration error:', e);
         }
     }
 
-    function saveModels() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(models));
+    // Compress image for Firestore storage (keeps under ~200KB)
+    function compressImage(file, maxWidth, quality) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > maxWidth) {
+                        h = Math.round((h * maxWidth) / w);
+                        w = maxWidth;
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
     }
 
     // ===== CATEGORY HELPERS =====
@@ -873,20 +943,21 @@
         const file = event.target.files[0];
         if (!file) return;
 
-        // Limit 2MB
+        // Limit 2MB original file size
         if (file.size > 2 * 1024 * 1024) {
             showToast('Lỗi', 'Ảnh phải nhỏ hơn 2MB', 'error_outline', 'error');
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            currentPhotoData = e.target.result;
+        // Compress image for cloud storage (Firestore 1MB doc limit)
+        compressImage(file, 600, 0.65).then(dataUrl => {
+            currentPhotoData = dataUrl;
             const area = document.getElementById('photoUploadArea');
             area.classList.add('has-photo');
             area.innerHTML = `<img src="${currentPhotoData}" alt="Preview"/>`;
-        };
-        reader.readAsDataURL(file);
+        }).catch(() => {
+            showToast('Lỗi', 'Không thể xử lý ảnh', 'error_outline', 'error');
+        });
     };
 
     // ===== CATEGORY TAG TOGGLE =====
@@ -1016,14 +1087,22 @@
         }
     }
 
-    // ===== SAVE MODEL =====
-    window.saveModel = function() {
+    // ===== SAVE MODEL (FIRESTORE) =====
+    window.saveModel = async function() {
         const name = document.getElementById('modelName').value.trim();
         if (!name) {
             showToast('Lỗi', 'Vui lòng nhập họ tên người mẫu', 'error_outline', 'error');
             document.getElementById('modelName').focus();
             return;
         }
+
+        // Disable button to prevent double submit
+        const submitBtn = document.getElementById('btnSubmitModel');
+        const btnText = document.getElementById('btnSubmitText');
+        const originalText = btnText.textContent;
+        submitBtn.disabled = true;
+        btnText.textContent = 'Đang lưu...';
+        submitBtn.style.opacity = '0.6';
 
         const modelData = {
             name: name,
@@ -1041,29 +1120,32 @@
             pricePerSet: parseInt((document.getElementById('priceSet').value || '').replace(/\D/g, '')) || 0,
         };
 
-        if (editingModelId) {
-            // Update existing
-            const idx = models.findIndex(m => m.id === editingModelId);
-            if (idx !== -1) {
-                models[idx] = { ...models[idx], ...modelData };
+        try {
+            if (editingModelId) {
+                // Update existing document in Firestore
+                const docRef = doc(db, COLLECTION_NAME, editingModelId);
+                await updateDoc(docRef, modelData);
                 showToast('Đã cập nhật', `Hồ sơ ${name} đã được cập nhật`, 'check_circle', 'success');
+            } else {
+                // Create new document in Firestore
+                modelData.createdAt = serverTimestamp();
+                modelData.createdBy = localStorage.getItem('nevo_user') || 'Admin';
+                await addDoc(collection(db, COLLECTION_NAME), modelData);
+                showToast('Thành công', `Đã thêm ${name} vào hệ thống`, 'check_circle', 'success');
             }
-        } else {
-            // Create new
-            modelData.id = 'model_' + Date.now();
-            modelData.createdAt = new Date().toISOString();
-            modelData.createdBy = localStorage.getItem('nevo_user') || 'Admin';
-            models.unshift(modelData);
-            showToast('Thành công', `Đã thêm ${name} vào hệ thống`, 'check_circle', 'success');
-        }
+            closeModal();
 
-        saveModels();
-        closeModal();
-        renderModelGrid();
-
-        // If we were in profile view and editing, refresh profile
-        if (editingModelId && currentModelId === editingModelId) {
-            openProfile(editingModelId);
+            // If editing current profile, refresh after Firestore sync
+            if (editingModelId && currentModelId === editingModelId) {
+                setTimeout(() => openProfile(currentModelId), 300);
+            }
+        } catch (error) {
+            console.error('Save model error:', error);
+            showToast('Lỗi', 'Không thể lưu dữ liệu. Vui lòng thử lại.', 'error_outline', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            btnText.textContent = originalText;
+            submitBtn.style.opacity = '1';
         }
     };
 
@@ -1113,7 +1195,8 @@
         document.getElementById('profilePriceSet').textContent = `${formatPrice(model.pricePerSet)} VND`;
 
         // Meta
-        document.getElementById('profileCreatedAt').textContent = model.createdAt ? new Date(model.createdAt).toLocaleDateString('vi-VN') : '--';
+        const _createdDate = model.createdAt?.toDate ? model.createdAt.toDate() : (model.createdAt ? new Date(model.createdAt) : null);
+        document.getElementById('profileCreatedAt').textContent = _createdDate ? _createdDate.toLocaleDateString('vi-VN') : '--';
         document.getElementById('profileCreatedBy').textContent = model.createdBy || '--';
 
         // Show profile view
@@ -1146,18 +1229,22 @@
         document.body.style.overflow = 'hidden';
     };
 
-    window.deleteCurrentModel = function() {
+    window.deleteCurrentModel = async function() {
         if (!currentModelId) return;
         const model = models.find(m => m.id === currentModelId);
         if (!model) return;
 
         if (!confirm(`Bạn chắc chắn muốn xóa "${model.name}" khỏi hệ thống?`)) return;
 
-        models = models.filter(m => m.id !== currentModelId);
-        saveModels();
-        showToast('Đã xóa', `${model.name} đã được xóa khỏi hệ thống`, 'delete', 'error');
-        showListView();
-        renderModelGrid();
+        try {
+            await deleteDoc(doc(db, COLLECTION_NAME, currentModelId));
+            showToast('Đã xóa', `${model.name} đã được xóa khỏi hệ thống`, 'delete', 'error');
+            showListView();
+            // renderModelGrid() sẽ được gọi tự động bởi onSnapshot
+        } catch (error) {
+            console.error('Delete error:', error);
+            showToast('Lỗi', 'Không thể xóa. Vui lòng thử lại.', 'error_outline', 'error');
+        }
     };
 
     // ===== TOAST =====
@@ -1263,8 +1350,7 @@
 
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', function() {
-        loadModels();
-        renderModelGrid();
+        initFirestoreListener();
         updateNavVisibility();
 
         // Mobile menu button
