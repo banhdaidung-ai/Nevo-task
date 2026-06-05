@@ -6408,8 +6408,10 @@
         const cfgRef = window.fsCollection(window.db, "ledger_configs");
 
         // 1. Sync Columns
+        window._skipColRender = false;
         window.fsOnSnapshot(window.fsQuery(colRef, window.fsOrderBy("createdAt", "asc")), (snap) => {
             window.financeColumns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            if (window._skipColRender) { window._skipColRender = false; return; }
             if (typeof window.renderFinancePage === 'function') window.renderFinancePage();
             if (typeof renderFinanceColumnsList === 'function') renderFinanceColumnsList();
         }, (err) => console.error("Column Sync Error:", err));
@@ -6669,6 +6671,7 @@
             const tdRem = document.getElementById(`rem-${col.name}`);
             if (tdRem) {
                 tdRem.textContent = remain.toLocaleString();
+                tdRem.dataset.actual = actual;
                 tdRem.className = `py-3 px-4 text-right dynamic-col font-black border-l border-yellow-300/50 ${remain < 0 ? 'text-red-600 animate-pulse' : ''}`;
             }
         });
@@ -7112,10 +7115,57 @@
     window.updateColumnPlan = async function(id, newPlan, periodKey) {
         if (!checkPermission('admin_access')) return;
         try {
+            // Optimistic local update — prevents value loss on re-render
+            const col = window.financeColumns.find(c => c.id === id);
+            if (col) {
+                if (!col.monthlyPlans) col.monthlyPlans = {};
+                col.monthlyPlans[periodKey] = Number(newPlan) || 0;
+            }
+
+            // Update plan totals and remaining in DOM immediately
+            let totalPlan = 0;
+            window.financeColumns.forEach(c => {
+                const mp = c.monthlyPlans || {};
+                const pv = Number(mp[periodKey] !== undefined ? mp[periodKey] : (c.plan || 0));
+                totalPlan += pv;
+                // Update individual remaining cell
+                const remCell = document.getElementById(`rem-${c.name}`);
+                if (remCell) {
+                    const actual = Number(remCell.dataset.actual || 0);
+                    const remain = pv - actual;
+                    remCell.textContent = remain.toLocaleString();
+                    remCell.className = `py-3 px-4 text-right dynamic-col font-black border-l border-yellow-300/50 ${remain < 0 ? 'text-red-600 animate-pulse' : ''}`;
+                }
+            });
+            const planTotalEl = document.getElementById('finTableTotalPlan');
+            if (planTotalEl) planTotalEl.textContent = totalPlan.toLocaleString();
+            const remainTotalEl = document.getElementById('finTableTotalRemain');
+            const spentTotalEl = document.getElementById('finTableTotalCode');
+            if (remainTotalEl) {
+                const totalSpent = window.financeExpenses
+                    .filter(e => e.date && e.date.startsWith(periodKey))
+                    .reduce((a, b) => a + (Number(b.amount) || 0), 0);
+                remainTotalEl.textContent = (totalPlan - totalSpent).toLocaleString();
+            }
+            // Update KPI cards
+            const kpiBudget = document.getElementById('finKpiMonthlyBudget');
+            if (kpiBudget) kpiBudget.textContent = totalPlan.toLocaleString();
+            const kpiRemain = document.getElementById('finKpiRemaining');
+            if (kpiRemain) {
+                const totalSpentMonth = window.financeExpenses
+                    .filter(e => e.date && e.date.startsWith(periodKey))
+                    .reduce((a, b) => a + (Number(b.amount) || 0), 0);
+                kpiRemain.textContent = (totalPlan - totalSpentMonth).toLocaleString();
+            }
+
+            window._skipColRender = true;
             const updateObj = {};
             updateObj[`monthlyPlans.${periodKey}`] = Number(newPlan) || 0;
             await window.fsUpdateDoc(window.fsDoc(window.db, "ledger_columns", id), updateObj);
-        } catch(err) { console.error(err); }
+        } catch(err) {
+            console.error(err);
+            window._skipColRender = false;
+        }
     };
 
 
