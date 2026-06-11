@@ -3291,16 +3291,16 @@
             }
         }
 
-        // Check model_access permission
+        // Check model_view permission
         if (modelLink) {
-            if (checkPermission('model_access')) {
+            if (checkPermission('model_view')) {
                 modelLink.classList.remove('hidden');
             } else {
                 modelLink.classList.add('hidden');
             }
         }
         if (mobileModelLink) {
-            if (checkPermission('model_access')) {
+            if (checkPermission('model_view')) {
                 mobileModelLink.classList.remove('hidden');
                 mobileModelLink.classList.add('flex');
             } else {
