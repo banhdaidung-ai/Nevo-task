@@ -373,6 +373,11 @@
                     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
                     <input id="modelSearch" type="text" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-primary/30 focus:ring-4 focus:ring-primary/5 outline-none transition-all" placeholder="Tìm theo tên người mẫu..." oninput="renderModelGrid()"/>
                 </div>
+                <select id="modelGenderFilter" class="px-3 py-2.5 bg-slate-50 border-2 border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-primary/30 outline-none cursor-pointer" onchange="renderModelGrid()">
+                    <option value="">Tất cả giới tính</option>
+                    <option value="Nam">Model Nam</option>
+                    <option value="Nữ">Model Nữ</option>
+                </select>
                 <div class="flex items-center gap-2 flex-wrap">
                     <button onclick="filterByCategory('')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-900 text-white" data-cat="">Tất cả</button>
                     <button onclick="filterByCategory('Fashion')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-pink-50 hover:text-pink-600" data-cat="Fashion">Fashion</button>
@@ -380,7 +385,13 @@
                     <button onclick="filterByCategory('Sportswear')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600" data-cat="Sportswear">Sportswear</button>
                     <button onclick="filterByCategory('Beauty')" class="filter-btn px-3 py-2 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-50 hover:text-amber-600" data-cat="Beauty">Beauty</button>
                 </div>
-                <span id="modelCount" class="ml-auto text-xs text-slate-400 font-medium"></span>
+                <div class="ml-auto flex items-center gap-3">
+                    <span id="modelCount" class="text-xs text-slate-400 font-medium"></span>
+                    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                        <button onclick="changeViewMode('grid')" id="viewBtnGrid" class="p-1.5 rounded-lg bg-white shadow-sm text-primary transition-all flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">grid_view</span></button>
+                        <button onclick="changeViewMode('list')" id="viewBtnList" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-all flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">view_list</span></button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -808,17 +819,47 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         }
     };
 
+    // ===== VIEW MODE =====
+    window.viewMode = 'grid'; // Default
+    window.changeViewMode = function(mode) {
+        window.viewMode = mode;
+        const btnGrid = document.getElementById('viewBtnGrid');
+        const btnList = document.getElementById('viewBtnList');
+        
+        if (btnGrid) {
+            btnGrid.classList.toggle('bg-white', mode === 'grid');
+            btnGrid.classList.toggle('shadow-sm', mode === 'grid');
+            btnGrid.classList.toggle('text-primary', mode === 'grid');
+            btnGrid.classList.toggle('text-slate-400', mode !== 'grid');
+        }
+        
+        if (btnList) {
+            btnList.classList.toggle('bg-white', mode === 'list');
+            btnList.classList.toggle('shadow-sm', mode === 'list');
+            btnList.classList.toggle('text-primary', mode === 'list');
+            btnList.classList.toggle('text-slate-400', mode !== 'list');
+        }
+        
+        renderModelGrid();
+    }
+
     // ===== RENDER MODEL GRID =====
     window.renderModelGrid = function() {
         const grid = document.getElementById('modelGrid');
         const emptyState = document.getElementById('emptyState');
         const searchTerm = (document.getElementById('modelSearch')?.value || '').toLowerCase().trim();
+        const genderFilter = document.getElementById('modelGenderFilter')?.value || '';
 
         let filtered = models;
 
         // Filter by search
         if (searchTerm) {
             filtered = filtered.filter(m => m.name.toLowerCase().includes(searchTerm));
+        }
+        
+        // Filter by gender
+        if (genderFilter) {
+            filtered = filtered.filter(m => m.gender === genderFilter);
         }
 
         // Filter by category
@@ -837,14 +878,77 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         }
 
         emptyState.classList.add('hidden');
+        
+        // Update grid layout class based on view mode
+        if (window.viewMode === 'list') {
+            grid.className = "flex flex-col gap-4";
+        } else {
+            grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+        }
 
         grid.innerHTML = filtered.map((m, idx) => {
             const genderIcon = m.gender === 'Nam' ? 'male' : m.gender === 'Nữ' ? 'female' : 'transgender';
-            const badge = idx === 0 ? 'TOP TALENT' : (idx % 3 === 2 ? 'EXCLUSIVE' : (m.pricePerDay >= 5000000 ? 'TOP TALENT' : ''));
-            const badgeColor = badge === 'EXCLUSIVE' ? 'bg-amber-500' : 'bg-primary';
+            const badge = idx === 0 ? 'TÀI NĂNG' : (idx % 3 === 2 ? 'ĐỘC QUYỀN' : (m.pricePerDay >= 5000000 ? 'TÀI NĂNG' : ''));
+            const badgeColor = badge === 'ĐỘC QUYỀN' ? 'bg-amber-500' : 'bg-primary';
             const desc = m.description ? (m.description.length > 100 ? m.description.substring(0, 100) + '...' : m.description) : '';
             const hasPrice = m.pricePerSession > 0 || m.pricePerDay > 0 || m.pricePerSet > 0;
 
+            if (window.viewMode === 'list') {
+                return `
+                <div class="model-card flex bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up" style="animation-delay: ${idx * 0.05}s">
+                    <div class="w-48 shrink-0 bg-slate-100 relative overflow-hidden cursor-pointer" onclick="openProfile('${m.id}')">
+                        ${m.photo
+                            ? `<img src="${m.photo}" alt="${m.name}" class="model-photo w-full h-full object-cover"/>`
+                            : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                                   <span class="material-symbols-outlined text-[48px] text-slate-300">face_3</span>
+                               </div>`
+                        }
+                        ${badge ? `<div class="absolute top-2 left-2"><span class="px-2 py-0.5 ${badgeColor} text-white text-[9px] font-extrabold uppercase tracking-wider rounded-full shadow-md">${badge}</span></div>` : ''}
+                    </div>
+                    <div class="p-5 flex-grow flex flex-col justify-center space-y-3 relative">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-headline font-extrabold text-lg text-slate-900 cursor-pointer hover:text-primary transition-colors" onclick="openProfile('${m.id}')">${m.name}</h3>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 font-semibold">
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-slate-400">${genderIcon}</span> ${m.gender || '--'}</span>
+                            <span class="text-slate-200">|</span>
+                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Tuổi</span> <strong class="text-slate-700">${m.age || '--'}</strong></span>
+                            <span class="text-slate-200">|</span>
+                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Cao</span> <strong class="text-slate-700">${m.height || '--'}cm</strong></span>
+                            <span class="text-slate-200">|</span>
+                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Nặng</span> <strong class="text-slate-700">${m.weight || '--'}kg</strong></span>
+                        </div>
+                        ${desc ? `<p class="text-xs text-slate-500 leading-relaxed line-clamp-1" style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">"${desc}"</p>` : ''}
+                        <div class="flex flex-wrap gap-1.5 mt-auto pt-2">
+                            ${(m.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)} !text-[10px] !px-2.5 !py-0.5">${c}</span>`).join('')}
+                        </div>
+                    </div>
+                    ${hasPrice ? `
+                    <div class="w-64 shrink-0 bg-slate-50 border-l border-slate-100 p-5 flex flex-col justify-center">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[12px]">sell</span> BẢNG GIÁ
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-medium">Theo buổi</span>
+                                <span class="font-headline font-extrabold text-primary">${formatPriceShort(m.pricePerSession)}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-medium">Theo ngày</span>
+                                <span class="font-headline font-extrabold text-primary">${formatPriceShort(m.pricePerDay)}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-medium">Theo set đồ</span>
+                                <span class="font-headline font-extrabold text-primary">${formatPriceShort(m.pricePerSet)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+                `;
+            }
+
+            // Grid view (original)
             return `
             <div class="model-card bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up" style="animation-delay: ${idx * 0.05}s">
                 <div class="aspect-[4/5] bg-slate-100 relative overflow-hidden" onclick="openProfile('${m.id}')">
@@ -890,15 +994,15 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
                         </p>
                         <div class="grid grid-cols-3 gap-2">
                             <div class="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
-                                <p class="text-[9px] text-slate-400 font-medium">Half day</p>
+                                <p class="text-[9px] text-slate-400 font-medium">Theo buổi</p>
                                 <p class="font-headline font-extrabold text-sm text-primary">${formatPriceShort(m.pricePerSession)}</p>
                             </div>
                             <div class="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
-                                <p class="text-[9px] text-slate-400 font-medium">Full day</p>
+                                <p class="text-[9px] text-slate-400 font-medium">Theo ngày</p>
                                 <p class="font-headline font-extrabold text-sm text-primary">${formatPriceShort(m.pricePerDay)}</p>
                             </div>
                             <div class="bg-slate-50 rounded-lg p-2 text-center border border-slate-100">
-                                <p class="text-[9px] text-slate-400 font-medium">Per set</p>
+                                <p class="text-[9px] text-slate-400 font-medium">Theo set đồ</p>
                                 <p class="font-headline font-extrabold text-sm text-primary">${formatPriceShort(m.pricePerSet)}</p>
                             </div>
                         </div>
