@@ -6,17 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Quản lý Model — Task Manager</title>
     <meta name="description" content="Quản lý hồ sơ người mẫu, talent cho hệ thống NEVO"/>
-    <!-- Auth + Model Guard -->
+    <!-- Auth + Model Guard (Async - loads role permissions from Firestore) -->
     <script>
         (function() {
             if (localStorage.getItem('nevo_logged_in') !== 'true') {
                 window.location.replace('login.html'); return;
             }
+            // Admin and manager always have access (fast sync check)
             var role = (localStorage.getItem('nevo_role') || '').toLowerCase();
-            var hasModelView = localStorage.getItem('nevo_model_view') === 'true';
-            if (role !== 'admin' && role !== 'manager' && !hasModelView) {
-                window.location.replace('index.html');
-            }
+            if (role === 'admin' || role === 'manager') return;
+            // For other roles, we defer the check until Firestore roles load
+            // The actual guard is enforced in the DOMContentLoaded handler below
+            // after loading system_roles from Firestore.
+            window.__modelGuardPending = true;
         })();
     </script>
     <!-- DNS Prefetch & Preconnect -->
@@ -1308,10 +1310,25 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
     });
 
     // ===== ADMIN LINK VISIBILITY =====
+    // Permission helper: checks model_view/model_edit from Firestore roles
+    function checkModelPermission(permKey) {
+        const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
+        if (role === 'admin') return true;
+        if (window.__modelAppRoles && window.__modelAppRoles[role]) {
+            const roleData = window.__modelAppRoles[role];
+            if (roleData.permissions && roleData.permissions[permKey] !== undefined) {
+                return !!roleData.permissions[permKey];
+            }
+        }
+        // Fallback for manager
+        if (role === 'manager') return true;
+        return false;
+    }
+
     function updateNavVisibility() {
         const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
-        const hasAdminAccess = localStorage.getItem('nevo_admin_access') === 'true';
-        const hasModelEdit = localStorage.getItem('nevo_model_edit') === 'true';
+        const hasAdminAccess = checkModelPermission('admin_access');
+        const hasModelEdit = checkModelPermission('model_edit');
 
         // Show/hide admin link
         const adminLink = document.getElementById('navAdminLink');
@@ -1330,6 +1347,10 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
             if (addBtn) addBtn.classList.add('hidden');
             if (editBtn) editBtn.classList.add('hidden');
             if (deleteBtn) deleteBtn.classList.add('hidden');
+        } else {
+            if (addBtn) addBtn.classList.remove('hidden');
+            if (editBtn) editBtn.classList.remove('hidden');
+            if (deleteBtn) deleteBtn.classList.remove('hidden');
         }
 
         // Update user info in nav
@@ -1348,9 +1369,50 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         if (dropRole) dropRole.textContent = userRole.toUpperCase();
     }
 
+    // ===== LOAD ROLES FROM FIRESTORE (for permission checking) =====
+    window.__modelAppRoles = {};
+    function loadRolesFromFirestore() {
+        try {
+            // Use onSnapshot for realtime updates from Firestore system_roles collection
+            onSnapshot(collection(db, 'system_roles'), (snapshot) => {
+                const roles = {};
+                snapshot.forEach((docSnap) => {
+                    roles[docSnap.id] = docSnap.data();
+                });
+                window.__modelAppRoles = roles;
+                console.log('[Model] Roles loaded:', Object.keys(roles).length, 'roles');
+                
+                // Enforce guard for non-admin/manager users
+                if (window.__modelGuardPending) {
+                    window.__modelGuardPending = false;
+                    const hasView = checkModelPermission('model_view');
+                    if (!hasView) {
+                        console.warn('[Model] User does not have model_view permission, redirecting...');
+                        window.location.replace('index.html');
+                        return;
+                    }
+                }
+                
+                // Refresh UI based on new permissions
+                updateNavVisibility();
+            });
+        } catch (e) {
+            console.error('[Model] Error loading roles:', e);
+            // Fallback: if roles fail to load, enforce guard based on role slug only
+            if (window.__modelGuardPending) {
+                window.__modelGuardPending = false;
+                const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
+                if (role !== 'admin' && role !== 'manager') {
+                    window.location.replace('index.html');
+                }
+            }
+        }
+    }
+
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', function() {
         initFirestoreListener();
+        loadRolesFromFirestore();
         updateNavVisibility();
 
         // Mobile menu button
