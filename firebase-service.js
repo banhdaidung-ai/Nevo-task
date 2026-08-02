@@ -9,14 +9,19 @@ import {
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
     serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+import { 
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut 
+} from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 import { firebaseConfig } from "./app-config.js";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // Export to window for legacy support if needed
 window.db = db;
+window.auth = auth;
 window.fsCollection = collection;
 window.fsAddDoc = addDoc;
 window.fsGetDocs = getDocs;
@@ -36,7 +41,9 @@ window.fsRunTransaction = runTransaction;
 window.fsTimestamp = Timestamp;
 
 export { 
-    db, collection, addDoc, getDocs, getDoc, doc, 
+    db, auth, collection, addDoc, getDocs, getDoc, doc, 
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
-    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
+    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp,
+    onAuthStateChanged, signInWithEmailAndPassword, signOut
 };
+

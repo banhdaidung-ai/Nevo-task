@@ -11,9 +11,11 @@ import {
 import { formatDate, sanitizeNumber } from "./utils.js";
 import { checkPermission } from "./auth-service.js";
 import { showToast, navigateTo } from "./ui-service.js";
+import { printOrderVoucher } from "./pdf-service.js";
 
 // Set globals for legacy support
 window.db = db;
+window.printOrderVoucher = printOrderVoucher;
 window.formatCurrency = (val) => {
     return Number(val || 0).toLocaleString('vi-VN') + ' đ';
 };

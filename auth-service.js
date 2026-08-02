@@ -3,12 +3,37 @@
   Permissions and Access Control
 */
 
+import { auth, onAuthStateChanged } from "./firebase-service.js";
+
 export function checkAuth() {
     if (localStorage.getItem('nevo_logged_in') !== 'true') {
         window.location.replace('login.html');
         return false;
     }
     return true;
+}
+
+export function initAuthGuard(onSuccess) {
+    if (!checkAuth()) return;
+    
+    if (auth) {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                if (onSuccess) onSuccess(user);
+            } else {
+                // If not signed in on Firebase and no session stored
+                const sessionUser = localStorage.getItem('nevo_user');
+                if (!sessionUser) {
+                    localStorage.removeItem('nevo_logged_in');
+                    window.location.replace('login.html');
+                } else if (onSuccess) {
+                    onSuccess({ displayName: sessionUser });
+                }
+            }
+        });
+    } else if (onSuccess) {
+        onSuccess(getCurrentUser());
+    }
 }
 
 export function getCurrentUser() {
@@ -28,7 +53,7 @@ export function checkPermission(field) {
 
     // Fallback: basic permission check if global version not yet loaded
     const user = getCurrentUser();
-    const userRoleSlug = user.role.toLowerCase();
+    const userRoleSlug = (user.role || '').toLowerCase();
     if (userRoleSlug === 'admin') return true;
     
     const permissionMap = {
@@ -55,5 +80,3 @@ export function checkPermission(field) {
     return false;
 }
 
-// DO NOT overwrite window.checkPermission here — the comprehensive version
-// in index.html (regular <script>) must remain the authoritative global.
