@@ -170,6 +170,20 @@
                 <span class="material-symbols-outlined text-primary text-[16px]">inventory_2</span>
                 <span class="text-xs font-bold text-primary font-headline">Sản phẩm mới</span>
             </div>
+            
+            <div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
+
+            <!-- View Mode Tabs -->
+            <div class="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <button id="tab-mode-month" type="button" class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all bg-white text-slate-800 shadow-sm cursor-pointer">
+                    <span class="material-symbols-outlined text-[15px] text-primary">calendar_month</span>
+                    <span>Theo tháng</span>
+                </button>
+                <button id="tab-mode-all" type="button" class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 cursor-pointer">
+                    <span class="material-symbols-outlined text-[15px] text-indigo-600">view_agenda</span>
+                    <span>Xem toàn bộ</span>
+                </button>
+            </div>
         </div>
 
         <!-- Global Search Bar -->
@@ -182,8 +196,25 @@
         </div>
 
         <div class="flex items-center gap-2 shrink-0 order-2 md:order-3">
-            <select id="month-selector" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer">
-            </select>
+            <!-- Month Selector Container -->
+            <div id="month-selector-container" class="flex items-center gap-1.5">
+                <select id="month-selector" class="bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer shadow-sm">
+                </select>
+            </div>
+
+            <!-- Year Selector Container (for 'Xem toàn bộ' tab) -->
+            <div id="year-selector-container" class="items-center gap-1.5 hidden">
+                <div class="flex items-center gap-1 bg-indigo-50/70 border border-indigo-200 rounded-lg px-2.5 py-1 shadow-sm">
+                    <span class="material-symbols-outlined text-[16px] text-indigo-600">event_repeat</span>
+                    <select id="year-selector" class="bg-transparent text-indigo-950 text-xs font-extrabold focus:outline-none cursor-pointer">
+                        <option value="2026" selected>Năm 2026</option>
+                        <option value="2025">Năm 2025</option>
+                        <option value="2027">Năm 2027</option>
+                        <option value="all">Tất cả các năm</option>
+                    </select>
+                </div>
+            </div>
+
             <div id="syncStatus" class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 hidden">
                 <div class="live-dot" style="width:6px;height:6px;"></div>
                 <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Đã đồng bộ</span>

@@ -14,6 +14,9 @@ const isUser = !['admin', 'manager'].includes(userRole.toLowerCase());
 
 let currentMonth = "";
 let COLLECTION_NAME = "";
+let currentViewMode = "month"; // "month" or "all"
+let selectedYear = "2026";
+let allProductsData = [];
 const SETTINGS_DOC = "products_table_config";
 
 let table;
@@ -167,23 +170,50 @@ function updateStats(data) {
     document.getElementById('stat-video').innerText = data.filter(d => d.videoModelTrangThai === 'Hoàn tất').length;
 }
 
+// Date helpers for "Xem toàn bộ" by year & arrival date
+function extractYearFromDateStr(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return null;
+    const parts = dateStr.trim().split('/');
+    if (parts.length === 3) return parts[2].trim();
+    const dashParts = dateStr.trim().split('-');
+    if (dashParts.length === 3) {
+        return dashParts[0].length === 4 ? dashParts[0].trim() : dashParts[2].trim();
+    }
+    return null;
+}
+
+function parseDateStrToTimestamp(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') return 0;
+    const parts = dateStr.trim().split('/');
+    if (parts.length === 3) {
+        const day = parseInt(parts[0], 10) || 1;
+        const month = (parseInt(parts[1], 10) || 1) - 1;
+        const year = parseInt(parts[2], 10) || 2026;
+        return new Date(year, month, day).getTime();
+    }
+    return 0;
+}
+
 // Setup Months
 function setupMonths() {
     const sel = document.getElementById('month-selector');
+    if (!sel) return;
+    sel.innerHTML = '';
     const now = new Date();
+    const curYearNum = now.getFullYear();
+    const curMonthNum = now.getMonth() + 1;
     
-    // Generate months from 3 months ago to 3 months ahead
-    for (let i = -3; i <= 3; i++) {
-        let d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-        let m = (d.getMonth() + 1).toString().padStart(2, '0');
-        let y = d.getFullYear();
-        let val = `${m}-${y}`;
+    // Generate all 12 months of the year
+    for (let m = 1; m <= 12; m++) {
+        const mStr = String(m).padStart(2, '0');
+        const val = `${mStr}-${curYearNum}`;
         
-        let opt = document.createElement('option');
+        const opt = document.createElement('option');
         opt.value = val;
-        opt.text = `Tháng ${m}/${y}`;
+        opt.text = `Tháng ${mStr}/${curYearNum}`;
         
-        if (i === 0) {
+        // Default to the current real month (e.g. Tháng 09/2026)
+        if (m === curMonthNum) {
             opt.selected = true;
             currentMonth = val;
             COLLECTION_NAME = "new_products_" + val;
@@ -198,7 +228,7 @@ function setupMonths() {
     });
 }
 
-// Load Data into Table
+// Load Data into Table (Month View)
 async function loadTableData() {
     setSyncing(true);
     try {
@@ -207,10 +237,16 @@ async function loadTableData() {
         const snapshot = await getDocs(q);
         const tableData = [];
         snapshot.forEach(doc => {
-            tableData.push({ id: doc.id, ...doc.data() });
+            tableData.push({
+                id: doc.id,
+                _collectionName: COLLECTION_NAME,
+                _monthStr: currentMonth,
+                ...doc.data()
+            });
         });
         
         if (table) {
+            try { table.hideColumn('_monthStr'); } catch(e) {}
             await table.setData(tableData);
             updateStats(tableData);
         }
@@ -220,13 +256,151 @@ async function loadTableData() {
         console.error("Error loading data:", e);
         // Fallback: if index not created yet, load without sort
         const snapshot = await getDocs(collection(db, COLLECTION_NAME));
-        const tableData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const tableData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            _collectionName: COLLECTION_NAME,
+            _monthStr: currentMonth,
+            ...doc.data()
+        }));
         if (table) {
+            try { table.hideColumn('_monthStr'); } catch(e) {}
             table.setData(tableData);
             updateStats(tableData);
         }
         setSyncing(false);
         return tableData;
+    }
+}
+
+// Load All Year Data for "Xem toàn bộ" tab
+async function loadAllYearData(year = "2026") {
+    setSyncing(true);
+    try {
+        const promises = [];
+        const yearsToScan = (year === 'all') ? ['2026', '2025'] : [year];
+        
+        for (const y of yearsToScan) {
+            for (let m = 1; m <= 12; m++) {
+                const mStr = String(m).padStart(2, '0') + '-' + y;
+                const collName = `new_products_${mStr}`;
+                promises.push(
+                    getDocs(collection(db, collName)).then(snap => {
+                        return snap.docs.map(doc => ({
+                            id: doc.id,
+                            _collectionName: collName,
+                            _monthStr: mStr,
+                            ...doc.data()
+                        }));
+                    }).catch(() => [])
+                );
+            }
+        }
+
+        // Also fetch legacy collection 'new_products'
+        if (year === '2026' || year === 'all') {
+            promises.push(
+                getDocs(collection(db, "new_products")).then(snap => {
+                    return snap.docs.map(doc => ({
+                        id: doc.id,
+                        _collectionName: "new_products",
+                        _monthStr: "05-2026",
+                        ...doc.data()
+                    }));
+                }).catch(() => [])
+            );
+        }
+
+        const results = await Promise.all(promises);
+        const rawProducts = results.flat();
+
+        // Deduplicate
+        const seen = new Set();
+        let uniqueProducts = [];
+        for (const item of rawProducts) {
+            const key = item._collectionName + '_' + item.id;
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueProducts.push(item);
+            }
+        }
+
+        // Filter based on "Ngày về kho Media"
+        if (year !== 'all') {
+            uniqueProducts = uniqueProducts.filter(item => {
+                const yearFromDate = extractYearFromDateStr(item.ngayVeKho);
+                if (yearFromDate) {
+                    return yearFromDate === year;
+                }
+                const collYear = item._monthStr ? item._monthStr.split('-')[1] : null;
+                return collYear === year;
+            });
+        }
+
+        // Sort by "Ngày về kho Media" descending (newest arrival date on top)
+        uniqueProducts.sort((a, b) => {
+            const timeA = parseDateStrToTimestamp(a.ngayVeKho) || (a.createdAt?.toMillis ? a.createdAt.toMillis() : 0);
+            const timeB = parseDateStrToTimestamp(b.ngayVeKho) || (b.createdAt?.toMillis ? b.createdAt.toMillis() : 0);
+            return timeB - timeA;
+        });
+
+        allProductsData = uniqueProducts;
+
+        if (table) {
+            try { table.showColumn('_monthStr'); } catch (e) {}
+            await table.setData(allProductsData);
+            updateStats(allProductsData);
+        }
+        setSyncing(false);
+        return allProductsData;
+    } catch (err) {
+        console.error("Error loading all year data:", err);
+        setSyncing(false);
+        return [];
+    }
+}
+
+// Switch between "Theo tháng" and "Xem toàn bộ" modes
+function switchViewMode(mode) {
+    currentViewMode = mode;
+    const tabMonth = document.getElementById('tab-mode-month');
+    const tabAll = document.getElementById('tab-mode-all');
+    const monthContainer = document.getElementById('month-selector-container');
+    const yearContainer = document.getElementById('year-selector-container');
+
+    if (mode === 'all') {
+        if (tabAll) tabAll.className = "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer";
+        if (tabMonth) tabMonth.className = "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 cursor-pointer";
+        
+        if (monthContainer) {
+            monthContainer.classList.add('hidden');
+            monthContainer.classList.remove('flex');
+        }
+        if (yearContainer) {
+            yearContainer.classList.remove('hidden');
+            yearContainer.classList.add('flex');
+        }
+
+        if (table) {
+            try { table.showColumn('_monthStr'); } catch (e) {}
+        }
+        loadAllYearData(selectedYear);
+    } else {
+        if (tabMonth) tabMonth.className = "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all bg-white text-slate-800 shadow-sm cursor-pointer";
+        if (tabAll) tabAll.className = "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all text-slate-600 hover:text-slate-900 cursor-pointer";
+
+        if (yearContainer) {
+            yearContainer.classList.add('hidden');
+            yearContainer.classList.remove('flex');
+        }
+        if (monthContainer) {
+            monthContainer.classList.remove('hidden');
+            monthContainer.classList.add('flex');
+        }
+
+        if (table) {
+            try { table.hideColumn('_monthStr'); } catch (e) {}
+        }
+        loadTableData();
     }
 }
 
@@ -625,6 +799,36 @@ async function init() {
                 return container;
             }
         },
+        { 
+            title: "Đợt/Tháng", 
+            field: "_monthStr", 
+            width: 105, 
+            headerFilter: "input", 
+            visible: false,
+            formatter: function(cell) {
+                const rowData = cell.getRow().getData();
+                let monthStr = "";
+                
+                // Ưu tiên 1: Tự động tính toán theo "Ngày về kho Media" (ngayVeKho)
+                if (rowData.ngayVeKho && typeof rowData.ngayVeKho === 'string') {
+                    const parts = rowData.ngayVeKho.trim().split('/');
+                    if (parts.length === 3 && parts[1] && parts[2]) {
+                        monthStr = `${parts[1].padStart(2, '0')}-${parts[2].trim()}`;
+                    } else if (parts.length === 2 && parts[1]) {
+                        const y = (rowData._monthStr ? rowData._monthStr.split('-')[1] : null) || '2026';
+                        monthStr = `${parts[1].padStart(2, '0')}-${y}`;
+                    }
+                }
+                
+                // Ưu tiên 2: Lấy theo collection tháng của dòng đó hoặc tháng hiện tại
+                if (!monthStr) {
+                    monthStr = rowData._monthStr || currentMonth || `${String(new Date().getMonth() + 1).padStart(2, '0')}-${new Date().getFullYear()}`;
+                }
+                
+                const parts = monthStr.split('-');
+                return `<span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-extrabold text-[11px] border border-indigo-100 whitespace-nowrap">T${parts[0]}/${parts[1] || ''}</span>`;
+            }
+        },
         { title: "Mã 10", field: "ma10", editor: "input", width: 120, headerFilter: "input" },
         { 
             title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, headerFilter: "input",
@@ -632,7 +836,17 @@ async function init() {
         },
         { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, headerFilter: "input" },
         { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, headerFilter: "input" },
-        { title: "Ngày về kho Media", field: "ngayVeKho", editor: dateEditor, formatter: dateDisplayFormatter, width: 110, headerFilter: "input" },
+        { 
+            title: "Ngày về kho Media", 
+            field: "ngayVeKho", 
+            editor: dateEditor, 
+            formatter: dateDisplayFormatter, 
+            width: 120, 
+            headerFilter: "input",
+            sorter: function(a, b) {
+                return parseDateStrToTimestamp(a) - parseDateStrToTimestamp(b);
+            }
+        },
         {
             title: "Hình ảnh trải sàn",
             columns: [
@@ -808,8 +1022,9 @@ async function init() {
         const field = cell.getField();
         if (data.id) {
             setSyncing(true);
+            const targetCollection = data._collectionName || COLLECTION_NAME;
             try {
-                await updateDoc(doc(db, COLLECTION_NAME, data.id), {
+                await updateDoc(doc(db, targetCollection, data.id), {
                     [field]: cell.getValue() || "",
                     updatedAt: serverTimestamp()
                 });
@@ -826,16 +1041,26 @@ async function init() {
         if (isUser) return;
         setSyncing(true);
         try {
+            const now = new Date();
+            const curM = String(now.getMonth() + 1).padStart(2, '0');
+            const curY = now.getFullYear();
+            const defaultMonthStr = `${curM}-${curY}`;
+            const targetCollection = (currentViewMode === 'all')
+                ? (`new_products_${defaultMonthStr}`)
+                : (COLLECTION_NAME || `new_products_${defaultMonthStr}`);
+            
+            const todayStr = `${String(now.getDate()).padStart(2, '0')}/${curM}/${curY}`;
+            
             const newDoc = {
                 ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
-                ngayVeKho: "", linkAnh: "", linkAnhModel: "", linkVideo: "",
+                ngayVeKho: todayStr, linkAnh: "", linkAnhModel: "", linkVideo: "",
                 anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa thực hiện",
                 anhModelNgay: "", anhModelTrangThai: "Chưa thực hiện",
                 videoModelNgay: "", videoModelTrangThai: "Chưa thực hiện",
                 createdAt: serverTimestamp()
             };
-            const docRef = await addDoc(collection(db, COLLECTION_NAME), newDoc);
-            table.addRow({ id: docRef.id, ...newDoc }, true);
+            const docRef = await addDoc(collection(db, targetCollection), newDoc);
+            table.addRow({ id: docRef.id, _collectionName: targetCollection, _monthStr: defaultMonthStr, ...newDoc }, true);
         } catch (err) { console.error(err); }
         setSyncing(false);
     });
@@ -1056,7 +1281,8 @@ async function init() {
             for (let row of selectedRows) {
                 const data = row.getData();
                 if (data.id) {
-                    promises.push(updateDoc(doc(db, COLLECTION_NAME, data.id), { rowColor: color }));
+                    const targetCollection = data._collectionName || COLLECTION_NAME;
+                    promises.push(updateDoc(doc(db, targetCollection, data.id), { rowColor: color }));
                     row.update({ rowColor: color });
                 }
             }
@@ -1136,8 +1362,10 @@ async function init() {
             setSyncing(true);
             try {
                 for (let row of selectedRows) {
-                    const id = row.getData().id;
-                    if (id) await deleteDoc(doc(db, COLLECTION_NAME, id));
+                    const data = row.getData();
+                    const id = data.id;
+                    const targetCollection = data._collectionName || COLLECTION_NAME;
+                    if (id) await deleteDoc(doc(db, targetCollection, id));
                     row.delete();
                 }
             } catch (err) { console.error(err); }
@@ -1147,10 +1375,28 @@ async function init() {
 
     // Export Excel
     document.getElementById("btn-export").addEventListener("click", () => {
-        table.download("xlsx", `SanPham_Nevo_${currentMonth}.xlsx`, {
-            sheetName: "Data",
+        const filename = currentViewMode === 'all'
+            ? `SanPham_Nevo_ToanBo_Nam_${selectedYear}.xlsx`
+            : `SanPham_Nevo_${currentMonth}.xlsx`;
+        const sheetName = currentViewMode === 'all' ? `ToanBo_${selectedYear}` : currentMonth;
+        table.download("xlsx", filename, {
+            sheetName: sheetName,
         });
     });
+
+    // Tab Mode listeners (Theo tháng vs Xem toàn bộ)
+    const tabMonthBtn = document.getElementById('tab-mode-month');
+    const tabAllBtn = document.getElementById('tab-mode-all');
+    const yearSelect = document.getElementById('year-selector');
+    
+    if (tabMonthBtn) tabMonthBtn.addEventListener('click', () => switchViewMode('month'));
+    if (tabAllBtn) tabAllBtn.addEventListener('click', () => switchViewMode('all'));
+    if (yearSelect) {
+        yearSelect.addEventListener('change', (e) => {
+            selectedYear = e.target.value;
+            loadAllYearData(selectedYear);
+        });
+    }
 
     // Global search
     document.getElementById("global-search").addEventListener("input", function(e){
