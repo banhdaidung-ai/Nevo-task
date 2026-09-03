@@ -265,6 +265,59 @@
             list-style-position: outside !important;
         }
 
+        /* Rich Text Editor & Content Link Styles */
+        [contenteditable="true"] a, 
+        .editor-container a, 
+        #viewOrderContent a {
+            color: #1d4ed8 !important;
+            text-decoration: underline !important;
+            text-underline-offset: 3px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            word-break: break-all !important;
+            transition: all 0.15s ease;
+        }
+        [contenteditable="true"] a:hover, 
+        .editor-container a:hover, 
+        #viewOrderContent a:hover {
+            color: #1e40af !important;
+            background-color: rgba(29, 78, 216, 0.1) !important;
+            border-radius: 4px;
+            padding: 1px 4px;
+        }
+
+        /* Table styles inside Editor & Content */
+        [contenteditable="true"] table, 
+        .editor-container table, 
+        #viewOrderContent table {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-collapse: collapse !important;
+            margin: 12px 0 !important;
+            background: #ffffff !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+        }
+        [contenteditable="true"] table th, 
+        [contenteditable="true"] table td, 
+        .editor-container table th, 
+        .editor-container table td, 
+        #viewOrderContent table th, 
+        #viewOrderContent table td {
+            padding: 8px 12px !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            word-break: break-word !important;
+        }
+        [contenteditable="true"] table th, 
+        .editor-container table th, 
+        #viewOrderContent table th {
+            background-color: #f1f5f9 !important;
+            font-weight: 700 !important;
+            color: #334155 !important;
+        }
+
         /* Person Bage Styles */
         .name-badge {
             display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
@@ -2948,28 +3001,35 @@
     </div>
 
 <!-- ====== EDIT ORDER MODAL ====== -->
-<div id="editOrderModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+<div id="editOrderModal" class="fixed inset-0 z-50 hidden items-center justify-center p-2 sm:p-4">
     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeEditModal()"></div>
-    <div class="relative w-full max-w-5xl mx-4 bg-white rounded-[24px] shadow-2xl animate-fade-in-up overflow-hidden">
+    <div class="relative w-full max-w-[1440px] w-[95vw] mx-auto bg-white rounded-[24px] shadow-2xl animate-fade-in-up overflow-hidden flex flex-col max-h-[92vh]">
         
         <!-- Header -->
-        <div class="bg-[#b80035] text-white p-6 md:px-10 md:pt-10 md:pb-8 relative">
-            <h2 class="text-[26px] font-extrabold font-headline mb-1 tracking-tight">Chỉnh sửa đơn hàng</h2>
-            <p class="text-white/80 text-base font-medium tracking-wide">ID: <span id="editModalHeaderId">#ORD-0000</span></p>
-            <button onclick="closeEditModal()" class="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors">
+        <div class="bg-[#b80035] text-white px-6 py-5 md:px-10 md:py-6 relative flex-shrink-0 flex items-center justify-between border-b border-rose-900/20">
+            <div>
+                <h2 class="text-xl md:text-2xl font-extrabold font-headline mb-0.5 tracking-tight flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[26px]">edit_note</span>
+                    Chỉnh sửa đơn hàng
+                </h2>
+                <p class="text-white/85 text-xs md:text-sm font-medium tracking-wide flex items-center gap-1.5">
+                    Mã đơn hàng: <span id="editModalHeaderId" class="font-bold text-white bg-white/20 px-2.5 py-0.5 rounded-full text-xs tracking-wider">#ORD-0000</span>
+                </p>
+            </div>
+            <button onclick="closeEditModal()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors" title="Đóng">
                 <span class="material-symbols-outlined text-[24px]">close</span>
             </button>
         </div>
 
         <!-- Body -->
-        <div class="p-6 md:p-10 overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar">
+        <div class="p-6 md:p-8 lg:p-10 overflow-y-auto flex-1 custom-scrollbar">
             <input type="hidden" id="editOrderId">
             <input type="hidden" id="editOrderCode">
 
-            <div class="flex flex-col lg:flex-row gap-10">
+            <div class="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
                 
                 <!-- Left Section: Main Information & Editor -->
-                <div class="flex-1 space-y-5 min-w-0">
+                <div class="flex-1 space-y-5 min-w-0 w-full">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Người yêu cầu -->
                         <div class="space-y-1.5">
@@ -3017,19 +3077,26 @@
                             </div>
                         </div>
 
-
+                        <!-- Tiêu đề -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Tiêu đề đơn hàng</label>
+                            <input id="editOrderTitle" type="text" class="w-full bg-[#e8eefc] border-none rounded-[12px] px-5 py-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow">
+                        </div>
                     </div>
 
-                    <!-- Tiêu đề -->
-                    <div class="space-y-1.5">
-                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Tiêu đề đơn hàng</label>
-                        <input id="editOrderTitle" type="text" class="w-full bg-[#e8eefc] border-none rounded-[12px] px-5 py-3.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#b80035]/50 outline-none transition-shadow">
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a]">Nội dung chi tiết</label>
-                        <div id="editOrderEditorContainer" class="editor-container w-full bg-[#e8eefc] rounded-[16px] overflow-hidden border border-outline-variant/30 transition-all">
-                            <div class="bg-[#dce4f7] px-3 py-2 flex flex-wrap items-center gap-1 p-2 border-b border-white/40">
+                    <div class="space-y-1.5 pt-1">
+                        <div class="flex items-center justify-between">
+                            <label class="text-[11px] font-bold uppercase tracking-widest text-[#7c6a6a] flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px] text-[#b80035]">description</span>
+                                Nội dung chi tiết
+                            </label>
+                            <span class="text-[11px] text-blue-600 font-medium flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                                Nhấn vào link để mở trực tiếp trong tab mới
+                            </span>
+                        </div>
+                        <div id="editOrderEditorContainer" class="editor-container w-full bg-[#e8eefc] rounded-[16px] overflow-hidden border border-outline-variant/30 transition-all flex flex-col">
+                            <div class="bg-[#dce4f7] px-3 py-2 flex flex-wrap items-center gap-1 p-2 border-b border-white/40 flex-shrink-0">
                                 <button onclick="editorCmd('bold')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In đậm"><span class="material-symbols-outlined text-[18px]">format_bold</span></button>
                                 <button onclick="editorCmd('italic')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="In nghiêng"><span class="material-symbols-outlined text-[18px]">format_italic</span></button>
                                 <button onclick="editorCmd('underline')" class="p-1.5 hover:bg-white/60 rounded-lg text-slate-700 transition-colors" title="Gạch chân"><span class="material-symbols-outlined text-[18px]">format_underlined</span></button>
@@ -3048,13 +3115,13 @@
                                      <span class="material-symbols-outlined text-lg">fullscreen</span>
                                 </button>
                             </div>
-                            <div id="editOrderContent" contenteditable="true" class="w-full px-5 py-4 text-[15px] font-medium text-slate-700 min-h-[400px] h-[500px] overflow-y-auto outline-none leading-relaxed custom-scrollbar break-words"></div>
+                            <div id="editOrderContent" contenteditable="true" class="w-full px-6 py-5 text-[15px] font-medium text-slate-800 min-h-[480px] max-h-[620px] overflow-y-auto outline-none leading-relaxed custom-scrollbar break-words bg-white/70"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right Section: Additional Information (Side Panel) -->
-                <div class="w-full lg:w-96 space-y-5 lg:border-l lg:border-slate-100 lg:pl-10 lg:flex-shrink-0">
+                <div class="w-full lg:w-80 xl:w-96 space-y-5 lg:border-l lg:border-slate-100 lg:pl-8 xl:pl-10 lg:flex-shrink-0">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-50 pb-4">
                         <span class="material-symbols-outlined text-[#b80035] text-[20px] pointer-events-none">tune</span>
                         <h3 class="text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#b80035]">Thông tin bổ sung</h3>
@@ -4366,9 +4433,18 @@
     };
 
     window.linkifyHTML = function(html) {
-        if (!html) return html;
+        if (!html) return html || '';
         const div = document.createElement('div');
         div.innerHTML = window.DOMPurify ? window.DOMPurify.sanitize(html) : html;
+
+        // Ensure all existing <a> tags have target="_blank" and proper attributes
+        div.querySelectorAll('a').forEach(a => {
+            a.setAttribute('target', '_blank');
+            a.setAttribute('rel', 'noopener noreferrer');
+            if (!a.getAttribute('title')) a.setAttribute('title', `Nhấn để mở: ${a.href}`);
+            a.classList.add('editor-link');
+        });
+
         const walk = document.createTreeWalker(div, NodeFilter.SHOW_TEXT, null, false);
         const nodes = [];
         let n;
@@ -4376,7 +4452,7 @@
             let p = n.parentNode;
             let inAnchor = false;
             while (p && p !== div) {
-                if (p.tagName === 'A') {
+                if (p.tagName === 'A' || p.tagName === 'SCRIPT' || p.tagName === 'STYLE') {
                     inAnchor = true;
                     break;
                 }
@@ -4385,28 +4461,66 @@
             if (!inAnchor) nodes.push(n);
         }
         
-        const urlRegex = /(https?:\/\/[^\s]+|(?:www\.|drive\.google\.com|docs\.google\.com)[^\s]+)/gi;
+        const urlRegex = /(https?:\/\/[^\s<>"'()]+|(?:www\.|drive\.google\.com|docs\.google\.com)[^\s<>"'()]+)/gi;
         nodes.forEach(node => {
             const val = node.nodeValue;
-            const replaced = val.replace(urlRegex, function(url) {
-                const href = url.startsWith('http') ? url : 'https://' + url;
-                return `<a href="${href}" target="_blank" class="text-indigo-600 hover:text-indigo-800 underline break-all font-medium">${url}</a>`;
-            });
+            if (!val || !urlRegex.test(val)) return;
+            urlRegex.lastIndex = 0;
             
-            if (replaced !== val) {
-                const span = document.createElement('span');
-                span.innerHTML = replaced;
-                node.parentNode.replaceChild(span, node);
-                
-                const parent = span.parentNode;
-                while (span.firstChild) {
-                    parent.insertBefore(span.firstChild, span);
+            const span = document.createElement('span');
+            let lastIdx = 0;
+            let match;
+            while ((match = urlRegex.exec(val)) !== null) {
+                let url = match[0];
+                let trailing = '';
+                const punctMatch = url.match(/[.,;:)]+$/);
+                if (punctMatch) {
+                    trailing = punctMatch[0];
+                    url = url.slice(0, -trailing.length);
                 }
-                parent.removeChild(span);
+                const before = val.substring(lastIdx, match.index);
+                if (before) span.appendChild(document.createTextNode(before));
+                
+                const href = url.startsWith('http') ? url : 'https://' + url;
+                const a = document.createElement('a');
+                a.href = href;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.className = 'editor-link text-blue-600 hover:text-blue-800 underline break-all font-semibold';
+                a.title = `Nhấn để mở liên kết: ${href}`;
+                a.textContent = url;
+                span.appendChild(a);
+                if (trailing) span.appendChild(document.createTextNode(trailing));
+                
+                lastIdx = match.index + match[0].length;
+            }
+            if (lastIdx < val.length) {
+                span.appendChild(document.createTextNode(val.substring(lastIdx)));
+            }
+            if (node.parentNode) {
+                node.parentNode.replaceChild(span, node);
             }
         });
         return div.innerHTML;
     };
+
+    // Global capturing listener to ensure clicking ANY link inside rich editors or detail modals opens the URL in a new tab
+    document.addEventListener('click', function(e) {
+        const anchor = e.target.closest('a');
+        if (!anchor || !anchor.href) return;
+        
+        const editorContainers = ['editOrderContent', 'orderContent', 'viewOrderContent', 'editOrderEditorContainer', 'orderEditorContainer'];
+        const isInside = editorContainers.some(id => {
+            const el = document.getElementById(id);
+            return el && el.contains(anchor);
+        });
+        
+        if (isInside) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.open(anchor.href, '_blank', 'noopener,noreferrer');
+        }
+    }, true);
 
     window.extractFirstLink = function(text) {
         if (!text) return '';

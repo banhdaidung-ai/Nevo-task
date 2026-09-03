@@ -1605,7 +1605,10 @@ window.openEditModal = async function(dataStr) {
     document.getElementById('editOrderVideo').value = data.assignedVideo || '';
     document.getElementById('editOrderPhoto').value = data.assignedPhoto || '';
     document.getElementById('editOrderDesign').value = data.assignedDesign || '';
-    document.getElementById('editOrderContent').innerHTML = data.content || '';
+    const rawContent = data.content || '';
+    document.getElementById('editOrderContent').innerHTML = typeof window.linkifyHTML === 'function'
+        ? window.linkifyHTML(rawContent)
+        : rawContent;
     document.getElementById('editOrderNote').value = data.note || '';
     document.getElementById('editOrderDepartment').value = data.department || 'Công nghệ Thông tin';
 
@@ -2251,7 +2254,9 @@ window.getStatusColor = function(status) {
             populateMultiSelect('menu-department', window.departmentsData, 'department');
             if (typeof window.updatePlanningDepartmentFilter === 'function') {
                 window.updatePlanningDepartmentFilter();
-                window.initMockupPlanningRows();
+                if (typeof window.initMockupPlanningRows === 'function') {
+                    window.initMockupPlanningRows();
+                }
             }
         });
 
