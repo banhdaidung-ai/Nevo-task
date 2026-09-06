@@ -3,7 +3,7 @@
   Initializes all services and handles global state
 */
 
-import { initDarkMode, toggleDarkMode, initPremiumEffects, navigateTo } from './ui-service.js';
+import { initDarkMode, toggleDarkMode, initPremiumEffects, navigateTo } from './ui-service.js?v=20260907_1';
 import { checkAuth, getCurrentUser } from './auth-service.js';
 import './firebase-service.js'; // Ensure Firebase is initialized
 

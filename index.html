@@ -29,7 +29,7 @@
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Inter:wght@300..700&display=swap" as="style">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" as="style">
     <!-- Local CSS (critical, loads first) -->
-    <link rel="stylesheet" href="index.css?v=2">
+    <link rel="stylesheet" href="index.css?v=20260907_1">
     <!-- Tailwind CSS (render-blocking, required for layout) -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <!-- Non-critical JS: defer to load AFTER HTML parsing -->
@@ -970,11 +970,11 @@
                     <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-0.5 hidden sm:block"></div>
                     
                     <!-- Lọc nhanh theo tuần -->
-                    <button id="btnWeekThis" class="week-filter-btn flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-all shadow-sm" onclick="filterOrdersByWeek(0, event)">
+                    <button id="btnWeekThis" class="week-filter-btn flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-primary transition-all shadow-sm" onclick="window.filterOrdersByWeek(0, event)">
                         <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
                         Tuần này
                     </button>
-                    <button id="btnWeekNext" class="week-filter-btn flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all shadow-sm" onclick="filterOrdersByWeek(1, event)">
+                    <button id="btnWeekNext" class="week-filter-btn flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all shadow-sm" onclick="window.filterOrdersByWeek(1, event)">
                         <span class="material-symbols-outlined text-[16px] text-blue-600">event_upcoming</span>
                         Tuần tới
                     </button>
@@ -1012,11 +1012,11 @@
                 <div class="flex items-center gap-3">
                     <div class="text-xs text-slate-400 font-medium italic hidden lg:block" id="tableResultsSummaryTop">Hiển thị 0 bản ghi</div>
                     <div class="inline-flex p-0.5 bg-slate-200/80 dark:bg-slate-700 rounded-lg shadow-inner">
-                        <button id="btnViewTable" class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm" onclick="switchOrdersView('table')">
+                        <button id="btnViewTable" class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm" onclick="window.switchOrdersView('table')">
                             <span class="material-symbols-outlined text-[15px]">table_rows</span>
                             Danh sách
                         </button>
-                        <button id="btnViewWeekly" class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white" onclick="switchOrdersView('weekly')">
+                        <button id="btnViewWeekly" class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white" onclick="window.switchOrdersView('weekly')">
                             <span class="material-symbols-outlined text-[15px]">view_week</span>
                             Lưới tuần
                         </button>
@@ -1178,10 +1178,10 @@
                                     <div class="date-range-menu shadow-2xl" id="menu-deployDate">
                                         <div class="space-y-4">
                                             <div class="flex items-center gap-1 flex-wrap pb-2 border-b border-slate-100 dark:border-slate-700">
-                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="applyDeployDateShortcut('today')">Hôm nay</button>
-                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="applyDeployDateShortcut('thisWeek')">Tuần này</button>
-                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="applyDeployDateShortcut('nextWeek')">Tuần tới</button>
-                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="applyDeployDateShortcut('thisMonth')">Tháng này</button>
+                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="window.applyDeployDateShortcut('today')">Hôm nay</button>
+                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="window.applyDeployDateShortcut('thisWeek')">Tuần này</button>
+                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="window.applyDeployDateShortcut('nextWeek')">Tuần tới</button>
+                                                <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-primary hover:text-white rounded text-[10px] font-bold transition-all text-slate-600" onclick="window.applyDeployDateShortcut('thisMonth')">Tháng này</button>
                                             </div>
                                             <div>
                                                 <label class="date-range-label">Từ ngày</label>
@@ -1300,13 +1300,13 @@
                 <!-- Navigation & Controls -->
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-sm shrink-0">
                     <div class="flex items-center gap-2">
-                        <button type="button" onclick="navigateWeeklyBoard(-1)" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center" title="Tuần trước">
+                        <button type="button" onclick="window.navigateWeeklyBoard(-1)" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center" title="Tuần trước">
                             <span class="material-symbols-outlined text-[18px]">chevron_left</span>
                         </button>
-                        <button type="button" onclick="navigateWeeklyBoard(0)" id="weeklyCurrentBadgeBtn" class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all">
+                        <button type="button" onclick="window.navigateWeeklyBoard(0)" id="weeklyCurrentBadgeBtn" class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold transition-all">
                             Tuần này
                         </button>
-                        <button type="button" onclick="navigateWeeklyBoard(1)" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center" title="Tuần tới">
+                        <button type="button" onclick="window.navigateWeeklyBoard(1)" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center" title="Tuần tới">
                             <span class="material-symbols-outlined text-[18px]">chevron_right</span>
                         </button>
                         <span id="weeklyBoardDateRangeTitle" class="text-sm font-extrabold text-[#1e293b] dark:text-white font-headline ml-2">
@@ -3341,8 +3341,27 @@
 </div>
 
 <!-- ====== CORE SCRIPTS ====== -->
-<script type="module" src="main.js?v=3"></script>
-<script type="module" src="orders-manager.js?v=3"></script>
+<script>
+    // Early bridge to guarantee buttons respond immediately even before ES module finishes loading
+    window.filterOrdersByWeek = function(offset, e) {
+        if (window._realFilterOrdersByWeek) return window._realFilterOrdersByWeek(offset, e);
+        console.log('[Weekly Planner] Queuing filterOrdersByWeek until module ready...');
+        window._pendingWeeklyFilter = { offset, e };
+    };
+    window.switchOrdersView = function(mode) {
+        if (window._realSwitchOrdersView) return window._realSwitchOrdersView(mode);
+        console.log('[Weekly Planner] Queuing switchOrdersView until module ready...');
+        window._pendingOrdersView = mode;
+    };
+    window.navigateWeeklyBoard = function(delta) {
+        if (typeof window.weeklyBoardWeekOffset === 'undefined') window.weeklyBoardWeekOffset = 0;
+        if (delta === 0) window.weeklyBoardWeekOffset = 0;
+        else window.weeklyBoardWeekOffset += delta;
+        if (window.renderWeeklyBoard) window.renderWeeklyBoard();
+    };
+</script>
+<script type="module" src="main.js?v=20260907_1"></script>
+<script type="module" src="orders-manager.js?v=20260907_1"></script>
 
 <!-- ====== JAVASCRIPT ====== -->
 <script>

@@ -951,6 +951,7 @@ window.getMondayOfWeek = function(d = new Date()) {
 };
 
 window.getWeekRange = function(offsetWeeks = 0) {
+    offsetWeeks = parseInt(offsetWeeks, 10) || 0;
     const today = new Date();
     const monday = window.getMondayOfWeek(today);
     monday.setDate(monday.getDate() + offsetWeeks * 7);
@@ -989,6 +990,7 @@ window.getWeekRange = function(offsetWeeks = 0) {
 
 window.filterOrdersByWeek = function(offsetWeeks = 0, event) {
     if (event) event.stopPropagation();
+    offsetWeeks = parseInt(offsetWeeks, 10) || 0;
     window.weeklyBoardWeekOffset = offsetWeeks;
 
     const btnThis = document.getElementById('btnWeekThis');
@@ -1369,6 +1371,17 @@ window.renderWeeklyBoard = function() {
 
 // --- TIỆN ÍCH LỊCH CÁ NHÂN ---
 
+function _stripHtmlForCalendar(html) {
+    if (!html) return '';
+    try {
+        const tmp = document.createElement('DIV');
+        tmp.innerHTML = html;
+        return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+    } catch(e) {
+        return String(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+}
+
 window.addToGoogleCalendar = function(orderId, event) {
     if (event) event.stopPropagation();
     const order = (window.allOrdersData || []).find(o => o.id === orderId);
@@ -1385,12 +1398,13 @@ window.addToGoogleCalendar = function(orderId, event) {
 
     const [y, m, d] = deployStr.split('-');
     const startDate = `${y}${m}${d}`;
-    const nextD = new Date(parseInt(y), parseInt(m) - 1, parseInt(d) + 1);
+    const nextD = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10) + 1);
     const endStr = window._normalizeDateToYMD(nextD);
     const [ny, nm, nd] = endStr.split('-');
     const endDate = `${ny}${nm}${nd}`;
 
     const title = encodeURIComponent(`[${order.code || 'Đơn hàng'}] ${order.title || 'Triển khai công việc'}`);
+    const contentSummary = _stripHtmlForCalendar(order.content || '').substring(0, 250);
     const details = encodeURIComponent(
         `Mã đơn: ${order.code || '-'}\n` +
         `Thể loại: ${order.category || '-'}\n` +
@@ -1400,8 +1414,8 @@ window.addToGoogleCalendar = function(orderId, event) {
         `Photo: ${order.assignedPhoto || '-'}\n` +
         `Trạng thái: ${order.status || '-'}\n` +
         `Ghi chú: ${order.note || '-'}\n` +
-        `Nội dung: ${(order.content || '').replace(/<[^>]*>/g, ' ')}\n\n` +
-        `Nevo-task: ${window.location.origin}${window.location.pathname}#orders`
+        (contentSummary ? `Nội dung tóm tắt: ${contentSummary}...\n\n` : '\n') +
+        `Link hệ thống: https://nevo.yody.ai/#orders`
     );
 
     const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}`;
@@ -1410,14 +1424,15 @@ window.addToGoogleCalendar = function(orderId, event) {
 };
 
 window.exportWeeklyICS = function() {
-    const range = window.getWeekRange(window.weeklyBoardWeekOffset || 0);
+    const offset = (typeof window.weeklyBoardWeekOffset === 'number') ? window.weeklyBoardWeekOffset : 0;
+    const range = window.getWeekRange(offset);
     const weekOrders = (window.allOrdersData || []).filter(o => {
         const dStr = window._normalizeDateToYMD(o.deployDate);
         return dStr && dStr >= range.startStr && dStr <= range.endStr;
     });
 
     if (weekOrders.length === 0) {
-        showToast('Không có đơn hàng nào', `Không có đơn triển khai trong tuần ${range.title} để xuất lịch`, 'event_busy', 'warning');
+        showToast('Chưa có đơn hàng nào', `Không có đơn triển khai trong tuần ${range.title} để xuất lịch`, 'event_busy', 'info');
         return;
     }
 
@@ -1471,14 +1486,15 @@ window.exportWeeklyICS = function() {
 };
 
 window.copyWeeklyScheduleText = function() {
-    const range = window.getWeekRange(window.weeklyBoardWeekOffset || 0);
+    const offset = (typeof window.weeklyBoardWeekOffset === 'number') ? window.weeklyBoardWeekOffset : 0;
+    const range = window.getWeekRange(offset);
     const weekOrders = (window.allOrdersData || []).filter(o => {
         const dStr = window._normalizeDateToYMD(o.deployDate);
         return dStr && dStr >= range.startStr && dStr <= range.endStr;
     });
 
     if (weekOrders.length === 0) {
-        showToast('Không có đơn hàng nào', `Không có đơn triển khai trong tuần ${range.title}`, 'event_busy', 'warning');
+        showToast('Chưa có đơn hàng nào', `Không có đơn triển khai trong tuần ${range.title}`, 'event_busy', 'info');
         return;
     }
 
@@ -1621,27 +1637,18 @@ window.renderOrdersTable = function() {
                 }
                 if (!itemDateStr) return false;
                 
-                // Parse ngày: xử lý Firestore Timestamp, seconds, hoặc string
-                let dDate;
-                if (itemDateStr.toDate) {
-                    dDate = itemDateStr.toDate(); // Firestore Timestamp
-                } else if (itemDateStr.seconds) {
-                    dDate = new Date(itemDateStr.seconds * 1000); // Serialized Timestamp
-                } else {
-                    dDate = new Date(itemDateStr); // String date
+                // Parse ngày: xử lý Firestore Timestamp, seconds, hoặc string với _normalizeDateToYMD
+                let ymd = window._normalizeDateToYMD ? window._normalizeDateToYMD(itemDateStr) : '';
+                if (!ymd) {
+                    let dDate = itemDateStr.toDate ? itemDateStr.toDate() : (itemDateStr.seconds ? new Date(itemDateStr.seconds * 1000) : new Date(itemDateStr));
+                    if (!isNaN(dDate.getTime()) && window._normalizeDateToYMD) {
+                        ymd = window._normalizeDateToYMD(dDate);
+                    }
                 }
-                if (isNaN(dDate.getTime())) return false;
+                if (!ymd) return false;
                 
-                if (startVal) {
-                    const dStart = new Date(startVal);
-                    dStart.setHours(0,0,0,0);
-                    if (dDate < dStart) return false;
-                }
-                if (endVal) {
-                    const dEnd = new Date(endVal);
-                    dEnd.setHours(23,59,59,999);
-                    if (dDate > dEnd) return false;
-                }
+                if (startVal && ymd < startVal) return false;
+                if (endVal && ymd > endVal) return false;
                 return true;
             }
 
@@ -3021,3 +3028,22 @@ window.getStatusColor = function(status) {
 if (window.initOrdersTracker) {
     window.initOrdersTracker();
 }
+
+// Register module functions and flush any clicks made during script loading
+window._realFilterOrdersByWeek = window.filterOrdersByWeek;
+window._realSwitchOrdersView = window.switchOrdersView;
+if (window._pendingWeeklyFilter) {
+    const p = window._pendingWeeklyFilter;
+    delete window._pendingWeeklyFilter;
+    if (typeof window.filterOrdersByWeek === 'function') {
+        window.filterOrdersByWeek(p.offset, p.e);
+    }
+}
+if (window._pendingOrdersView) {
+    const m = window._pendingOrdersView;
+    delete window._pendingOrdersView;
+    if (typeof window.switchOrdersView === 'function') {
+        window.switchOrdersView(m);
+    }
+}
+
