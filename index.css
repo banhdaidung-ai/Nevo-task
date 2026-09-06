@@ -270,3 +270,27 @@ html.dark .form-input:focus {
     opacity: 1; transform: translateY(0) scale(1);
     pointer-events: auto;
 }
+
+/* Weekly Planner Board & Week Filter */
+.week-filter-btn.active {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 10px rgba(184, 0, 53, 0.25) !important;
+}
+.week-filter-btn.active span {
+  color: #ffffff !important;
+}
+
+.weekly-col-today {
+  border-color: rgba(184, 0, 53, 0.4) !important;
+  background-color: rgba(184, 0, 53, 0.02) !important;
+}
+
+.weekly-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.weekly-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.08);
+}

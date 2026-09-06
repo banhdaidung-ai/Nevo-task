@@ -615,6 +615,8 @@ const itemsPerPage = 50;
 let sortConfig = { key: 'createdAt', direction: 'desc' };
 let isManualSortActive = false;
 let columnFilters = {};
+window.currentOrdersView = 'table';
+window.weeklyBoardWeekOffset = 0;
 
 window.toggleSort = function(key) {
     if (sortConfig.key === key) {
@@ -711,11 +713,25 @@ window.clearAllFilters = function() {
         if(allBtn) allBtn.classList.add('all-active');
     });
 
+    // Reset Week Filter buttons
+    const btnWeekThis = document.getElementById('btnWeekThis');
+    const btnWeekNext = document.getElementById('btnWeekNext');
+    if (btnWeekThis) btnWeekThis.classList.remove('active');
+    if (btnWeekNext) btnWeekNext.classList.remove('active');
+
+    // Close calendar sync dropdown
+    const calMenu = document.getElementById('calendarSyncDropdown');
+    if (calMenu) calMenu.classList.add('hidden');
+
     // Also close all menus
     document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(m => m.classList.remove('show'));
 
     currentTablePage = 0;
-    window.renderOrdersTable();
+    if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+        window.renderWeeklyBoard();
+    } else {
+        window.renderOrdersTable();
+    }
     showToast('Đã xóa bộ lọc', 'Bộ lọc và sắp xếp đã được đưa về mặc định', 'filter_list_off', 'info');
 };
 
@@ -723,6 +739,10 @@ window.clearAllFilters = function() {
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.multi-select-container') && !e.target.closest('.date-range-container')) {
         document.querySelectorAll('.multi-select-menu, .date-range-menu').forEach(menu => menu.classList.remove('show'));
+    }
+    if (!e.target.closest('#calendarSyncMenuContainer')) {
+        const calMenu = document.getElementById('calendarSyncDropdown');
+        if (calMenu) calMenu.classList.add('hidden');
     }
 });
 
@@ -882,8 +902,631 @@ window.setQuickFilter = function(status) {
     const filterStatusEl = document.getElementById('filterStatus');
     if(filterStatusEl) filterStatusEl.value = status;
     currentTablePage = 0;
-    window.renderOrdersTable();
+    if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+        window.renderWeeklyBoard();
+    } else {
+        window.renderOrdersTable();
+    }
 };
+
+// =========================================================================
+// WEEKLY PLANNER & PERSONAL CALENDAR INTEGRATION
+// =========================================================================
+
+if (!window._normalizeDateToYMD) {
+    window._normalizeDateToYMD = function(dateVal) {
+        if (!dateVal) return '';
+        if (dateVal.toDate && typeof dateVal.toDate === 'function') {
+            const d = dateVal.toDate();
+            return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+        }
+        if (dateVal.seconds) {
+            const d = new Date(dateVal.seconds * 1000);
+            return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+        }
+        if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+            return dateVal;
+        }
+        if (typeof dateVal === 'string' && dateVal.includes('T')) {
+            return dateVal.split('T')[0];
+        }
+        if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+            return `${dateVal.getFullYear()}-${(dateVal.getMonth()+1).toString().padStart(2,'0')}-${dateVal.getDate().toString().padStart(2,'0')}`;
+        }
+        if (typeof dateVal === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(dateVal)) {
+            const parts = dateVal.split('/');
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return '';
+    };
+}
+
+window.getMondayOfWeek = function(d = new Date()) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(date.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+};
+
+window.getWeekRange = function(offsetWeeks = 0) {
+    const today = new Date();
+    const monday = window.getMondayOfWeek(today);
+    monday.setDate(monday.getDate() + offsetWeeks * 7);
+
+    const daysOfWeek = ['THỨ 2', 'THỨ 3', 'THỨ 4', 'THỨ 5', 'THỨ 6', 'THỨ 7', 'CHỦ NHẬT'];
+    const days = [];
+    const todayStr = window._normalizeDateToYMD(today);
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const ymd = window._normalizeDateToYMD(d);
+        days.push({
+            date: d,
+            dateStr: ymd,
+            dayName: daysOfWeek[i],
+            dateDisplay: `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`,
+            fullDisplay: `${daysOfWeek[i]}, ${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`,
+            isToday: ymd === todayStr
+        });
+    }
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    return {
+        startDate: monday,
+        endDate: sunday,
+        startStr: window._normalizeDateToYMD(monday),
+        endStr: window._normalizeDateToYMD(sunday),
+        title: `${days[0].dateDisplay} - ${days[6].dateDisplay}/${sunday.getFullYear()}`,
+        days: days
+    };
+};
+
+window.filterOrdersByWeek = function(offsetWeeks = 0, event) {
+    if (event) event.stopPropagation();
+    window.weeklyBoardWeekOffset = offsetWeeks;
+
+    const btnThis = document.getElementById('btnWeekThis');
+    const btnNext = document.getElementById('btnWeekNext');
+
+    // Kiểm tra nếu đang active nút này thì bấm lại để tắt bộ lọc
+    const isAlreadyActive = (offsetWeeks === 0 && btnThis?.classList.contains('active')) ||
+                            (offsetWeeks === 1 && btnNext?.classList.contains('active'));
+
+    if (isAlreadyActive) {
+        delete columnFilters['deployDate_start'];
+        delete columnFilters['deployDate_end'];
+        btnThis?.classList.remove('active');
+        btnNext?.classList.remove('active');
+        const trigger = document.getElementById('trigger-deployDate');
+        if (trigger) {
+            trigger.textContent = trigger.getAttribute('data-label');
+            trigger.style.color = '';
+            trigger.style.borderColor = '';
+        }
+        const startInput = document.getElementById('deployDate_start');
+        const endInput = document.getElementById('deployDate_end');
+        if (startInput) startInput.value = '';
+        if (endInput) endInput.value = '';
+
+        currentTablePage = 0;
+        if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+            window.renderWeeklyBoard();
+        } else {
+            window.renderOrdersTable();
+        }
+        showToast('Đã bỏ lọc tuần', 'Hiển thị toàn bộ ngày triển khai', 'filter_list_off', 'info');
+        return;
+    }
+
+    const range = window.getWeekRange(offsetWeeks);
+    columnFilters['deployDate_start'] = range.startStr;
+    columnFilters['deployDate_end'] = range.endStr;
+
+    // Tự động sắp xếp tăng dần theo ngày triển khai để xem theo thứ tự đầu tuần -> cuối tuần
+    sortConfig = { key: 'deployDate', direction: 'asc' };
+    isManualSortActive = true;
+
+    // Cập nhật trạng thái nút
+    if (btnThis) {
+        if (offsetWeeks === 0) btnThis.classList.add('active');
+        else btnThis.classList.remove('active');
+    }
+    if (btnNext) {
+        if (offsetWeeks === 1) btnNext.classList.add('active');
+        else btnNext.classList.remove('active');
+    }
+
+    // Cập nhật trigger cột Ngày triển khai
+    const trigger = document.getElementById('trigger-deployDate');
+    if (trigger) {
+        trigger.textContent = `${offsetWeeks === 0 ? 'Tuần này' : 'Tuần tới'} (${range.days[0].dateDisplay} - ${range.days[6].dateDisplay})`;
+        trigger.style.color = '#b80035';
+        trigger.style.borderColor = '#b80035';
+    }
+
+    // Cập nhật input trong menu lọc
+    const startInput = document.getElementById('deployDate_start');
+    const endInput = document.getElementById('deployDate_end');
+    if (startInput) startInput.value = range.startStr;
+    if (endInput) endInput.value = range.endStr;
+
+    currentTablePage = 0;
+    if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+        window.renderWeeklyBoard();
+    } else {
+        window.renderOrdersTable();
+    }
+
+    const weekLabel = offsetWeeks === 0 ? 'Tuần này' : 'Tuần tới';
+    showToast(`Đã lọc: ${weekLabel}`, `Từ ${range.days[0].dateDisplay} đến ${range.days[6].dateDisplay}`, 'calendar_today', 'success');
+};
+
+window.applyDeployDateShortcut = function(type) {
+    const today = new Date();
+    let startStr = '', endStr = '', label = '';
+
+    if (type === 'today') {
+        startStr = window._normalizeDateToYMD(today);
+        endStr = startStr;
+        label = 'Hôm nay';
+    } else if (type === 'thisWeek') {
+        window.filterOrdersByWeek(0);
+        const menu = document.getElementById('menu-deployDate');
+        if (menu) menu.classList.remove('show');
+        return;
+    } else if (type === 'nextWeek') {
+        window.filterOrdersByWeek(1);
+        const menu = document.getElementById('menu-deployDate');
+        if (menu) menu.classList.remove('show');
+        return;
+    } else if (type === 'thisMonth') {
+        const y = today.getFullYear();
+        const m = today.getMonth();
+        const firstDay = new Date(y, m, 1);
+        const lastDay = new Date(y, m + 1, 0);
+        startStr = window._normalizeDateToYMD(firstDay);
+        endStr = window._normalizeDateToYMD(lastDay);
+        label = `Tháng ${m + 1}`;
+    }
+
+    if (startStr && endStr) {
+        columnFilters['deployDate_start'] = startStr;
+        columnFilters['deployDate_end'] = endStr;
+        sortConfig = { key: 'deployDate', direction: 'asc' };
+        isManualSortActive = true;
+
+        const startInput = document.getElementById('deployDate_start');
+        const endInput = document.getElementById('deployDate_end');
+        if (startInput) startInput.value = startStr;
+        if (endInput) endInput.value = endStr;
+
+        const trigger = document.getElementById('trigger-deployDate');
+        if (trigger) {
+            trigger.textContent = `${label} (${formatDateDisplay(startStr)} - ${formatDateDisplay(endStr)})`;
+            trigger.style.color = '#b80035';
+            trigger.style.borderColor = '#b80035';
+        }
+
+        currentTablePage = 0;
+        if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+            window.renderWeeklyBoard();
+        } else {
+            window.renderOrdersTable();
+        }
+
+        const menu = document.getElementById('menu-deployDate');
+        if (menu) menu.classList.remove('show');
+        showToast(`Đã lọc: ${label}`, `${formatDateDisplay(startStr)} - ${formatDateDisplay(endStr)}`, 'event_available', 'success');
+    }
+};
+
+window.switchOrdersView = function(viewMode) {
+    window.currentOrdersView = viewMode;
+    const tableWrapper = document.getElementById('ordersTableWrapper');
+    const paginationWrapper = document.getElementById('ordersPaginationWrapper');
+    const weeklyBoardWrapper = document.getElementById('ordersWeeklyBoardWrapper');
+    const btnViewTable = document.getElementById('btnViewTable');
+    const btnViewWeekly = document.getElementById('btnViewWeekly');
+
+    if (viewMode === 'weekly') {
+        if (tableWrapper) tableWrapper.classList.add('hidden');
+        if (paginationWrapper) paginationWrapper.classList.add('hidden');
+        if (weeklyBoardWrapper) weeklyBoardWrapper.classList.remove('hidden');
+
+        if (btnViewTable) {
+            btnViewTable.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
+            btnViewTable.classList.add('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
+        }
+        if (btnViewWeekly) {
+            btnViewWeekly.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
+            btnViewWeekly.classList.remove('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
+        }
+
+        window.renderWeeklyBoard();
+    } else {
+        if (tableWrapper) tableWrapper.classList.remove('hidden');
+        if (paginationWrapper) paginationWrapper.classList.remove('hidden');
+        if (weeklyBoardWrapper) weeklyBoardWrapper.classList.add('hidden');
+
+        if (btnViewTable) {
+            btnViewTable.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
+            btnViewTable.classList.remove('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
+        }
+        if (btnViewWeekly) {
+            btnViewWeekly.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
+            btnViewWeekly.classList.add('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
+        }
+
+        window.renderOrdersTable();
+    }
+};
+
+window.navigateWeeklyBoard = function(delta) {
+    if (delta === 0) {
+        window.weeklyBoardWeekOffset = 0;
+    } else {
+        window.weeklyBoardWeekOffset = (window.weeklyBoardWeekOffset || 0) + delta;
+    }
+    window.renderWeeklyBoard();
+};
+
+window.renderWeeklyBoard = function() {
+    const grid = document.getElementById('weeklyBoardGrid');
+    if (!grid) return;
+
+    const range = window.getWeekRange(window.weeklyBoardWeekOffset || 0);
+
+    // Cập nhật tiêu đề khoảng ngày tuần
+    const titleEl = document.getElementById('weeklyBoardDateRangeTitle');
+    if (titleEl) {
+        const offset = window.weeklyBoardWeekOffset || 0;
+        let badge = '';
+        if (offset === 0) badge = ' <span class="text-xs px-2 py-0.5 bg-primary/10 text-primary font-bold rounded-full ml-1.5">Tuần này</span>';
+        else if (offset === 1) badge = ' <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 font-bold rounded-full ml-1.5">Tuần tới</span>';
+        else if (offset === -1) badge = ' <span class="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 font-bold rounded-full ml-1.5">Tuần trước</span>';
+        titleEl.innerHTML = `${range.title}${badge}`;
+    }
+
+    // Highlight nút Tuần này
+    const currentBtn = document.getElementById('weeklyCurrentBadgeBtn');
+    if (currentBtn) {
+        if ((window.weeklyBoardWeekOffset || 0) === 0) {
+            currentBtn.classList.add('bg-primary', 'text-white');
+            currentBtn.classList.remove('bg-primary/10', 'text-primary');
+        } else {
+            currentBtn.classList.remove('bg-primary', 'text-white');
+            currentBtn.classList.add('bg-primary/10', 'text-primary');
+        }
+    }
+
+    // Lọc đơn hàng cho tuần đang chọn
+    const activeTab = document.querySelector('.quick-filter-tabs button.active')?.id || 'tab-all';
+    const currentUserName = localStorage.getItem('nevo_user') || '';
+    const qSearch = document.getElementById('filterSearch')?.value.trim().toLowerCase();
+    const qStatus = document.getElementById('filterStatus')?.value;
+
+    let weekOrders = (window.allOrdersData || []).filter(data => {
+        if (activeTab === 'tab-my') {
+            const isRelated = data.requester === currentUserName || data.stylist === currentUserName || data.assignedVideo === currentUserName || data.assignedPhoto === currentUserName || data.assignedDesign === currentUserName;
+            if (!isRelated) return false;
+        }
+
+        if (qSearch) {
+            const code = (data.code || '').toLowerCase();
+            const title = (data.title || '').toLowerCase();
+            const requester = (data.requester || '').toLowerCase();
+            const category = (data.category || '').toLowerCase();
+            if (!code.includes(qSearch) && !title.includes(qSearch) && !requester.includes(qSearch) && !category.includes(qSearch)) return false;
+        }
+
+        if (qStatus && data.status !== qStatus) return false;
+
+        const dateStr = window._normalizeDateToYMD(data.deployDate);
+        if (!dateStr) return false;
+        return dateStr >= range.startStr && dateStr <= range.endStr;
+    });
+
+    // Thống kê nhanh
+    const statsEl = document.getElementById('weeklyBoardStats');
+    if (statsEl) {
+        let compCount = 0;
+        let procCount = 0;
+        weekOrders.forEach(o => {
+            if (o.status === 'Hoàn thành') compCount++;
+            else if (o.status !== 'Hủy') procCount++;
+        });
+        statsEl.innerHTML = `Tổng: <span class="font-extrabold text-primary font-headline">${weekOrders.length} đơn</span> (${compCount} xong, ${procCount} đang xử lý)`;
+    }
+
+    const summaryTop = document.getElementById('tableResultsSummaryTop');
+    if (summaryTop) {
+        summaryTop.textContent = `Lưới tuần: ${weekOrders.length} đơn (${range.title})`;
+    }
+
+    // Render 7 cột (Thứ 2 -> Chủ Nhật)
+    let gridHtml = '';
+
+    range.days.forEach(day => {
+        const dayOrders = weekOrders.filter(o => window._normalizeDateToYMD(o.deployDate) === day.dateStr);
+        dayOrders.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+
+        const colBorderClass = day.isToday
+            ? 'border-primary ring-2 ring-primary/20 bg-rose-50/20 dark:bg-rose-950/10'
+            : 'border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40';
+
+        const headerBgClass = day.isToday
+            ? 'bg-gradient-to-r from-primary/10 to-rose-100/40 dark:from-primary/20 dark:to-rose-950/40 border-b border-primary/20'
+            : 'bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80';
+
+        let cardsHtml = '';
+        if (dayOrders.length === 0) {
+            cardsHtml = `
+                <div class="h-32 flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 text-xs font-semibold border-2 border-dashed border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3 text-center transition-colors">
+                    <span class="material-symbols-outlined text-[22px] mb-1 opacity-40">event_busy</span>
+                    <span>Không có lịch</span>
+                </div>
+            `;
+        } else {
+            dayOrders.forEach(order => {
+                const currentStatus = (window.orderStatusesData || []).find(s => s.name === order.status);
+                const badgeColor = currentStatus ? currentStatus.color : 'bg-slate-100 text-slate-600 border-slate-200';
+
+                const dataStr = encodeURIComponent(JSON.stringify({
+                    id: order.id, 
+                    code: order.code, 
+                    status: order.status, 
+                    title: order.title, 
+                    requester: order.requester, 
+                    department: order.department, 
+                    deadline: order.deadline, 
+                    deployDate: order.deployDate,
+                    orderDate: order.orderDate || order.createdAt,
+                    content: order.content,
+                    category: order.category,
+                    stylist: order.stylist,
+                    assignedVideo: order.assignedVideo,
+                    assignedPhoto: order.assignedPhoto,
+                    assignedDesign: order.assignedDesign,
+                    costs: order.costs || {},
+                    totalCost: order.totalCost || 0,
+                    note: order.note || ''
+                })).replace(/'/g, '%27');
+
+                let assigneesHtml = '';
+                if (order.stylist && order.stylist !== '-') {
+                    assigneesHtml += `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded"><span class="w-1.5 h-1.5 rounded-full bg-pink-500"></span>${order.stylist}</span>`;
+                }
+                if (order.assignedVideo && order.assignedVideo !== '-') {
+                    assigneesHtml += `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>${order.assignedVideo}</span>`;
+                }
+                if (order.assignedPhoto && order.assignedPhoto !== '-') {
+                    assigneesHtml += `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>${order.assignedPhoto}</span>`;
+                }
+
+                cardsHtml += `
+                    <div class="weekly-card bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-xl p-3 shadow-sm hover:shadow-md transition-all group relative cursor-pointer" onclick="openEditModal('${dataStr}')">
+                        <div class="flex items-center justify-between gap-1 mb-1.5">
+                            <span class="font-headline font-black text-xs text-primary hover:underline" onclick="event.stopPropagation(); openHistoryDrawer('${order.id}', '${order.code}')" title="Xem lịch sử">
+                                ${order.code || '-'}
+                            </span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-extrabold border ${badgeColor} uppercase tracking-wider">
+                                ${order.status || 'Chờ duyệt'}
+                            </span>
+                        </div>
+
+                        <div class="text-[12px] font-bold text-slate-800 dark:text-slate-100 line-clamp-2 mb-2 leading-snug group-hover:text-primary transition-colors" title="${safeAttr(order.title || '')}">
+                            ${safeAttr(order.title || 'Không có tiêu đề')}
+                        </div>
+
+                        <div class="flex items-center justify-between gap-1 mb-2">
+                            <div>${getCategoryBadge(order.category)}</div>
+                            ${order.note ? `<span class="text-[10px] text-slate-400 italic truncate max-w-[90px]" title="${safeAttr(order.note)}">📝 ${safeAttr(order.note)}</span>` : ''}
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-1">
+                            <div class="flex items-center gap-1 flex-wrap">
+                                ${assigneesHtml || '<span class="text-[10px] text-slate-400">-</span>'}
+                            </div>
+                            <button type="button" onclick="event.stopPropagation(); window.addToGoogleCalendar('${order.id}', event)" class="p-1 rounded-lg text-slate-400 hover:text-primary hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors" title="Thêm vào Google Calendar">
+                                <span class="material-symbols-outlined text-[17px]">calendar_add_on</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        gridHtml += `
+            <div class="flex flex-col rounded-2xl border ${colBorderClass} overflow-hidden shadow-sm h-full max-h-[72vh]">
+                <div class="p-3 ${headerBgClass} flex items-center justify-between shrink-0">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-headline font-black text-xs text-slate-800 dark:text-white uppercase tracking-wider">${day.dayName}</span>
+                            ${day.isToday ? '<span class="bg-primary text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md leading-none shadow-sm animate-pulse">Hôm nay</span>' : ''}
+                        </div>
+                        <div class="text-[11px] font-bold text-slate-400 mt-0.5">${day.dateDisplay}</div>
+                    </div>
+                    <span class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full text-[11px] font-extrabold ${dayOrders.length > 0 ? 'bg-primary text-white shadow-sm' : 'bg-slate-200/80 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}">
+                        ${dayOrders.length}
+                    </span>
+                </div>
+
+                <div class="flex-1 p-2 space-y-2.5 overflow-y-auto min-h-[140px]">
+                    ${cardsHtml}
+                </div>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = gridHtml;
+};
+
+// --- TIỆN ÍCH LỊCH CÁ NHÂN ---
+
+window.addToGoogleCalendar = function(orderId, event) {
+    if (event) event.stopPropagation();
+    const order = (window.allOrdersData || []).find(o => o.id === orderId);
+    if (!order) {
+        showToast('Không tìm thấy đơn hàng', '', 'error');
+        return;
+    }
+
+    const deployStr = window._normalizeDateToYMD(order.deployDate);
+    if (!deployStr) {
+        showToast('Đơn hàng chưa có ngày triển khai', 'Vui lòng cập nhật ngày triển khai trước khi thêm vào lịch', 'event_busy', 'warning');
+        return;
+    }
+
+    const [y, m, d] = deployStr.split('-');
+    const startDate = `${y}${m}${d}`;
+    const nextD = new Date(parseInt(y), parseInt(m) - 1, parseInt(d) + 1);
+    const endStr = window._normalizeDateToYMD(nextD);
+    const [ny, nm, nd] = endStr.split('-');
+    const endDate = `${ny}${nm}${nd}`;
+
+    const title = encodeURIComponent(`[${order.code || 'Đơn hàng'}] ${order.title || 'Triển khai công việc'}`);
+    const details = encodeURIComponent(
+        `Mã đơn: ${order.code || '-'}\n` +
+        `Thể loại: ${order.category || '-'}\n` +
+        `Người yêu cầu: ${order.requester || '-'}\n` +
+        `Stylist: ${order.stylist || '-'}\n` +
+        `Video: ${order.assignedVideo || '-'}\n` +
+        `Photo: ${order.assignedPhoto || '-'}\n` +
+        `Trạng thái: ${order.status || '-'}\n` +
+        `Ghi chú: ${order.note || '-'}\n` +
+        `Nội dung: ${(order.content || '').replace(/<[^>]*>/g, ' ')}\n\n` +
+        `Nevo-task: ${window.location.origin}${window.location.pathname}#orders`
+    );
+
+    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}`;
+    window.open(gcalUrl, '_blank');
+    showToast('Đang mở Google Calendar...', 'Hãy kiểm tra tab mới để lưu sự kiện', 'event', 'info');
+};
+
+window.exportWeeklyICS = function() {
+    const range = window.getWeekRange(window.weeklyBoardWeekOffset || 0);
+    const weekOrders = (window.allOrdersData || []).filter(o => {
+        const dStr = window._normalizeDateToYMD(o.deployDate);
+        return dStr && dStr >= range.startStr && dStr <= range.endStr;
+    });
+
+    if (weekOrders.length === 0) {
+        showToast('Không có đơn hàng nào', `Không có đơn triển khai trong tuần ${range.title} để xuất lịch`, 'event_busy', 'warning');
+        return;
+    }
+
+    let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Nevo-task//Order Deployment Calendar//VI',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        `X-WR-CALNAME:Ke hoach trien khai ${range.title}`
+    ];
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const nowStamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    weekOrders.forEach(o => {
+        const deployStr = window._normalizeDateToYMD(o.deployDate);
+        const [y, m, d] = deployStr.split('-').map(Number);
+        const dtStart = `${y}${pad(m)}${pad(d)}`;
+        const nextDay = new Date(y, m - 1, d + 1);
+        const dtEnd = `${nextDay.getFullYear()}${pad(nextDay.getMonth() + 1)}${pad(nextDay.getDate())}`;
+
+        const summary = `[${o.code || 'ORD'}] ${o.title || 'Triển khai'}`.replace(/[\\,;]/g, ' ');
+        const desc = `The loai: ${o.category || '-'}\\nNguoi yeu cau: ${o.requester || '-'}\\nStylist: ${o.stylist || '-'}\\nVideo: ${o.assignedVideo || '-'}\\nPhoto: ${o.assignedPhoto || '-'}\\nTrang thai: ${o.status || '-'}\\nGhi chu: ${o.note || '-'}`.replace(/\r?\n/g, '\\n');
+
+        icsContent.push('BEGIN:VEVENT');
+        icsContent.push(`UID:order-${o.id}-${dtStart}@nevo-task.local`);
+        icsContent.push(`DTSTAMP:${nowStamp}`);
+        icsContent.push(`DTSTART;VALUE=DATE:${dtStart}`);
+        icsContent.push(`DTEND;VALUE=DATE:${dtEnd}`);
+        icsContent.push(`SUMMARY:${summary}`);
+        icsContent.push(`DESCRIPTION:${desc}`);
+        icsContent.push('STATUS:CONFIRMED');
+        icsContent.push('END:VEVENT');
+    });
+
+    icsContent.push('END:VCALENDAR');
+
+    const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `ke_hoach_trien_khai_${range.startStr}_den_${range.endStr}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    const dropdown = document.getElementById('calendarSyncDropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+
+    showToast('Đã xuất file .ics!', 'Mở file để đồng bộ toàn bộ đơn tuần này vào Apple Calendar / Outlook', 'download_done', 'success');
+};
+
+window.copyWeeklyScheduleText = function() {
+    const range = window.getWeekRange(window.weeklyBoardWeekOffset || 0);
+    const weekOrders = (window.allOrdersData || []).filter(o => {
+        const dStr = window._normalizeDateToYMD(o.deployDate);
+        return dStr && dStr >= range.startStr && dStr <= range.endStr;
+    });
+
+    if (weekOrders.length === 0) {
+        showToast('Không có đơn hàng nào', `Không có đơn triển khai trong tuần ${range.title}`, 'event_busy', 'warning');
+        return;
+    }
+
+    let text = `📅 KẾ HOẠCH TRIỂN KHAI TUẦN (${range.title})\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+    range.days.forEach(day => {
+        const dayOrders = weekOrders.filter(o => window._normalizeDateToYMD(o.deployDate) === day.dateStr);
+        text += `\n📌 ${day.dayName} (${day.dateDisplay}) - ${dayOrders.length} đơn:\n`;
+        if (dayOrders.length === 0) {
+            text += `   (Không có lịch)\n`;
+        } else {
+            dayOrders.forEach((o, idx) => {
+                const team = [
+                    o.stylist && o.stylist !== '-' ? `Stylist: ${o.stylist}` : '',
+                    o.assignedVideo && o.assignedVideo !== '-' ? `Video: ${o.assignedVideo}` : '',
+                    o.assignedPhoto && o.assignedPhoto !== '-' ? `Photo: ${o.assignedPhoto}` : ''
+                ].filter(Boolean).join(' | ');
+
+                text += `   ${idx + 1}. [${o.code || 'ORD'}] ${o.title || 'Công việc'}\n`;
+                text += `      • Thể loại: ${o.category || '-'} | Trạng thái: ${o.status || '-'}\n`;
+                if (team) text += `      • Nhân sự: ${team}\n`;
+                if (o.note) text += `      • Ghi chú: ${o.note}\n`;
+            });
+        }
+    });
+
+    text += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `Tổng cộng: ${weekOrders.length} đơn triển khai trong tuần.\n`;
+
+    navigator.clipboard.writeText(text).then(() => {
+        const dropdown = document.getElementById('calendarSyncDropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+        showToast('Đã sao chép lịch trình tuần!', 'Nội dung đã được lưu vào bộ nhớ tạm để dán vào Zalo/Note', 'content_copy', 'success');
+    }).catch(err => {
+        console.error("Clipboard error:", err);
+        showToast('Lỗi sao chép', 'Vui lòng thử lại', 'error');
+    });
+};
+
+window.toggleCalendarSyncMenu = function(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('calendarSyncDropdown');
+    if (!dropdown) return;
+    dropdown.classList.toggle('hidden');
+};
+
+// =========================================================================
 
 window.renderOrdersTable = function() {
     const tbodyFull = document.getElementById('ordersTableBody');
@@ -1254,8 +1897,11 @@ window.renderOrdersTable = function() {
                     <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'orderDate')">
                         <div class="display-val">${orderText}</div>
                     </td>
-                    <td class="text-[11px] text-slate-500 font-bold ${checkPermission('deployDate') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('deployDate') ? `onclick="startInlineEdit(this, '${dataStr}', 'deployDate')"` : ''}>
-                        <div class="display-val">${deployText}</div>
+                    <td class="text-[11px] text-slate-500 font-bold ${checkPermission('deployDate') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all group/deploy" ${checkPermission('deployDate') ? `onclick="startInlineEdit(this, '${dataStr}', 'deployDate')"` : ''}>
+                        <div class="display-val flex items-center justify-between gap-1">
+                            <span>${deployText}</span>
+                            ${data.deployDate ? `<button type="button" onclick="event.stopPropagation(); window.addToGoogleCalendar('${data.id}', event)" title="Thêm vào Google Calendar" class="opacity-0 group-hover/deploy:opacity-100 p-0.5 hover:bg-rose-50 text-slate-400 hover:text-primary rounded transition-all"><span class="material-symbols-outlined text-[15px]">event</span></button>` : ''}
+                        </div>
                     </td>
                     <td class="text-[12px] font-bold text-primary cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
                         <div class="display-val">${deadlineText}</div>
@@ -2336,7 +2982,13 @@ window.getStatusColor = function(status) {
             isInitialLoadAllOrders = false;
             
             // Render visible components
-            if (window.currentPage === 'orders') window.renderOrdersTable();
+            if (window.currentPage === 'orders') {
+                if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+                    window.renderWeeklyBoard();
+                } else if (window.renderOrdersTable) {
+                    window.renderOrdersTable();
+                }
+            }
             if (window.currentPage === 'dashboard') window.renderDashboardTable();
             
             if (window.currentPage === 'reports') {

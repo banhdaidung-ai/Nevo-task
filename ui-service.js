@@ -89,7 +89,13 @@ export function navigateTo(pageId) {
 
             // Trigger page-specific renders if they exist on window
             if (pageId === 'dashboard' && window.renderDashboardTable) window.renderDashboardTable();
-            if (pageId === 'orders' && window.renderOrdersTable) window.renderOrdersTable();
+            if (pageId === 'orders') {
+                if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+                    window.renderWeeklyBoard();
+                } else if (window.renderOrdersTable) {
+                    window.renderOrdersTable();
+                }
+            }
             if (pageId === 'reports' && window.renderReports) window.renderReports();
             if (pageId === 'planning') {
                 if (window.renderPlanningTable) window.renderPlanningTable();
