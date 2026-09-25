@@ -291,8 +291,36 @@ window.closeHistoryDrawer = function() {
     }, 500);
 };
 
-// ===== ORDER WINDOW CHECK SYSTEM =====
+// ===== ORDER WINDOW CHECK SYSTEM (REALTIME & CACHED) =====
 let indexOwInterval = null;
+window._cachedOwSessions = null;
+window._cachedOwConfig = null;
+
+// Initialize realtime listeners for Order Window to avoid polling
+if (db) {
+    try {
+        onSnapshot(doc(db, 'order_window_config', 'settings'), (snap) => {
+            if (snap.exists()) {
+                window._cachedOwConfig = snap.data();
+                if (typeof window.updateIndexOwBanner === 'function') window.updateIndexOwBanner();
+            }
+        }, (err) => console.warn('OW Config snapshot error:', err));
+
+        const qOwSessions = query(
+            collection(db, 'order_window_sessions'),
+            where('status', '==', 'active')
+        );
+        onSnapshot(qOwSessions, (snap) => {
+            window._cachedOwSessions = [];
+            snap.forEach(d => window._cachedOwSessions.push({ id: d.id, ...d.data() }));
+            if (typeof window.updateIndexOwBanner === 'function') window.updateIndexOwBanner();
+            if (typeof window.updateOrderCategoryDropdown === 'function') window.updateOrderCategoryDropdown();
+        }, (err) => console.warn('OW Sessions snapshot error:', err));
+    } catch (owInitErr) {
+        console.warn('Failed to attach OW realtime listeners:', owInitErr);
+    }
+}
+
 window.checkOrderWindowOpen = async function(category) {
     const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
     if (role === 'admin' || role === 'manager') return { allowed: true };
@@ -300,28 +328,33 @@ window.checkOrderWindowOpen = async function(category) {
     try {
         const userId = localStorage.getItem('nevo_user_id') || localStorage.getItem('nevo_user') || '';
         const now = new Date();
-        const q = query(
-            collection(db, 'order_window_sessions'),
-            where('status', '==', 'active')
-        );
-        const snap = await getDocs(q);
+        
+        let sessions = window._cachedOwSessions;
+        if (!sessions) {
+            const q = query(
+                collection(db, 'order_window_sessions'),
+                where('status', '==', 'active')
+            );
+            const snap = await getDocs(q);
+            sessions = [];
+            snap.forEach(d => sessions.push({ id: d.id, ...d.data() }));
+            window._cachedOwSessions = sessions;
+        }
+
         let found = null;
         let openCategories = [];
         let shortestEnd = new Date(2100, 0, 1);
-        snap.forEach(d => {
-            const s = d.data();
+        sessions.forEach(s => {
             const end = s.endTime?.toDate ? s.endTime.toDate() : new Date(s.endTime);
             if (end > now) {
                 const targets = s.targetUsers || ['all'];
                 if (targets.includes('all') || targets.includes(userId)) {
                     const cats = s.targetCategories || ['all'];
-                    // Collect all open categories from all active sessions
                     if (cats.includes('all')) {
                         openCategories = ['all'];
                     } else {
                         cats.forEach(c => { if (!openCategories.includes(c) && !openCategories.includes('all')) openCategories.push(c); });
                     }
-                    // Check if specific category is allowed
                     if (!category || cats.includes('all') || cats.includes(category)) {
                         if (end < shortestEnd) {
                             shortestEnd = end;
@@ -335,7 +368,6 @@ window.checkOrderWindowOpen = async function(category) {
             found.openCategories = openCategories;
             return found;
         }
-        // If we have open categories but the specific category isn't in them
         if (openCategories.length > 0 && category) {
             return { allowed: false, openCategories: openCategories, categoryBlocked: true };
         }
@@ -382,17 +414,21 @@ window.updateIndexOwBanner = async function() {
 
     let upcomingText = '';
     try {
-        const configSnap = await getDoc(doc(db, 'order_window_config', 'settings'));
-        if (configSnap.exists()) {
-            const config = configSnap.data();
-            if (config.autoEnabled) {
-                const dayNames = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
-                const dayName = config.scheduledDay === -1 ? 'Hằng ngày' : dayNames[config.scheduledDay];
-                upcomingText = `Lịch tự động tiếp theo: ${dayName} (${config.startTime || '08:00'} - ${config.endTime || '17:00'})`;
-                
-                const nextOpenEl = document.getElementById('indexOwNextOpen');
-                if (nextOpenEl) nextOpenEl.textContent = upcomingText;
+        let config = window._cachedOwConfig;
+        if (!config) {
+            const configSnap = await getDoc(doc(db, 'order_window_config', 'settings'));
+            if (configSnap.exists()) {
+                config = configSnap.data();
+                window._cachedOwConfig = config;
             }
+        }
+        if (config && config.autoEnabled) {
+            const dayNames = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+            const dayName = config.scheduledDay === -1 ? 'Hằng ngày' : dayNames[config.scheduledDay];
+            upcomingText = `Lịch tự động tiếp theo: ${dayName} (${config.startTime || '08:00'} - ${config.endTime || '17:00'})`;
+            
+            const nextOpenEl = document.getElementById('indexOwNextOpen');
+            if (nextOpenEl) nextOpenEl.textContent = upcomingText;
         }
     } catch(e) {}
 
@@ -405,7 +441,8 @@ window.updateIndexOwBanner = async function() {
         const cats = result.openCategories || result.targetCategories || ['all'];
         let catText = cats.includes('all') ? 'Tất cả thể loại' : cats.join(', ');
         
-        document.getElementById('indexOwReason').textContent = (result.reason || '') + ' | ' + catText;
+        const reasonEl = document.getElementById('indexOwReason');
+        if (reasonEl) reasonEl.textContent = (result.reason || '') + ' | ' + catText;
         
         const upcomingEl = document.getElementById('indexOwUpcoming');
         if (upcomingEl && upcomingText) {
@@ -423,6 +460,7 @@ window.updateIndexOwBanner = async function() {
             
             const timerEl = document.getElementById('indexOwTimer');
             const labelEl = document.getElementById('indexOwTimerLabel');
+            if (!timerEl) return;
             
             if (diff > 30 * 24 * 60 * 60 * 1000) {
                 timerEl.textContent = 'Mở 24/7';
@@ -439,7 +477,7 @@ window.updateIndexOwBanner = async function() {
                 const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
                 timerEl.textContent = h+':'+m+':'+s;
             }
-        }
+        };
         tick();
         indexOwInterval = setInterval(tick, 1000);
     } else if (!result.allowed) {
@@ -452,14 +490,18 @@ window.updateIndexOwBanner = async function() {
     }
 };
 
-// Auto-check & create scheduled session from index page
+// Auto-check & create scheduled session from index page (One-time check on load)
 window.indexAutoSchedulerCheck = async function() {
     if (!db) return;
     try {
-        const configSnap = await getDoc(doc(db, 'order_window_config', 'settings'));
-        if (!configSnap.exists()) return;
-        const config = configSnap.data();
-        if (!config.autoEnabled) return;
+        let config = window._cachedOwConfig;
+        if (!config) {
+            const configSnap = await getDoc(doc(db, 'order_window_config', 'settings'));
+            if (!configSnap.exists()) return;
+            config = configSnap.data();
+            window._cachedOwConfig = config;
+        }
+        if (!config || !config.autoEnabled) return;
         const now = new Date();
         if (now.getDay() !== config.scheduledDay && config.scheduledDay !== -1) return;
         const [sH, sM] = (config.startTime||'08:00').split(':').map(Number);
@@ -487,10 +529,11 @@ window.indexAutoSchedulerCheck = async function() {
     } catch(e) { console.error('Index auto-scheduler error:', e); }
 };
 
-// Run checks periodically
-setTimeout(() => { window.indexAutoSchedulerCheck(); window.updateIndexOwBanner(); }, 2000);
-setInterval(() => { window.updateIndexOwBanner(); }, 30000);
-setInterval(() => { window.indexAutoSchedulerCheck(); }, 60000);
+// Initial check on load - no periodic polling to conserve quota
+setTimeout(() => { 
+    if (typeof window.indexAutoSchedulerCheck === 'function') window.indexAutoSchedulerCheck(); 
+    if (typeof window.updateIndexOwBanner === 'function') window.updateIndexOwBanner(); 
+}, 2000);
 
 
 // ===== CREATE ORDER HANDLER =====
@@ -542,20 +585,45 @@ window.handleCreateOrder = async function() {
     
     try {
         if (db) {
-            // Sử dụng Transaction để lấy số đếm mới nhất an toàn
+            // Sử dụng Transaction để lấy số đếm mới nhất an toàn, kèm Smart Fallback khi quota/mạng lỗi
             const counterRef = doc(db, "counters", "orders");
-            code = await runTransaction(db, async (transaction) => {
-                const sfDoc = await transaction.get(counterRef);
-                let newCount = 1;
-                if (sfDoc.exists()) {
-                    newCount = sfDoc.data().count + 1;
+            try {
+                code = await runTransaction(db, async (transaction) => {
+                    const sfDoc = await transaction.get(counterRef);
+                    let newCount = 1;
+                    if (sfDoc.exists()) {
+                        newCount = (sfDoc.data().count || 0) + 1;
+                    }
+                    // Cập nhật lại số đếm mới
+                    transaction.set(counterRef, { count: newCount }, { merge: true });
+                    return 'NV-' + newCount.toString().padStart(4, '0');
+                });
+            } catch (txError) {
+                console.warn("Transaction counter error (quota/network). Kích hoạt cấp mã dự phòng thông minh:", txError);
+                // Smart fallback: Tìm mã lớn nhất hiện có trong danh sách đơn đã load
+                let maxNum = 0;
+                if (Array.isArray(window.allOrdersData)) {
+                    window.allOrdersData.forEach(o => {
+                        if (o.code && typeof o.code === 'string' && o.code.startsWith('NV-')) {
+                            const raw = o.code.replace('NV-', '').trim();
+                            const num = parseInt(raw, 10);
+                            if (!isNaN(num) && num > maxNum) maxNum = num;
+                        }
+                    });
                 }
-                // Cập nhật lại số đếm mới
-                transaction.set(counterRef, { count: newCount }, { merge: true });
-                return 'NV-' + newCount.toString().padStart(4, '0');
-            });
+                if (maxNum > 0) {
+                    code = 'NV-' + (maxNum + 1).toString().padStart(4, '0');
+                } else {
+                    const now = new Date();
+                    const dStr = String(now.getFullYear()).slice(-2) + 
+                                 String(now.getMonth() + 1).padStart(2, '0') + 
+                                 String(now.getDate()).padStart(2, '0');
+                    const rStr = String(Math.floor(1000 + Math.random() * 9000));
+                    code = `NV-${dStr}-${rStr}`;
+                }
+            }
 
-            // Lưu dữ liệu vào mảng orders với mã vừa tạo
+            // Lưu dữ liệu vào collection orders với mã vừa tạo
             await addDoc(collection(db, "orders"), {
                 code: code,
                 department: department,
@@ -593,10 +661,14 @@ window.handleCreateOrder = async function() {
             document.getElementById('assignedPhoto').value = '';
         }, 1000);
     } catch (error) {
-        console.error("Lỗi:", error);
+        console.error("Lỗi tạo đơn:", error);
         btn.innerHTML = originalText;
         btn.disabled = false;
-        showToast('Lỗi!', 'Không thể lưu lên mạng. Kiểm tra kết nối.', 'error', 'error');
+        if (error?.code === 'resource-exhausted' || (error?.message && error.message.toLowerCase().includes('quota'))) {
+            showToast('Hạn mức hệ thống!', 'Hệ thống Firebase đạt giới hạn truy vấn trong ngày. Vui lòng liên hệ quản trị viên hoặc thử lại sau.', 'warning', 'error');
+        } else {
+            showToast('Lỗi!', 'Không thể lưu lên mạng. Kiểm tra kết nối (' + (error.message || 'Lỗi không xác định') + ').', 'error', 'error');
+        }
     }
 };
 
@@ -2910,6 +2982,9 @@ window.getStatusColor = function(status) {
                 if (typeof window.initMockupPlanningRows === 'function') {
                     window.initMockupPlanningRows();
                 }
+            }
+            if (typeof window.updateFinanceDeptDropdown === 'function') {
+                window.updateFinanceDeptDropdown();
             }
         });
 

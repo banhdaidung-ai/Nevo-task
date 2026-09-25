@@ -488,7 +488,10 @@
 <!-- ====== FIREBASE CHIP ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { 
+        initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+        getFirestore, doc, getDoc, setDoc, collection, getDocs 
+    } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -518,7 +521,18 @@
     ];
 
     const app = initializeApp(firebaseConfig);
-    window.db = getFirestore(app);
+    let db;
+    try {
+        db = initializeFirestore(app, {
+            localCache: persistentLocalCache({
+                tabManager: persistentMultipleTabManager()
+            })
+        });
+    } catch (e) {
+        console.warn("Falling back to default getFirestore in login:", e);
+        db = getFirestore(app);
+    }
+    window.db = db;
     window.fsDoc = doc;
     window.fsGetDoc = getDoc;
     window.fsSetDoc = setDoc;

@@ -1471,7 +1471,11 @@
 <!-- ====== FIREBASE SYSTEM ====== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch, limit, Timestamp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { 
+        initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+        getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, 
+        serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch, limit, Timestamp 
+    } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDkcMFNMsw0rzuW3PVaFk-q4oIVRY4NIg0",
@@ -1494,7 +1498,17 @@
     window.hashPassword = hashPassword;
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    let db;
+    try {
+        db = initializeFirestore(app, {
+            localCache: persistentLocalCache({
+                tabManager: persistentMultipleTabManager()
+            })
+        });
+    } catch (e) {
+        console.warn("Falling back to default getFirestore in admin:", e);
+        db = getFirestore(app);
+    }
 
     // Expose Firebase to window for UI script
     window.db = db;
@@ -1503,7 +1517,7 @@
         serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch, limit, Timestamp
     };
     
-    console.log("Firebase System Initialized");
+    console.log("Firebase System Initialized with Persistent Cache");
     
     // Trigger initial data load from UI script
     if (window.startSync) window.startSync();
@@ -1688,13 +1702,17 @@
             updateRoleOptions();
         });
 
-        // --- 6. ACTIVITIES SYNC ---
-        const qActivities = window.fs.query(window.fs.collection(window.db, "activities"), window.fs.orderBy("createdAt", "desc"));
+        // --- 6. ACTIVITIES SYNC (Limit to 50 to conserve reads) ---
+        const qActivities = window.fs.query(
+            window.fs.collection(window.db, "activities"), 
+            window.fs.orderBy("createdAt", "desc"), 
+            window.fs.limit(50)
+        );
         window.fs.onSnapshot(qActivities, (snap) => {
             window.activities = [];
             snap.forEach(doc => window.activities.push({ id: doc.id, ...doc.data() }));
             window.renderActivitiesTable();
-        });
+        }, (err) => console.warn("Activities sync error:", err));
 
         // --- 7. ORDERS SYNC (FOR DASHBOARD) ---
         const qOrders = window.fs.query(window.fs.collection(window.db, "orders"));

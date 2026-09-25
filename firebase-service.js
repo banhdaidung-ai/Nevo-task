@@ -5,6 +5,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
 import { 
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     getFirestore, collection, addDoc, getDocs, getDoc, doc, 
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
     serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
@@ -14,9 +15,21 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 import { firebaseConfig } from "./app-config.js";
 
-// Initialize Firebase
+// Initialize Firebase with Multi-Tab IndexedDB Persistent Cache
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
+let db;
+try {
+    db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager()
+        })
+    });
+} catch (e) {
+    console.warn("Falling back to default getFirestore:", e);
+    db = getFirestore(app);
+}
+
 const auth = getAuth(app);
 
 // Export to window for legacy support if needed

@@ -3360,8 +3360,8 @@
         if (window.renderWeeklyBoard) window.renderWeeklyBoard();
     };
 </script>
-<script type="module" src="main.js?v=20260907_1"></script>
-<script type="module" src="orders-manager.js?v=20260907_1"></script>
+<script type="module" src="main.js?v=20260925_opt1"></script>
+<script type="module" src="orders-manager.js?v=20260925_opt1"></script>
 
 <!-- ====== JAVASCRIPT ====== -->
 <script>
@@ -5183,12 +5183,11 @@
     window.initPlanningSync = function() {
         if(window.planningInitialized) return;
         
-        // Sync departments
-        window.fsOnSnapshot(window.fsCollection(window.db, "departments"), (snapshot) => {
-            window.departmentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Use shared departments data from orders-manager to avoid duplicate reads
+        if (window.departmentsData && window.departmentsData.length > 0) {
             window.updatePlanningDepartmentFilter();
             window.renderPlanningTable();
-        });
+        }
 
         // Sync planning rows
         const q = window.fsQuery(window.fsCollection(window.db, "planning"));
@@ -5197,7 +5196,7 @@
             window.renderPlanningCalendarHeaders();
             window.renderPlanningTable();
             window.renderPlanningReport();
-        });
+        }, (err) => console.warn('Planning sync error:', err));
         
         window.planningInitialized = true;
     };
@@ -6680,21 +6679,21 @@
             if (typeof renderFinanceConfigList === 'function') renderFinanceConfigList();
         }, (err) => console.error("Config Sync Error:", err));
 
-        // 4. Sync Departments for filter
-        const deptsRef = window.fsCollection(window.db, "departments");
-        window.fsOnSnapshot(deptsRef, (snap) => {
+        // 4. Sync Departments for filter (Uses shared window.departmentsData to avoid duplicate reads)
+        window.updateFinanceDeptDropdown = function() {
             const fDept = document.getElementById('financeFilterDept');
-            if(fDept) {
+            if (fDept && window.departmentsData) {
                 const currentVal = fDept.value;
                 fDept.innerHTML = '<option value="all">Tất cả phòng ban</option>';
-                snap.forEach(d => {
-                    const name = d.data().name;
+                window.departmentsData.forEach(d => {
+                    const name = d.name;
                     fDept.innerHTML += `<option value="${name}">${name}</option>`;
                 });
-                if(currentVal) fDept.value = currentVal;
+                if (currentVal) fDept.value = currentVal;
             }
-            populateFinanceSelects(); // Update modal selects when depts change
-        });
+            populateFinanceSelects();
+        };
+        window.updateFinanceDeptDropdown();
     }
 
     function populateFinanceSelects() {
