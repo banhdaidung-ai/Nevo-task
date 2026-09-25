@@ -536,10 +536,30 @@ setTimeout(() => {
 }, 2000);
 
 
+// Helper to extract maximum numeric order code from allOrdersData
+function getMaxOrderNumFromCache() {
+    let maxNum = 0;
+    if (Array.isArray(window.allOrdersData)) {
+        for (const o of window.allOrdersData) {
+            if (o && typeof o.code === 'string' && o.code.startsWith('NV-')) {
+                const raw = o.code.replace('NV-', '').trim();
+                const num = parseInt(raw, 10);
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+            }
+        }
+    }
+    return maxNum;
+}
+
 // ===== CREATE ORDER HANDLER =====
 window.handleCreateOrder = async function() {
     if (!checkPermission('create')) {
         showToast('Từ chối!', 'Bạn không có quyền tạo đơn hàng.', 'block', 'error');
+        return;
+    }
+
+    if (window._isCreatingOrder) {
+        console.warn("Đang trong quá trình tạo đơn, vui lòng đợi...");
         return;
     }
 
@@ -560,7 +580,6 @@ window.handleCreateOrder = async function() {
         return;
     }
     const title = document.getElementById('orderTitle').value;
-    let code = document.getElementById('orderCode').value;
     const department = document.getElementById('department').value;
     const requester = document.getElementById('requester').value;
     const deadline = document.getElementById('deadline').value;
@@ -582,50 +601,149 @@ window.handleCreateOrder = async function() {
     const originalText = btn.innerHTML;
     btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>Đang xử lý...';
     btn.disabled = true;
+    window._isCreatingOrder = true;
     
+    let allocatedCode = '';
+    let newOrderId = '';
+
     try {
-        if (db) {
-            // Sử dụng Transaction để lấy số đếm mới nhất an toàn, kèm Smart Fallback khi quota/mạng lỗi
-            const counterRef = doc(db, "counters", "orders");
-            try {
-                code = await runTransaction(db, async (transaction) => {
-                    const sfDoc = await transaction.get(counterRef);
-                    let newCount = 1;
-                    if (sfDoc.exists()) {
-                        newCount = (sfDoc.data().count || 0) + 1;
+        if (!db) {
+            throw new Error("Không thể kết nối cơ sở dữ liệu.");
+        }
+
+        const counterRef = doc(db, "counters", "orders");
+        const newOrderRef = doc(collection(db, "orders"));
+        newOrderId = newOrderRef.id;
+
+        try {
+            // ATOMIC TRANSACTION: Đảm bảo 100% không bao giờ trùng mã
+            // 1. Đọc counter hiện tại
+            // 2. Tìm số lớn nhất giữa counter và danh sách đơn đã load
+            // 3. Quét kiểm tra khóa bảo lưu trong collection "order_codes"
+            // 4. Ghi bảo lưu mã, tăng counter và tạo đơn HÀNG TẤT CẢ TRONG CÙNG 1 TRANSACTION
+            allocatedCode = await runTransaction(db, async (transaction) => {
+                const sfDoc = await transaction.get(counterRef);
+                const currentCounter = sfDoc.exists() ? (Number(sfDoc.data().count) || 0) : 0;
+                const localMax = getMaxOrderNumFromCache();
+                let candidateNum = Math.max(currentCounter, localMax);
+                let assigned = null;
+
+                for (let attempt = 0; attempt < 50; attempt++) {
+                    candidateNum++;
+                    const candidateCode = 'NV-' + candidateNum.toString().padStart(4, '0');
+
+                    // Kiểm tra không trùng trong dữ liệu đơn đã load
+                    const existsLocally = Array.isArray(window.allOrdersData) &&
+                        window.allOrdersData.some(o => o && o.code === candidateCode);
+                    if (existsLocally) continue;
+
+                    // Kiểm tra khóa bảo lưu duy nhất trong collection order_codes
+                    const codeRef = doc(db, "order_codes", candidateCode);
+                    const codeSnap = await transaction.get(codeRef);
+                    if (!codeSnap.exists()) {
+                        // Khóa mã này ngay trong transaction
+                        transaction.set(codeRef, {
+                            code: candidateCode,
+                            orderId: newOrderRef.id,
+                            requester: requester || '',
+                            title: title || '',
+                            createdAt: serverTimestamp()
+                        });
+                        assigned = candidateCode;
+                        break;
                     }
-                    // Cập nhật lại số đếm mới
-                    transaction.set(counterRef, { count: newCount }, { merge: true });
-                    return 'NV-' + newCount.toString().padStart(4, '0');
+                }
+
+                if (!assigned) {
+                    throw new Error("Không thể cấp phát mã đơn sau 50 lần thử.");
+                }
+
+                // Cập nhật counter đồng bộ
+                transaction.set(counterRef, {
+                    count: candidateNum,
+                    lastAllocatedCode: assigned,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                // Tạo đơn hàng nguyên tử cùng transaction
+                transaction.set(newOrderRef, {
+                    code: assigned,
+                    department: department,
+                    requester: requester,
+                    title: title,
+                    deadline: deadline,
+                    deployDate: deployDate,
+                    content: content,
+                    category: category,
+                    stylist: stylist,
+                    assignedVideo: assignedVideo,
+                    assignedPhoto: assignedPhoto,
+                    assignedDesign: assignedDesign,
+                    status: 'Chờ duyệt',
+                    createdAt: serverTimestamp()
                 });
-            } catch (txError) {
-                console.warn("Transaction counter error (quota/network). Kích hoạt cấp mã dự phòng thông minh:", txError);
-                // Smart fallback: Tìm mã lớn nhất hiện có trong danh sách đơn đã load
-                let maxNum = 0;
-                if (Array.isArray(window.allOrdersData)) {
-                    window.allOrdersData.forEach(o => {
-                        if (o.code && typeof o.code === 'string' && o.code.startsWith('NV-')) {
-                            const raw = o.code.replace('NV-', '').trim();
-                            const num = parseInt(raw, 10);
-                            if (!isNaN(num) && num > maxNum) maxNum = num;
-                        }
-                    });
+
+                return assigned;
+            });
+        } catch (txError) {
+            console.warn("Transaction counter error. Kích hoạt cấp mã dự phòng thông minh bảo đảm duy nhất:", txError);
+            
+            // SMART FALLBACK: Luôn đồng bộ counter và khóa bảo lưu mã
+            let fallbackNum = getMaxOrderNumFromCache();
+            try {
+                const cSnap = await getDoc(counterRef);
+                if (cSnap.exists()) {
+                    fallbackNum = Math.max(fallbackNum, Number(cSnap.data().count) || 0);
                 }
-                if (maxNum > 0) {
-                    code = 'NV-' + (maxNum + 1).toString().padStart(4, '0');
-                } else {
-                    const now = new Date();
-                    const dStr = String(now.getFullYear()).slice(-2) + 
-                                 String(now.getMonth() + 1).padStart(2, '0') + 
-                                 String(now.getDate()).padStart(2, '0');
-                    const rStr = String(Math.floor(1000 + Math.random() * 9000));
-                    code = `NV-${dStr}-${rStr}`;
+            } catch (e) {}
+
+            let assigned = null;
+            for (let attempt = 0; attempt < 50; attempt++) {
+                fallbackNum++;
+                const candidateCode = 'NV-' + fallbackNum.toString().padStart(4, '0');
+
+                if (Array.isArray(window.allOrdersData) && window.allOrdersData.some(o => o && o.code === candidateCode)) {
+                    continue;
                 }
+
+                try {
+                    const codeSnap = await getDoc(doc(db, "order_codes", candidateCode));
+                    if (codeSnap.exists()) continue;
+                } catch (e) {}
+
+                assigned = candidateCode;
+                break;
             }
 
-            // Lưu dữ liệu vào collection orders với mã vừa tạo
-            await addDoc(collection(db, "orders"), {
-                code: code,
+            if (!assigned) {
+                fallbackNum++;
+                assigned = 'NV-' + fallbackNum.toString().padStart(4, '0');
+            }
+
+            allocatedCode = assigned;
+
+            // Ghi bảo lưu mã và cập nhật counter
+            try {
+                await setDoc(doc(db, "order_codes", allocatedCode), {
+                    code: allocatedCode,
+                    orderId: newOrderRef.id,
+                    requester: requester || '',
+                    title: title || '',
+                    createdAt: serverTimestamp()
+                }, { merge: true });
+
+                await setDoc(counterRef, {
+                    count: fallbackNum,
+                    lastAllocatedCode: allocatedCode,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            } catch (reserveErr) {
+                console.warn("Lỗi ghi reservation/counter dự phòng:", reserveErr);
+            }
+
+            // Ghi đơn hàng mới
+            await setDoc(newOrderRef, {
+                code: allocatedCode,
                 department: department,
                 requester: requester,
                 title: title,
@@ -640,16 +758,14 @@ window.handleCreateOrder = async function() {
                 status: 'Chờ duyệt',
                 createdAt: serverTimestamp()
             });
-            
-            // LOG ACTIVITY
-            if (window.logActivity) {
-                window.logActivity('create', `Đơn hàng mới ${code}`, `${requester || 'Ai đó'} vừa khởi tạo đơn hàng: ${title}`, null, code);
-            }
+        }
+
+        // LOG ACTIVITY
+        if (window.logActivity) {
+            window.logActivity('create', `Đơn hàng mới ${allocatedCode}`, `${requester || 'Ai đó'} vừa khởi tạo đơn hàng: ${title}`, newOrderId, allocatedCode);
         }
         
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        showToast('Thành công!', `Đơn hàng ${code} đã được tự động cấp và lưu trên hệ thống.`, 'check_circle', 'success');
+        showToast('Thành công!', `Đơn hàng ${allocatedCode} đã được tự động cấp và lưu trên hệ thống.`, 'check_circle', 'success');
         
         setTimeout(() => {
             navigateTo('orders');
@@ -662,13 +778,15 @@ window.handleCreateOrder = async function() {
         }, 1000);
     } catch (error) {
         console.error("Lỗi tạo đơn:", error);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
         if (error?.code === 'resource-exhausted' || (error?.message && error.message.toLowerCase().includes('quota'))) {
             showToast('Hạn mức hệ thống!', 'Hệ thống Firebase đạt giới hạn truy vấn trong ngày. Vui lòng liên hệ quản trị viên hoặc thử lại sau.', 'warning', 'error');
         } else {
             showToast('Lỗi!', 'Không thể lưu lên mạng. Kiểm tra kết nối (' + (error.message || 'Lỗi không xác định') + ').', 'error', 'error');
         }
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        window._isCreatingOrder = false;
     }
 };
 
@@ -3040,8 +3158,15 @@ window.getStatusColor = function(status) {
 
         window.fsOnSnapshot(qAll, (snapshot) => {
             window.allOrdersData = [];
+            const seenCodes = new Set();
             snapshot.forEach((doc) => {
-                window.allOrdersData.push({ id: doc.id, ...doc.data() });
+                const data = doc.data();
+                if (data.code && seenCodes.has(data.code)) {
+                    console.warn(`[OrderSync Warning] Phát hiện trùng mã: ${data.code} (ID: ${doc.id})`);
+                } else if (data.code) {
+                    seenCodes.add(data.code);
+                }
+                window.allOrdersData.push({ id: doc.id, ...data });
             });
             
             // Check for newly added orders
