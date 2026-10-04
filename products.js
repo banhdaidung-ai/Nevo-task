@@ -1061,7 +1061,29 @@ async function init() {
                 cell.getElement().style.outline = "";
                 cell.getElement().style.backgroundColor = "";
                 cell.setValue(sourceValue);
-                // cellEdited event handles Firebase sync automatically
+                const r = cell.getRow();
+                const d = r.getData();
+                const f = cell.getField();
+                if (d.id) {
+                    const targetCollection = d._collectionName || COLLECTION_NAME;
+                    const payload = {
+                        [f]: sourceValue || "",
+                        updatedAt: serverTimestamp()
+                    };
+                    if (f === 'ngayVeKho') {
+                        const newNgayCo = sourceValue ? addDaysToDateStr(sourceValue, 7) : "";
+                        const tc = r.getCell('anhTraiSanNgayCo');
+                        const mc = r.getCell('anhModelNgayCo');
+                        if (tc) tc.setValue(newNgayCo);
+                        if (mc) mc.setValue(newNgayCo);
+                        payload.anhTraiSanNgayCo = newNgayCo;
+                        payload.anhModelNgayCo = newNgayCo;
+                    }
+                    try {
+                        await updateDoc(doc(db, targetCollection, d.id), payload);
+                    } catch (err) { console.error(err); }
+                    r.reformat();
+                }
             }
             setSyncing(false);
         }
@@ -1081,24 +1103,27 @@ async function init() {
         // Chỉ admin/manager mới được sửa — ngoại trừ cột air channels (mọi user đều được)
         if (isUser && !AIR_FIELDS.includes(field)) return;
 
-        // Tự động cập nhật "Ngày có ảnh" khi "Ngày về kho" thay đổi
-        // (chỉ cập nhật nếu ô đó chưa được điền thủ công)
-        if (field === 'ngayVeKho' && value) {
-            const newNgayCo = addDaysToDateStr(value, 7);
+        const updatePayload = {
+            [field]: value || "",
+            updatedAt: serverTimestamp()
+        };
+
+        // Khi thay ngày về kho: Tự động tính và cập nhật ngày có ảnh (cả trải sàn và model)
+        if (field === 'ngayVeKho') {
+            const newNgayCo = value ? addDaysToDateStr(value, 7) : "";
             const traiSanCell = row.getCell('anhTraiSanNgayCo');
             const modelCell   = row.getCell('anhModelNgayCo');
-            if (traiSanCell && !traiSanCell.getValue()) traiSanCell.setValue(newNgayCo);
-            if (modelCell   && !modelCell.getValue())   modelCell.setValue(newNgayCo);
+            if (traiSanCell) traiSanCell.setValue(newNgayCo);
+            if (modelCell)   modelCell.setValue(newNgayCo);
+            updatePayload.anhTraiSanNgayCo = newNgayCo;
+            updatePayload.anhModelNgayCo = newNgayCo;
         }
 
         if (data.id) {
             setSyncing(true);
             const targetCollection = data._collectionName || COLLECTION_NAME;
             try {
-                await updateDoc(doc(db, targetCollection, data.id), {
-                    [field]: value || "",
-                    updatedAt: serverTimestamp()
-                });
+                await updateDoc(doc(db, targetCollection, data.id), updatePayload);
             } catch (err) { console.error(err); }
             row.reformat();
             setSyncing(false);
