@@ -777,106 +777,26 @@ async function init() {
     // Auto-migrate old status values ("Chưa có", "Chưa chụp") → "Chưa thực hiện"
     migrateOldStatuses();
 
-    // Base Columns
-    let columns = [
-        { rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30 },
-        { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
-        { 
-            title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false,
-            headerFilter: function(cell, onRendered, success, cancel, filterParams) {
-                const container = document.createElement("div");
-                container.className = "flex justify-center items-center h-full w-full px-1";
-                const btn = document.createElement("button");
-                btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">filter_alt_off</span>`;
-                btn.className = "w-6 h-6 rounded bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm";
-                btn.title = "Xóa tất cả bộ lọc";
-                btn.onclick = function(e) {
-                    e.stopPropagation();
-                    table.clearHeaderFilter();
-                    table.clearFilter();
-                };
-                container.appendChild(btn);
-                return container;
-            }
-        },
-        { 
-            title: "Đợt/Tháng", 
-            field: "_monthStr", 
-            width: 105, 
-            headerFilter: "input", 
-            visible: false,
-            formatter: function(cell) {
-                const rowData = cell.getRow().getData();
-                let monthStr = "";
-                
-                // Ưu tiên 1: Tự động tính toán theo "Ngày về kho Media" (ngayVeKho)
-                if (rowData.ngayVeKho && typeof rowData.ngayVeKho === 'string') {
-                    const parts = rowData.ngayVeKho.trim().split('/');
-                    if (parts.length === 3 && parts[1] && parts[2]) {
-                        monthStr = `${parts[1].padStart(2, '0')}-${parts[2].trim()}`;
-                    } else if (parts.length === 2 && parts[1]) {
-                        const y = (rowData._monthStr ? rowData._monthStr.split('-')[1] : null) || '2026';
-                        monthStr = `${parts[1].padStart(2, '0')}-${y}`;
-                    }
-                }
-                
-                // Ưu tiên 2: Lấy theo collection tháng của dòng đó hoặc tháng hiện tại
-                if (!monthStr) {
-                    monthStr = rowData._monthStr || currentMonth || `${String(new Date().getMonth() + 1).padStart(2, '0')}-${new Date().getFullYear()}`;
-                }
-                
-                const parts = monthStr.split('-');
-                return `<span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-extrabold text-[11px] border border-indigo-100 whitespace-nowrap">T${parts[0]}/${parts[1] || ''}</span>`;
-            }
-        },
-        { title: "Mã 10", field: "ma10", editor: "input", width: 120, headerFilter: "input" },
-        { 
-            title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, headerFilter: "input",
-            cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview
-        },
-        { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, headerFilter: "input" },
-        { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, headerFilter: "input" },
-        { 
-            title: "Ngày về kho Media", 
-            field: "ngayVeKho", 
-            editor: dateEditor, 
-            formatter: dateDisplayFormatter, 
-            width: 120, 
-            headerFilter: "input",
-            sorter: function(a, b) {
-                return parseDateStrToTimestamp(a) - parseDateStrToTimestamp(b);
-            }
-        },
-        {
-            title: "Hình ảnh trải sàn",
-            columns: [
-                { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 130, headerFilter: "input",
-                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter },
-                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 120, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
-            ]
-        },
-        {
-            title: "Hình ảnh model",
-            columns: [
-                { title: "Link Ảnh", field: "linkAnhModel", editor: "input", width: 130, headerFilter: "input",
-                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter },
-                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 120, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
-            ]
-        },
-        {
-            title: "Video model",
-            columns: [
-                { title: "Link Video", field: "linkVideo", editor: "input", width: 130, headerFilter: "input", formatter: linkFormatter },
-                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, headerFilter: "input" },
-                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 120, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
-            ]
-        },
-        { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, headerFilter: "input" }
-    ];
+    // Helper: tính ngày có ảnh = ngày về kho + N ngày (DD/MM/YYYY)
+    function addDaysToDateStr(dateStr, days) {
+        if (!dateStr || typeof dateStr !== 'string') return '';
+        const parts = dateStr.trim().split('/');
+        if (parts.length !== 3) return '';
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[2], 10);
+        if (isNaN(d) || isNaN(m) || isNaN(y)) return '';
+        const date = new Date(y, m, d);
+        date.setDate(date.getDate() + days);
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        return `${dd}/${mm}/${date.getFullYear()}`;
+    }
 
-    // Header Menu
+    // Các cột air channels — TẤT CẢ user đều được phép điền
+    const AIR_FIELDS = ['airWeb', 'airTiktok', 'airShopee'];
+
+    // Header Menu (chuột phải vào tiêu đề cột)
     const headerMenu = [
         {
             label: "Đổi tên cột",
@@ -916,16 +836,152 @@ async function init() {
         }
     ];
 
+    // Base Columns
+    let columns = [
+        { rowHandle:true, formatter:"handle", headerSort:false, frozen:true, width:30, minWidth:30 },
+        { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
+        { 
+            title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false,
+            headerFilter: function(cell, onRendered, success, cancel, filterParams) {
+                const container = document.createElement("div");
+                container.className = "flex justify-center items-center h-full w-full px-1";
+                const btn = document.createElement("button");
+                btn.innerHTML = `<span class="material-symbols-outlined text-[16px]">filter_alt_off</span>`;
+                btn.className = "w-6 h-6 rounded bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm";
+                btn.title = "Xóa tất cả bộ lọc";
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    table.clearHeaderFilter();
+                    table.clearFilter();
+                };
+                container.appendChild(btn);
+                return container;
+            }
+        },
+        { 
+            title: "Đợt/Tháng", 
+            field: "_monthStr", 
+            width: 105, 
+            headerFilter: "input", 
+            visible: false,
+            headerMenu: headerMenu,
+            formatter: function(cell) {
+                const rowData = cell.getRow().getData();
+                let monthStr = "";
+                
+                // Ưu tiên 1: Tự động tính toán theo "Ngày về kho Media" (ngayVeKho)
+                if (rowData.ngayVeKho && typeof rowData.ngayVeKho === 'string') {
+                    const parts = rowData.ngayVeKho.trim().split('/');
+                    if (parts.length === 3 && parts[1] && parts[2]) {
+                        monthStr = `${parts[1].padStart(2, '0')}-${parts[2].trim()}`;
+                    } else if (parts.length === 2 && parts[1]) {
+                        const y = (rowData._monthStr ? rowData._monthStr.split('-')[1] : null) || '2026';
+                        monthStr = `${parts[1].padStart(2, '0')}-${y}`;
+                    }
+                }
+                
+                // Ưu tiên 2: Lấy theo collection tháng của dòng đó hoặc tháng hiện tại
+                if (!monthStr) {
+                    monthStr = rowData._monthStr || currentMonth || `${String(new Date().getMonth() + 1).padStart(2, '0')}-${new Date().getFullYear()}`;
+                }
+                
+                const parts = monthStr.split('-');
+                return `<span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-extrabold text-[11px] border border-indigo-100 whitespace-nowrap">T${parts[0]}/${parts[1] || ''}</span>`;
+            }
+        },
+        { title: "Mã 10", field: "ma10", editor: "input", width: 120, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+        { 
+            title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, minWidth: 100, headerFilter: "input",
+            cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview,
+            headerMenu: headerMenu
+        },
+        { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+        { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+        { 
+            title: "Ngày về kho", 
+            field: "ngayVeKho", 
+            editor: dateEditor, 
+            formatter: dateDisplayFormatter, 
+            width: 120, 
+            minWidth: 100,
+            headerFilter: "input",
+            headerMenu: headerMenu,
+            sorter: function(a, b) {
+                return parseDateStrToTimestamp(a) - parseDateStrToTimestamp(b);
+            }
+        },
+        {
+            title: "Hình ảnh trải sàn",
+            columns: [
+                { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 130, minWidth: 90, headerFilter: "input",
+                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter, headerMenu: headerMenu },
+                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 105, minWidth: 90, headerFilter: "input", headerMenu: headerMenu },
+                { title: "Ngày có ảnh", field: "anhTraiSanNgayCo", editor: dateEditor, formatter: dateDisplayFormatter, width: 115, minWidth: 100, headerFilter: "input", headerMenu: headerMenu,
+                    tooltip: "Tự động = Ngày về kho + 7 ngày. Có thể chỉnh tay." },
+                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]}, headerMenu: headerMenu }
+            ]
+        },
+        {
+            title: "Hình ảnh model",
+            columns: [
+                { title: "Link Ảnh", field: "linkAnhModel", editor: "input", width: 130, minWidth: 90, headerFilter: "input",
+                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter, headerMenu: headerMenu },
+                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 105, minWidth: 90, headerFilter: "input", headerMenu: headerMenu },
+                { title: "Ngày có ảnh", field: "anhModelNgayCo", editor: dateEditor, formatter: dateDisplayFormatter, width: 115, minWidth: 100, headerFilter: "input", headerMenu: headerMenu,
+                    tooltip: "Tự động = Ngày về kho + 7 ngày. Có thể chỉnh tay." },
+                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]}, headerMenu: headerMenu }
+            ]
+        },
+        {
+            title: "Video model",
+            columns: [
+                { title: "Link Video", field: "linkVideo", editor: "input", width: 130, minWidth: 90, headerFilter: "input", formatter: linkFormatter, headerMenu: headerMenu },
+                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 105, minWidth: 90, headerFilter: "input", headerMenu: headerMenu },
+                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]}, headerMenu: headerMenu }
+            ]
+        },
+        {
+            title: "Ngày air các kênh",
+            columns: [
+                { title: "Web",    field: "airWeb",    editor: dateEditor, formatter: dateDisplayFormatter, width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+                { title: "Tiktok", field: "airTiktok", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+                { title: "Shopee", field: "airShopee", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu }
+            ]
+        },
+        { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, minWidth: 120, headerFilter: "input", headerMenu: headerMenu }
+    ];
+
+    // Load custom columns từ Firebase (hỗ trợ cả cột đơn và cột thuộc nhóm)
     customCols.forEach(col => {
-        columns.push({ title: col.title, field: col.field, editor: "input", width: 150, headerMenu: headerMenu });
+        const colDef = { title: col.title, field: col.field, editor: "input", width: 150, headerMenu: headerMenu };
+        if (col.group) {
+            const groupCol = columns.find(c => c.title === col.group && c.columns);
+            if (groupCol) {
+                groupCol.columns.push(colDef);
+            } else {
+                // Tạo nhóm mới ngay trước cột Ghi chú
+                const ghiChuIdx = columns.findIndex(c => c.field === 'ghiChu');
+                const newGroup = { title: col.group, columns: [colDef] };
+                if (ghiChuIdx > -1) columns.splice(ghiChuIdx, 0, newGroup);
+                else columns.push(newGroup);
+            }
+        } else {
+            const ghiChuIdx = columns.findIndex(c => c.field === 'ghiChu');
+            if (ghiChuIdx > -1) columns.splice(ghiChuIdx, 0, colDef);
+            else columns.push(colDef);
+        }
     });
 
     if (isUser) {
         const disableEditing = (cols) => {
             cols.forEach(c => {
                 if (c.columns) {
+                    // Nhóm "Ngày air các kênh": giữ nguyên quyền chỉnh sửa cho tất cả user
+                    if (c.title === 'Ngày air các kênh') return;
                     disableEditing(c.columns);
                 } else {
+                    // Các cột air channels luôn cho phép user điền
+                    if (AIR_FIELDS.includes(c.field)) return;
                     c.editor = false;
                     c.headerMenu = [];
                 }
@@ -946,8 +1002,9 @@ async function init() {
         rowFormatter: rowColorFormatter,
         movableColumns: true, 
         movableRows: true,
+        headerWordWrap: true,
         persistence: { columns: true, rows: true },
-        persistenceID: "productsTable_v6",
+        persistenceID: "productsTable_v7",
         columns: columns,
     });
 
@@ -1016,16 +1073,30 @@ async function init() {
 
     // --- FIREBASE SYNC ---
     table.on("cellEdited", async function(cell) {
-        if (isUser) return;
         const row = cell.getRow();
         const data = row.getData();
         const field = cell.getField();
+        const value = cell.getValue();
+
+        // Chỉ admin/manager mới được sửa — ngoại trừ cột air channels (mọi user đều được)
+        if (isUser && !AIR_FIELDS.includes(field)) return;
+
+        // Tự động cập nhật "Ngày có ảnh" khi "Ngày về kho" thay đổi
+        // (chỉ cập nhật nếu ô đó chưa được điền thủ công)
+        if (field === 'ngayVeKho' && value) {
+            const newNgayCo = addDaysToDateStr(value, 7);
+            const traiSanCell = row.getCell('anhTraiSanNgayCo');
+            const modelCell   = row.getCell('anhModelNgayCo');
+            if (traiSanCell && !traiSanCell.getValue()) traiSanCell.setValue(newNgayCo);
+            if (modelCell   && !modelCell.getValue())   modelCell.setValue(newNgayCo);
+        }
+
         if (data.id) {
             setSyncing(true);
             const targetCollection = data._collectionName || COLLECTION_NAME;
             try {
                 await updateDoc(doc(db, targetCollection, data.id), {
-                    [field]: cell.getValue() || "",
+                    [field]: value || "",
                     updatedAt: serverTimestamp()
                 });
             } catch (err) { console.error(err); }
@@ -1050,13 +1121,16 @@ async function init() {
                 : (COLLECTION_NAME || `new_products_${defaultMonthStr}`);
             
             const todayStr = `${String(now.getDate()).padStart(2, '0')}/${curM}/${curY}`;
+            // Ngày có ảnh mặc định = ngày về kho + 7 ngày
+            const defaultNgayCo = addDaysToDateStr(todayStr, 7);
             
             const newDoc = {
                 ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
                 ngayVeKho: todayStr, linkAnh: "", linkAnhModel: "", linkVideo: "",
-                anhTraiSanNgay: "", anhTraiSanTrangThai: "Chưa thực hiện",
-                anhModelNgay: "", anhModelTrangThai: "Chưa thực hiện",
+                anhTraiSanNgay: "", anhTraiSanNgayCo: defaultNgayCo, anhTraiSanTrangThai: "Chưa thực hiện",
+                anhModelNgay: "", anhModelNgayCo: defaultNgayCo, anhModelTrangThai: "Chưa thực hiện",
                 videoModelNgay: "", videoModelTrangThai: "Chưa thực hiện",
+                airWeb: "", airTiktok: "", airShopee: "",
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, targetCollection), newDoc);
@@ -1065,30 +1139,96 @@ async function init() {
         setSyncing(false);
     });
 
-    // Add Custom Column
+    // Add Custom Column (hỗ trợ chọn nhóm hoặc cột đơn)
     document.getElementById("btn-add-col").addEventListener("click", async () => {
         if (isUser) return;
-        const { value: colName } = await Swal.fire({
+
+        // Lấy danh sách nhóm hiện có
+        const existingGroups = columns
+            .filter(c => c.columns && c.title)
+            .map(c => c.title);
+
+        const groupOptionsHtml = [
+            `<option value="">— Cột đơn (không thuộc nhóm) —</option>`,
+            ...existingGroups.map(g => `<option value="${g}">${g}</option>`),
+            `<option value="__new__">✨ Tạo nhóm mới...</option>`
+        ].join('');
+
+        const { value: formValues } = await Swal.fire({
             title: 'Thêm cột mới',
-            input: 'text',
-            inputLabel: 'Tên cột',
-            inputPlaceholder: 'Nhập tên cột...',
-            showCancelButton: true
+            width: '460px',
+            html: `
+                <div style="text-align:left;display:flex;flex-direction:column;gap:14px;margin-top:4px">
+                    <div>
+                        <label style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Tên cột</label>
+                        <input id="swal-col-name" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box" placeholder="Nhập tên cột...">
+                    </div>
+                    <div>
+                        <label style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Thuộc nhóm</label>
+                        <select id="swal-col-group" class="swal2-select" style="margin:0;width:100%;box-sizing:border-box">${groupOptionsHtml}</select>
+                    </div>
+                    <div id="swal-new-group-wrap" style="display:none">
+                        <label style="font-size:13px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Tên nhóm mới</label>
+                        <input id="swal-new-group-name" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box" placeholder="Nhập tên nhóm mới...">
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Thêm cột',
+            cancelButtonText: 'Hủy',
+            didOpen: () => {
+                document.getElementById('swal-col-group').addEventListener('change', (ev) => {
+                    const wrap = document.getElementById('swal-new-group-wrap');
+                    wrap.style.display = ev.target.value === '__new__' ? 'block' : 'none';
+                });
+            },
+            preConfirm: () => {
+                const name = document.getElementById('swal-col-name').value.trim();
+                const group = document.getElementById('swal-col-group').value;
+                const newGroupName = (document.getElementById('swal-new-group-name') || {}).value?.trim() || '';
+                if (!name) { Swal.showValidationMessage('Vui lòng nhập tên cột'); return false; }
+                if (group === '__new__' && !newGroupName) { Swal.showValidationMessage('Vui lòng nhập tên nhóm mới'); return false; }
+                return { name, group: group === '__new__' ? newGroupName : group };
+            }
         });
 
-        if (colName) {
+        if (formValues) {
             setSyncing(true);
+            const { name: colName, group: colGroup } = formValues;
             const field = "custom_" + Date.now();
             const newColDef = { title: colName, field: field, editor: "input", width: 150, headerMenu: headerMenu };
-            
-            table.addColumn(newColDef);
+
             try {
+                // Cập nhật mảng columns để rebuild đúng vị trí
+                if (colGroup) {
+                    const groupCol = columns.find(c => c.title === colGroup && c.columns);
+                    if (groupCol) {
+                        groupCol.columns.push({...newColDef});
+                    } else {
+                        // Tạo nhóm mới trước cột Ghi chú
+                        const ghiChuIdx = columns.findIndex(c => c.field === 'ghiChu');
+                        const newGroup = { title: colGroup, columns: [{...newColDef}] };
+                        if (ghiChuIdx > -1) columns.splice(ghiChuIdx, 0, newGroup);
+                        else columns.push(newGroup);
+                    }
+                } else {
+                    const ghiChuIdx = columns.findIndex(c => c.field === 'ghiChu');
+                    if (ghiChuIdx > -1) columns.splice(ghiChuIdx, 0, {...newColDef});
+                    else columns.push({...newColDef});
+                }
+
+                // Rebuild bảng với cấu trúc cột mới
+                table.setColumns(columns);
+
+                // Lưu vào Firebase
                 const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
                 let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
-                cols.push(newColDef);
+                cols.push({ title: colName, field: field, group: colGroup || null });
                 await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
-                Swal.fire('Thành công', 'Đã thêm cột mới. Cột này áp dụng cho mọi tháng.', 'success');
-            } catch (e) { console.error(e); }
+                Swal.fire('Thành công', colGroup
+                    ? `Đã thêm cột "${colName}" vào nhóm "${colGroup}". Áp dụng cho mọi tháng.`
+                    : `Đã thêm cột "${colName}". Áp dụng cho mọi tháng.`, 'success');
+            } catch (e) { console.error(e); Swal.fire('Lỗi', 'Không thể thêm cột: ' + e.message, 'error'); }
             setSyncing(false);
         }
     });
@@ -1413,7 +1553,8 @@ async function init() {
     }
     updateDriveButton();
 
-    // RBAC: Hide editing UI for User role
+    // RBAC: Ẩn các nút chỉnh sửa với User role
+    // (3 cột Ngày air vẫn cho phép User điền — đã xử lý trong cellEdited)
     if (isUser) {
         const elementsToRemove = [
             "btn-add-row", "btn-add-col", "btn-color-row", 
@@ -1425,7 +1566,7 @@ async function init() {
             if (el) el.style.display = 'none';
         });
         
-        // Hide info text about Alt+Drag
+        // Ẩn ghi chú hướng dẫn Alt+Drag
         const infoText = document.querySelector('.text-slate-500.font-medium');
         if (infoText) infoText.style.display = 'none';
     }
