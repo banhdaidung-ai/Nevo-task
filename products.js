@@ -487,7 +487,21 @@ async function init() {
     }
 
     let tokenClient = null;
+    let isConnectingDrive = false; // Chặn bấm nhiều lần khi đang kết nối
     async function connectGoogleDrive() {
+        if (isConnectingDrive) return;
+        isConnectingDrive = true;
+        let popupOpened = false;
+        try {
+            popupOpened = await connectGoogleDriveFlow();
+        } finally {
+            // Chưa mở được cửa sổ Google (thiếu Client ID, lỗi thư viện...) thì cho bấm lại.
+            // Nếu đã mở cửa sổ, cờ được reset trong callback / error_callback của Google.
+            if (!popupOpened) isConnectingDrive = false;
+        }
+    }
+
+    async function connectGoogleDriveFlow() {
         // Fetch googleClientId from settings document
         let clientId = null;
         try {
@@ -514,18 +528,18 @@ async function init() {
                 } catch (e) {
                     Swal.fire('Lỗi', 'Không thể lưu cài đặt.', 'error');
                     setSyncing(false);
-                    return;
+                    return false;
                 }
                 setSyncing(false);
             } else {
-                return;
+                return false;
             }
         }
         
         // Trigger Google OAuth 2.0 Token Flow
         if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
             Swal.fire('Lỗi thư viện', 'Thư viện Google Identity Services chưa tải xong. Vui lòng thử lại sau vài giây!', 'error');
-            return;
+            return false;
         }
         
         try {
@@ -533,20 +547,27 @@ async function init() {
                 client_id: clientId,
                 scope: 'https://www.googleapis.com/auth/drive.readonly',
                 callback: (tokenResponse) => {
+                    isConnectingDrive = false;
                     if (tokenResponse && tokenResponse.access_token) {
                         localStorage.setItem("gdrive_access_token", tokenResponse.access_token);
                         localStorage.setItem("gdrive_token_expires", (Date.now() + tokenResponse.expires_in * 1000).toString());
                         updateDriveButton();
+                        // Tải lại thumbnail sau khi có token
+                        if (table) table.redraw(true);
                         Swal.fire('Thành công', 'Đã kết nối trực tiếp với Google Drive thành công!', 'success');
                     } else {
                         Swal.fire('Lỗi ủy quyền', 'Sếp đã từ chối hoặc có lỗi trong quá trình cấp quyền.', 'error');
                     }
                 },
+                // Người dùng đóng cửa sổ Google / popup bị chặn: cho phép bấm lại
+                error_callback: () => { isConnectingDrive = false; }
             });
             tokenClient.requestAccessToken({ prompt: 'consent' });
+            return true;
         } catch (err) {
             console.error(err);
             Swal.fire('Lỗi kết nối', 'Có lỗi khi kết nối Google: ' + err.message, 'error');
+            return false;
         }
     }
 
@@ -581,7 +602,7 @@ async function init() {
         const cached = driveCache.get(folderId);
         if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) return cached;
         const q = `'${folderId}' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=200`;
+        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,thumbnailLink)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=200`;
         const resp = await driveApiFetch(url, token);
         if (!resp.ok) return { status: resp.status, files: [], timestamp: 0 };
         const data = await resp.json();
@@ -682,7 +703,7 @@ async function init() {
         const token = localStorage.getItem("gdrive_access_token");
         const expires = localStorage.getItem("gdrive_token_expires");
         if (!token || !expires || Date.now() >= parseInt(expires)) {
-            previewTitle.innerHTML = `<span class="text-rose-500 font-bold">⚠️ Chưa kết nối Drive</span><br><span class="text-[11px] text-slate-500 font-normal">Nhấp nút <b>"Kết nối Drive"</b> trên thanh công cụ.</span>`;
+            previewTitle.innerHTML = `<span class="text-rose-500 font-bold">⚠️ Chưa kết nối Drive</span><br><span class="text-[11px] text-slate-500 font-normal">Bấm vào ô ảnh (biểu tượng đám mây) hoặc nút <b>"Kết nối Drive"</b> trên thanh công cụ.</span>`;
             spinner.style.display = "none";
             return;
         }
@@ -707,7 +728,7 @@ async function init() {
                 file = result.file;
             } else {
                 // Direct file link
-                const fileUrl = `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType&supportsAllDrives=true`;
+                const fileUrl = `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType,thumbnailLink&supportsAllDrives=true`;
                 const fileResp = await driveApiFetch(fileUrl, token);
                 status = fileResp.status;
                 if (fileResp.ok) {
@@ -772,6 +793,143 @@ async function init() {
             spinner.style.display = "none";
         }
     }
+
+    // --- THUMBNAIL ẢNH TRONG BẢNG ---
+    const THUMB_SIZE = 44;
+    const thumbUrlCache = new Map();   // key: folderId|code -> url | null (không có ảnh)
+    const thumbQueue = [];
+    let thumbActive = 0;
+    const THUMB_CONCURRENCY = 4;
+
+    function runThumbQueue() {
+        while (thumbActive < THUMB_CONCURRENCY && thumbQueue.length) {
+            const job = thumbQueue.shift();
+            thumbActive++;
+            job().catch(() => {}).finally(() => { thumbActive--; runThumbQueue(); });
+        }
+    }
+
+    function setThumbPlaceholder(el, icon, title) {
+        el.innerHTML = `<span class="material-symbols-outlined" style="font-size:20px;color:#cbd5e1;" title="${title}">${icon}</span>`;
+    }
+
+    // Ô chưa kết nối Drive / phiên hết hạn: bấm thẳng vào ô để kết nối
+    function setThumbConnect(el, title) {
+        el.innerHTML = `<span class="material-symbols-outlined" style="font-size:22px;color:#f59e0b;cursor:pointer;" title="${title}">cloud_off</span>`;
+        el.style.cursor = "pointer";
+        const stop = (e) => e.stopPropagation();
+        el.onmousedown = stop;
+        el.onpointerdown = stop;
+        el.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            connectGoogleDrive();
+        };
+    }
+
+    function setThumbImage(el, url, fallbackFile, token) {
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.referrerPolicy = "no-referrer";
+        img.style.cssText = `width:${THUMB_SIZE}px;height:${THUMB_SIZE}px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;background:#f1f5f9;display:block;`;
+        let triedFallback = false;
+        img.onerror = async () => {
+            // Dự phòng: tải trực tiếp nội dung ảnh bằng token nếu thumbnailLink không dùng được
+            if (triedFallback || !fallbackFile) { setThumbPlaceholder(el, "broken_image", "Không tải được ảnh"); return; }
+            triedFallback = true;
+            try {
+                let blobUrl = imageCache.get(fallbackFile.id);
+                if (!blobUrl) {
+                    const resp = await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${fallbackFile.id}?alt=media&supportsAllDrives=true`, token);
+                    if (!resp.ok) throw new Error("HTTP " + resp.status);
+                    blobUrl = URL.createObjectURL(await resp.blob());
+                    imageCache.set(fallbackFile.id, blobUrl);
+                }
+                img.src = blobUrl;
+            } catch (e) { setThumbPlaceholder(el, "broken_image", "Không tải được ảnh"); }
+        };
+        img.src = url;
+        el.innerHTML = "";
+        el.appendChild(img);
+    }
+
+    async function loadThumbnail(el, linkAnh, searchCode) {
+        if (!el.isConnected) return; // ô đã bị cuộn đi, sẽ render lại khi cần
+        const token = localStorage.getItem("gdrive_access_token");
+        const expires = localStorage.getItem("gdrive_token_expires");
+        if (!token || !expires || Date.now() >= parseInt(expires)) {
+            setThumbConnect(el, "Chưa kết nối Drive - bấm để kết nối");
+            return;
+        }
+        const folderId = extractFolderId(linkAnh);
+        if (!folderId) { setThumbPlaceholder(el, "image_not_supported", "Link ảnh không đúng định dạng Drive"); return; }
+
+        const key = `${folderId}|${searchCode.trim().toLowerCase()}`;
+        if (thumbUrlCache.has(key)) {
+            const cached = thumbUrlCache.get(key);
+            if (cached) setThumbImage(el, cached.url, cached.file, token);
+            else setThumbPlaceholder(el, "image_not_supported", "Không thấy ảnh cho mã này");
+            return;
+        }
+
+        const isFolder = linkAnh.includes("/folders/");
+        let file = null, status = 200;
+        if (isFolder) {
+            const r = await findImageInFolder(folderId, searchCode, token);
+            status = r.status; file = r.file;
+        } else {
+            const resp = await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType,thumbnailLink&supportsAllDrives=true`, token);
+            status = resp.status;
+            if (resp.ok) file = await resp.json();
+        }
+
+        if (status === 401) {
+            localStorage.removeItem("gdrive_access_token");
+            localStorage.removeItem("gdrive_token_expires");
+            updateDriveButton();
+            setThumbConnect(el, "Phiên Drive hết hạn - bấm để kết nối lại");
+            return;
+        }
+        if (status !== 200) { setThumbPlaceholder(el, "lock", `Lỗi quyền truy cập (${status})`); return; }
+
+        if (!file || !file.mimeType || !file.mimeType.startsWith("image/")) {
+            thumbUrlCache.set(key, null);
+            setThumbPlaceholder(el, "image_not_supported", "Không thấy ảnh cho mã này");
+            return;
+        }
+        const url = file.thumbnailLink
+            ? file.thumbnailLink.replace(/=s\d+$/, `=s${THUMB_SIZE * 3}`)
+            : null;
+        if (url) {
+            thumbUrlCache.set(key, { url, file });
+            setThumbImage(el, url, file, token);
+        } else {
+            // Không có thumbnailLink -> tải nội dung ảnh
+            const resp = await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`, token);
+            if (!resp.ok) { setThumbPlaceholder(el, "broken_image", "Không tải được ảnh"); return; }
+            const blobUrl = URL.createObjectURL(await resp.blob());
+            imageCache.set(file.id, blobUrl);
+            thumbUrlCache.set(key, { url: blobUrl, file: null });
+            setThumbImage(el, blobUrl, null, token);
+        }
+    }
+
+    // Formatter cột thumbnail: ưu tiên link ảnh model, sau đó ảnh trải sàn (giống hover)
+    const thumbnailFormatter = function(cell) {
+        const rowData = cell.getRow().getData();
+        const searchCode = rowData.ma16 || rowData.ma10;
+        const linkAnh = rowData.linkAnhModel || rowData.linkAnh;
+        const el = document.createElement("div");
+        el.style.cssText = `width:${THUMB_SIZE}px;height:${THUMB_SIZE}px;display:flex;align-items:center;justify-content:center;margin:0 auto;`;
+        if (!searchCode || !linkAnh || !String(linkAnh).includes("drive.google.com")) {
+            setThumbPlaceholder(el, "image", "Chưa có link ảnh Drive");
+            return el;
+        }
+        setThumbPlaceholder(el, "hourglass_top", "Đang tải...");
+        thumbQueue.push(() => loadThumbnail(el, String(linkAnh), String(searchCode)));
+        runThumbQueue();
+        return el;
+    };
 
     const tableData = await loadTableData();
     // Auto-migrate old status values ("Chưa có", "Chưa chụp") → "Chưa thực hiện"
@@ -890,6 +1048,11 @@ async function init() {
             }
         },
         { title: "Mã 10", field: "ma10", editor: "input", width: 120, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+        {
+            title: "Ảnh", field: "_thumb", formatter: thumbnailFormatter, width: 70, minWidth: 60,
+            hozAlign: "center", vertAlign: "middle", headerSort: false, download: false, clipboard: false,
+            cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview
+        },
         { 
             title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, minWidth: 100, headerFilter: "input",
             cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview,
@@ -1004,7 +1167,7 @@ async function init() {
         movableRows: true,
         headerWordWrap: true,
         persistence: { columns: true, rows: true },
-        persistenceID: "productsTable_v7",
+        persistenceID: "productsTable_v8",
         columns: columns,
     });
 
