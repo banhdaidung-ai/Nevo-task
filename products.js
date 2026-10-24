@@ -488,12 +488,17 @@ async function init() {
 
     let tokenClient = null;
     let isConnectingDrive = false; // Chặn bấm nhiều lần khi đang kết nối
-    async function connectGoogleDrive() {
+    let cachedClientId = null;
+    let driveRefreshTimer = null;
+    const DRIVE_REFRESH_MARGIN = 5 * 60 * 1000; // gia hạn trước khi hết hạn 5 phút
+
+    // silent = true: tự gia hạn im lặng (không hộp thoại, không báo lỗi khi thất bại)
+    async function connectGoogleDrive(silent = false) {
         if (isConnectingDrive) return;
         isConnectingDrive = true;
         let popupOpened = false;
         try {
-            popupOpened = await connectGoogleDriveFlow();
+            popupOpened = await connectGoogleDriveFlow(silent === true);
         } finally {
             // Chưa mở được cửa sổ Google (thiếu Client ID, lỗi thư viện...) thì cho bấm lại.
             // Nếu đã mở cửa sổ, cờ được reset trong callback / error_callback của Google.
@@ -501,14 +506,56 @@ async function init() {
         }
     }
 
-    async function connectGoogleDriveFlow() {
-        // Fetch googleClientId from settings document
-        let clientId = null;
+    // Hẹn giờ tự gia hạn token trước khi hết hạn (nếu tab còn mở)
+    function scheduleDriveRefresh() {
+        if (driveRefreshTimer) clearTimeout(driveRefreshTimer);
+        const expires = parseInt(localStorage.getItem("gdrive_token_expires") || "0");
+        if (!expires) return;
+        const delay = Math.max(expires - Date.now() - DRIVE_REFRESH_MARGIN, 5000);
+        driveRefreshTimer = setTimeout(() => connectGoogleDrive(true), delay);
+    }
+
+    // Vào trang: token còn hạn thì chỉ hẹn giờ gia hạn; hết hạn nhưng đã từng kết nối thì thử gia hạn im lặng
+    function trySilentReconnect() {
+        const token = localStorage.getItem("gdrive_access_token");
+        const expires = parseInt(localStorage.getItem("gdrive_token_expires") || "0");
+        if (token && expires && Date.now() < expires) { scheduleDriveRefresh(); return; }
+        if (localStorage.getItem("gdrive_connected") === "1") {
+            // Thư viện Google tải async: chờ tối đa ~10s rồi mới gia hạn im lặng
+            let tries = 0;
+            const wait = setInterval(() => {
+                tries++;
+                if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+                    clearInterval(wait);
+                    connectGoogleDrive(true);
+                } else if (tries >= 40) clearInterval(wait);
+            }, 250);
+        }
+    }
+
+    // Lưu email tài khoản Google đã kết nối để lần sau Google chọn đúng tài khoản
+    async function rememberDriveAccount(token) {
         try {
-            const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
-            clientId = configSnap.exists() ? configSnap.data().googleClientId : null;
+            const resp = await fetch("https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)", {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (data && data.user && data.user.emailAddress) localStorage.setItem("gdrive_hint", data.user.emailAddress);
+        } catch (e) { /* không quan trọng */ }
+    }
+
+    async function connectGoogleDriveFlow(silent) {
+        // Fetch googleClientId from settings document
+        let clientId = cachedClientId;
+        try {
+            if (!clientId) {
+                const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
+                clientId = configSnap.exists() ? configSnap.data().googleClientId : null;
+            }
         } catch (err) { console.error("Error loading config for Google Drive:", err); }
         
+        if (!clientId && silent) return false; // im lặng thì không hỏi Client ID
         if (!clientId) {
             const { value: newId } = await Swal.fire({
                 title: 'Cấu hình Google Client ID',
@@ -538,10 +585,11 @@ async function init() {
         
         // Trigger Google OAuth 2.0 Token Flow
         if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-            Swal.fire('Lỗi thư viện', 'Thư viện Google Identity Services chưa tải xong. Vui lòng thử lại sau vài giây!', 'error');
+            if (!silent) Swal.fire('Lỗi thư viện', 'Thư viện Google Identity Services chưa tải xong. Vui lòng thử lại sau vài giây!', 'error');
             return false;
         }
         
+        cachedClientId = clientId;
         try {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: clientId,
@@ -551,22 +599,29 @@ async function init() {
                     if (tokenResponse && tokenResponse.access_token) {
                         localStorage.setItem("gdrive_access_token", tokenResponse.access_token);
                         localStorage.setItem("gdrive_token_expires", (Date.now() + tokenResponse.expires_in * 1000).toString());
+                        localStorage.setItem("gdrive_connected", "1");
                         updateDriveButton();
+                        scheduleDriveRefresh();
+                        if (!localStorage.getItem("gdrive_hint")) rememberDriveAccount(tokenResponse.access_token);
                         // Tải lại thumbnail sau khi có token
                         if (table) table.redraw(true);
-                        Swal.fire('Thành công', 'Đã kết nối trực tiếp với Google Drive thành công!', 'success');
-                    } else {
+                        if (!silent) Swal.fire('Thành công', 'Đã kết nối trực tiếp với Google Drive thành công!', 'success');
+                    } else if (!silent) {
                         Swal.fire('Lỗi ủy quyền', 'Sếp đã từ chối hoặc có lỗi trong quá trình cấp quyền.', 'error');
                     }
                 },
                 // Người dùng đóng cửa sổ Google / popup bị chặn: cho phép bấm lại
                 error_callback: () => { isConnectingDrive = false; }
             });
-            tokenClient.requestAccessToken({ prompt: 'consent' });
+            // Không ép màn hình đồng ý: đã cấp quyền trước đó thì Google tự cấp lại token
+            const request = { prompt: '' };
+            const hint = localStorage.getItem("gdrive_hint");
+            if (hint) request.hint = hint;
+            tokenClient.requestAccessToken(request);
             return true;
         } catch (err) {
             console.error(err);
-            Swal.fire('Lỗi kết nối', 'Có lỗi khi kết nối Google: ' + err.message, 'error');
+            if (!silent) Swal.fire('Lỗi kết nối', 'Có lỗi khi kết nối Google: ' + err.message, 'error');
             return false;
         }
     }
@@ -1740,6 +1795,7 @@ async function init() {
         return false;
     }
     updateDriveButton();
+    trySilentReconnect(); // Ghi nhớ kết nối Drive: tự gia hạn token im lặng khi vào lại web
 
     // RBAC: Ẩn các nút chỉnh sửa với User role
     // (3 cột Ngày air vẫn cho phép User điền — đã xử lý trong cellEdited)
