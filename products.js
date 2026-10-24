@@ -627,8 +627,15 @@ async function init() {
     }
 
     function extractFolderId(url) {
-        if (!url) return null;
-        const match = url.match(/[-\w]{25,}/);
+        if (!url || typeof url !== "string") return null;
+        const s = url.trim();
+        const byParam = s.match(/[?&]id=([-\w]{15,})/);
+        if (byParam) return byParam[1];
+        const byFolder = s.match(/\/folders\/([-\w]{15,})/);
+        if (byFolder) return byFolder[1];
+        const byFile = s.match(/\/d\/([-\w]{15,})/);
+        if (byFile) return byFile[1];
+        const match = s.match(/[-\w]{25,}/);
         return match ? match[0] : null;
     }
 
@@ -652,38 +659,108 @@ async function init() {
         });
     }
 
-    // Cached folder file listing
+    const folderInflight = new Map();
+    const metaCache = new Map();
+    const metaInflight = new Map();
+
+    function normalizeDriveItem(f) {
+        if (f && f.mimeType === 'application/vnd.google-apps.shortcut' && f.shortcutDetails && f.shortcutDetails.targetId) {
+            return {
+                id: f.shortcutDetails.targetId,
+                name: f.name,
+                mimeType: f.shortcutDetails.targetMimeType || f.mimeType,
+                thumbnailLink: f.thumbnailLink
+            };
+        }
+        return f;
+    }
+
+    // Cached folder file listing (with in-flight deduplication)
     async function getCachedFolderFiles(folderId, token) {
         const cached = driveCache.get(folderId);
         if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) return cached;
-        const q = `'${folderId}' in parents and trashed = false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,thumbnailLink)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=200`;
-        const resp = await driveApiFetch(url, token);
-        if (!resp.ok) return { status: resp.status, files: [], timestamp: 0 };
-        const data = await resp.json();
-        const entry = { status: 200, files: data.files || [], timestamp: Date.now() };
-        driveCache.set(folderId, entry);
-        return entry;
+        if (folderInflight.has(folderId)) return await folderInflight.get(folderId);
+
+        const promise = (async () => {
+            const q = `'${folderId}' in parents and trashed = false`;
+            const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType,thumbnailLink,shortcutDetails)&supportsAllDrives=true&includeItemsFromAllDrives=true&pageSize=1000`;
+            const resp = await driveApiFetch(url, token);
+            if (!resp.ok) return { status: resp.status, files: [], timestamp: 0 };
+            const data = await resp.json();
+            const rawFiles = (data.files || []).map(normalizeDriveItem);
+            const entry = { status: 200, files: rawFiles, timestamp: Date.now() };
+            driveCache.set(folderId, entry);
+            return entry;
+        })();
+
+        folderInflight.set(folderId, promise);
+        try {
+            return await promise;
+        } finally {
+            folderInflight.delete(folderId);
+        }
+    }
+
+    // Cached metadata lookup for links like drive.google.com/open?id=... (could be folder or file)
+    async function getCachedFileMeta(fileId, token) {
+        const cached = metaCache.get(fileId);
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) return cached;
+        if (metaInflight.has(fileId)) return await metaInflight.get(fileId);
+
+        const promise = (async () => {
+            const fileUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType,thumbnailLink,shortcutDetails&supportsAllDrives=true`;
+            const resp = await driveApiFetch(fileUrl, token);
+            if (!resp.ok) return { status: resp.status, file: null, timestamp: 0 };
+            const raw = await resp.json();
+            const file = normalizeDriveItem(raw);
+            const entry = { status: 200, file, timestamp: Date.now() };
+            metaCache.set(fileId, entry);
+            return entry;
+        })();
+
+        metaInflight.set(fileId, promise);
+        try {
+            return await promise;
+        } finally {
+            metaInflight.delete(fileId);
+        }
+    }
+
+    function normalizeCodeStr(s) {
+        return String(s || "").toLowerCase().replace(/[\s_]+/g, "-");
+    }
+
+    function isImageOrPreviewable(f) {
+        if (!f || !f.mimeType || f.mimeType === 'application/vnd.google-apps.folder') return false;
+        return f.mimeType.startsWith('image/') || Boolean(f.thumbnailLink);
     }
 
     function findBestImageMatch(files, candidate) {
-        let matches = files.filter(f => f.mimeType && f.mimeType.startsWith('image/') && f.name.toLowerCase().includes(candidate));
+        const normCandidate = normalizeCodeStr(candidate);
+        let matches = files.filter(f => {
+            if (!isImageOrPreviewable(f) || !f.name) return false;
+            const lowName = f.name.toLowerCase();
+            return lowName.includes(candidate) || normalizeCodeStr(lowName).includes(normCandidate);
+        });
         if (matches.length === 0) return null;
         
         matches.sort((a, b) => {
             const nameA = a.name.toLowerCase();
             const nameB = b.name.toLowerCase();
             
-            const getScore = (name) => {
+            const getScore = (f, name) => {
                 const nameWithoutExt = name.substring(0, name.lastIndexOf('.')) || name;
-                if (nameWithoutExt === candidate) return 100;
-                if (name.includes('(1)') || name.includes('-1') || name.includes('_1') || name.includes('front')) return 80;
-                if (name.includes('(2)') || name.includes('-2') || name.includes('_2')) return 60;
-                return 40; // Other suffixes
+                const normNoExt = normalizeCodeStr(nameWithoutExt);
+                let score = 40;
+                if (nameWithoutExt === candidate || normNoExt === normCandidate) score = 100;
+                else if (name.includes('(1)') || name.includes('-1') || name.includes('_1') || name.includes('front')) score = 80;
+                else if (name.includes('(2)') || name.includes('-2') || name.includes('_2')) score = 60;
+                if (f.mimeType && f.mimeType.startsWith('image/')) score += 5;
+                return score;
             };
             
-            const scoreA = getScore(nameA);
-            const scoreB = getScore(nameB);
+            const scoreA = getScore(a, nameA);
+            const scoreB = getScore(b, nameB);
             
             if (scoreA !== scoreB) return scoreB - scoreA; 
             return nameA.localeCompare(nameB); 
@@ -692,27 +769,36 @@ async function init() {
         return matches[0];
     }
 
-    async function findImageInFolder(folderId, searchCode, token) {
+    async function findImageInFolder(folderId, searchCode, token, strictColor = false) {
         const folderData = await getCachedFolderFiles(folderId, token);
         if (folderData.status !== 200) return { status: folderData.status, file: null };
         const files = folderData.files;
 
-        const targetCode = searchCode.trim().toLowerCase();
+        const targetCode = normalizeCodeStr(searchCode.trim());
         const searchCandidates = [targetCode];
         if (targetCode.includes('-')) {
             const parts = targetCode.split('-');
             if (parts.length > 2) searchCandidates.push(parts.slice(0, 2).join('-'));
-            searchCandidates.push(parts[0]);
+            if (!strictColor) searchCandidates.push(parts[0]);
         }
 
-        // Direct match
+        // 1. Direct match in current folder
         for (const candidate of searchCandidates) {
             const bestMatch = findBestImageMatch(files, candidate);
             if (bestMatch) return { status: 200, file: bestMatch };
         }
 
-        // Search subfolders (1 level deep) - also cached
+        // 2. Search subfolders (prioritize subfolders whose name matches candidate codes)
         const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+        const folderMatchRank = (folderName) => {
+            const low = normalizeCodeStr(folderName || "");
+            for (let i = 0; i < searchCandidates.length; i++) {
+                if (low.includes(searchCandidates[i])) return i;
+            }
+            return 99;
+        };
+        subfolders.sort((a, b) => folderMatchRank(a.name) - folderMatchRank(b.name));
+
         for (const folder of subfolders) {
             const subData = await getCachedFolderFiles(folder.id, token);
             if (subData.status === 200) {
@@ -720,9 +806,77 @@ async function init() {
                     const bestMatch = findBestImageMatch(subData.files, candidate);
                     if (bestMatch) return { status: 200, file: bestMatch };
                 }
+                // Check level-2 subfolders if they match candidate codes
+                const subSubfolders = subData.files.filter(
+                    f => f.mimeType === 'application/vnd.google-apps.folder' && folderMatchRank(f.name) < 99
+                );
+                subSubfolders.sort((a, b) => folderMatchRank(a.name) - folderMatchRank(b.name));
+                for (const sub2 of subSubfolders) {
+                    const sub2Data = await getCachedFolderFiles(sub2.id, token);
+                    if (sub2Data.status === 200) {
+                        for (const candidate of searchCandidates) {
+                            const bestMatch = findBestImageMatch(sub2Data.files, candidate);
+                            if (bestMatch) return { status: 200, file: bestMatch };
+                        }
+                        const firstImg = sub2Data.files.find(isImageOrPreviewable);
+                        if (firstImg) return { status: 200, file: firstImg };
+                    }
+                }
+                // If the subfolder itself is named after this specific product/color, fallback to its first image
+                if (folderMatchRank(folder.name) <= 1) {
+                    const firstImg = subData.files.find(isImageOrPreviewable);
+                    if (firstImg) return { status: 200, file: firstImg };
+                }
             }
         }
         return { status: 200, file: null };
+    }
+
+    // Unified resolver: handles /folders/, /open?id=..., shortcuts, direct files, and fallback across links
+    async function resolveDriveImageFromLink(linkAnh, searchCode, token, strictColor = false) {
+        const id = extractFolderId(linkAnh);
+        if (!id) return { status: 400, file: null, isFolder: false };
+
+        const explicitFolderUrl = linkAnh.includes("/folders/") || linkAnh.includes("folderview") || driveCache.has(id);
+        if (explicitFolderUrl) {
+            const res = await findImageInFolder(id, searchCode, token, strictColor);
+            return { status: res.status, file: res.file, isFolder: true };
+        }
+
+        // Unknown link format (e.g. drive.google.com/open?id=...&usp=drive_fs or /file/d/...): check metadata first
+        const meta = await getCachedFileMeta(id, token);
+        if (meta.status !== 200 || !meta.file) {
+            return { status: meta.status, file: null, isFolder: false };
+        }
+        if (meta.file.mimeType === 'application/vnd.google-apps.folder') {
+            const res = await findImageInFolder(meta.file.id, searchCode, token, strictColor);
+            return { status: res.status, file: res.file, isFolder: true };
+        }
+        return { status: 200, file: meta.file, isFolder: false };
+    }
+
+    async function resolveDriveImageFromLinks(links, searchCode, token) {
+        const validLinks = (links || []).filter(l => l && typeof l === 'string' && l.includes("drive.google.com"));
+        let lastResult = { status: 200, file: null, isFolder: true };
+        const hasColorPart = normalizeCodeStr(searchCode).includes('-');
+
+        // Lượt 1: Tìm khớp đúng mã màu (Mã 16) trên tất cả các link (ưu tiên Model -> Trải sàn)
+        for (const link of validLinks) {
+            const res = await resolveDriveImageFromLink(link, searchCode, token, hasColorPart);
+            if (res.status === 401 || res.status === 403) return res;
+            if (res.file && isImageOrPreviewable(res.file)) return res;
+            lastResult = res;
+        }
+        // Lượt 2: Nếu chưa thấy ảnh theo mã màu, cho phép fallback theo Mã 10
+        if (hasColorPart) {
+            for (const link of validLinks) {
+                const res = await resolveDriveImageFromLink(link, searchCode, token, false);
+                if (res.status === 401 || res.status === 403) return res;
+                if (res.file && isImageOrPreviewable(res.file)) return res;
+                lastResult = res;
+            }
+        }
+        return lastResult;
     }
 
     async function showImagePreview(e, cell) {
@@ -730,17 +884,18 @@ async function init() {
         const searchCode = rowData.ma16 || rowData.ma10;
         const field = cell.getField();
         
-        let linkAnh = "";
+        let candidateLinks = [];
         if (field === "linkAnh") {
-            linkAnh = rowData.linkAnh;
+            candidateLinks = [rowData.linkAnh];
         } else if (field === "linkAnhModel") {
-            linkAnh = rowData.linkAnhModel;
+            candidateLinks = [rowData.linkAnhModel];
         } else {
-            // Priority: linkAnhModel > linkAnh (trải sàn)
-            linkAnh = rowData.linkAnhModel || rowData.linkAnh;
+            // Priority: linkAnhModel > linkAnh (trải sàn), tự động fallback nếu link đầu chưa có ảnh
+            candidateLinks = [rowData.linkAnhModel, rowData.linkAnh];
         }
+        candidateLinks = candidateLinks.filter(l => l && typeof l === 'string' && l.includes("drive.google.com"));
 
-        if (!searchCode || !linkAnh || !linkAnh.includes("drive.google.com")) return;
+        if (!searchCode || candidateLinks.length === 0) return;
 
         const card = document.getElementById("hover-preview-card");
         const previewImg = document.getElementById("preview-img");
@@ -763,38 +918,15 @@ async function init() {
             return;
         }
 
-        const folderId = extractFolderId(linkAnh);
+        const folderId = extractFolderId(candidateLinks[0]);
         if (!folderId) {
             previewTitle.innerText = "⚠️ Link ảnh không đúng định dạng Drive";
             spinner.style.display = "none";
             return;
         }
 
-        console.log("🖱️ Hover:", linkAnh, "| ID:", folderId, "| Code:", searchCode);
-        const isFolder = linkAnh.includes("/folders/") || linkAnh.includes("/drive/folders/");
-
         try {
-            let file = null;
-            let status = 200;
-
-            if (isFolder) {
-                const result = await findImageInFolder(folderId, searchCode, token);
-                status = result.status;
-                file = result.file;
-            } else {
-                // Direct file link
-                const fileUrl = `https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType,thumbnailLink&supportsAllDrives=true`;
-                const fileResp = await driveApiFetch(fileUrl, token);
-                status = fileResp.status;
-                if (fileResp.ok) {
-                    file = await fileResp.json();
-                    console.log("📄 Direct file:", file.name, file.mimeType);
-                } else {
-                    let errBody = '';
-                    try { errBody = JSON.stringify(await fileResp.json()); } catch(e) {}
-                    console.error(`❌ Direct file lỗi ${status}:`, errBody);
-                }
-            }
+            const { status, file, isFolder } = await resolveDriveImageFromLinks(candidateLinks, searchCode, token);
 
             if (status === 401 || status === 403) {
                 if (status === 401) {
@@ -809,12 +941,31 @@ async function init() {
 
             if (file) {
                 if (file.mimeType && file.mimeType.startsWith('image/')) {
-                    // Check image blob cache first
                     const cachedBlob = imageCache.get(file.id);
                     if (cachedBlob) {
                         previewImg.src = cachedBlob;
                         previewImg.style.display = "block";
                         spinner.style.display = "none";
+                        previewTitle.innerText = `Ảnh: ${file.name}`;
+                    } else if (file.thumbnailLink) {
+                        const hiResUrl = file.thumbnailLink.replace(/=s\d+$/, '=s800');
+                        previewImg.referrerPolicy = "no-referrer";
+                        previewImg.onload = () => { previewImg.style.display = "block"; spinner.style.display = "none"; };
+                        previewImg.onerror = async () => {
+                            const mediaResp = await driveApiFetch(
+                                `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`, token
+                            );
+                            if (mediaResp.ok) {
+                                const blob = await mediaResp.blob();
+                                const localUrl = URL.createObjectURL(blob);
+                                imageCache.set(file.id, localUrl);
+                                previewImg.src = localUrl;
+                            } else {
+                                previewTitle.innerText = "❌ Không thể tải nội dung ảnh";
+                                spinner.style.display = "none";
+                            }
+                        };
+                        previewImg.src = hiResUrl;
                         previewTitle.innerText = `Ảnh: ${file.name}`;
                     } else {
                         const mediaResp = await driveApiFetch(
@@ -832,8 +983,13 @@ async function init() {
                             spinner.style.display = "none";
                         }
                     }
+                } else if (file.thumbnailLink) {
+                    previewImg.referrerPolicy = "no-referrer";
+                    previewImg.src = file.thumbnailLink.replace(/=s\d+$/, '=s800');
+                    previewImg.onload = () => { previewImg.style.display = "block"; spinner.style.display = "none"; };
+                    previewTitle.innerText = `Ảnh xem trước: ${file.name}`;
                 } else {
-                    previewTitle.innerText = "⚠️ Định dạng tệp không phải là ảnh";
+                    previewTitle.innerText = `⚠️ Tệp "${file.name || ''}" không phải là ảnh`;
                     spinner.style.display = "none";
                 }
             } else {
@@ -851,7 +1007,7 @@ async function init() {
 
     // --- THUMBNAIL ẢNH TRONG BẢNG ---
     const THUMB_SIZE = 44;
-    const thumbUrlCache = new Map();   // key: folderId|code -> url | null (không có ảnh)
+    const thumbUrlCache = new Map();   // key: links|code -> { url, file } | null (không có ảnh)
     const thumbQueue = [];
     let thumbActive = 0;
     const THUMB_CONCURRENCY = 4;
@@ -908,7 +1064,7 @@ async function init() {
         el.appendChild(img);
     }
 
-    async function loadThumbnail(el, linkAnh, searchCode) {
+    async function loadThumbnail(el, linkInput, searchCode) {
         if (!el.isConnected) return; // ô đã bị cuộn đi, sẽ render lại khi cần
         const token = localStorage.getItem("gdrive_access_token");
         const expires = localStorage.getItem("gdrive_token_expires");
@@ -916,27 +1072,23 @@ async function init() {
             setThumbConnect(el, "Chưa kết nối Drive - bấm để kết nối");
             return;
         }
-        const folderId = extractFolderId(linkAnh);
-        if (!folderId) { setThumbPlaceholder(el, "image_not_supported", "Link ảnh không đúng định dạng Drive"); return; }
-
-        const key = `${folderId}|${searchCode.trim().toLowerCase()}`;
-        if (thumbUrlCache.has(key)) {
-            const cached = thumbUrlCache.get(key);
-            if (cached) setThumbImage(el, cached.url, cached.file, token);
-            else setThumbPlaceholder(el, "image_not_supported", "Không thấy ảnh cho mã này");
+        const links = (Array.isArray(linkInput) ? linkInput : [linkInput])
+            .filter(l => l && typeof l === "string" && l.includes("drive.google.com"));
+        const ids = links.map(extractFolderId).filter(Boolean);
+        if (ids.length === 0) {
+            setThumbPlaceholder(el, "image_not_supported", "Link ảnh không đúng định dạng Drive");
             return;
         }
 
-        const isFolder = linkAnh.includes("/folders/");
-        let file = null, status = 200;
-        if (isFolder) {
-            const r = await findImageInFolder(folderId, searchCode, token);
-            status = r.status; file = r.file;
-        } else {
-            const resp = await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,mimeType,thumbnailLink&supportsAllDrives=true`, token);
-            status = resp.status;
-            if (resp.ok) file = await resp.json();
+        const key = `${ids.join(",")}|${normalizeCodeStr(searchCode.trim())}`;
+        if (thumbUrlCache.has(key)) {
+            const cached = thumbUrlCache.get(key);
+            if (cached) setThumbImage(el, cached.url, cached.file, token);
+            else setThumbPlaceholder(el, "image_not_supported", `Không thấy ảnh chứa mã: ${searchCode.trim()}`);
+            return;
         }
+
+        const { status, file } = await resolveDriveImageFromLinks(links, searchCode, token);
 
         if (status === 401) {
             localStorage.removeItem("gdrive_access_token");
@@ -947,9 +1099,9 @@ async function init() {
         }
         if (status !== 200) { setThumbPlaceholder(el, "lock", `Lỗi quyền truy cập (${status})`); return; }
 
-        if (!file || !file.mimeType || !file.mimeType.startsWith("image/")) {
+        if (!file || !isImageOrPreviewable(file)) {
             thumbUrlCache.set(key, null);
-            setThumbPlaceholder(el, "image_not_supported", "Không thấy ảnh cho mã này");
+            setThumbPlaceholder(el, "image_not_supported", `Không thấy ảnh chứa mã: ${searchCode.trim()}`);
             return;
         }
         const url = file.thumbnailLink
@@ -969,19 +1121,20 @@ async function init() {
         }
     }
 
-    // Formatter cột thumbnail: ưu tiên link ảnh model, sau đó ảnh trải sàn (giống hover)
+    // Formatter cột thumbnail: ưu tiên link ảnh model, nếu chưa có ảnh thì tự động tìm sang link ảnh trải sàn
     const thumbnailFormatter = function(cell) {
         const rowData = cell.getRow().getData();
         const searchCode = rowData.ma16 || rowData.ma10;
-        const linkAnh = rowData.linkAnhModel || rowData.linkAnh;
+        const candidateLinks = [rowData.linkAnhModel, rowData.linkAnh]
+            .filter(l => l && typeof l === "string" && l.includes("drive.google.com"));
         const el = document.createElement("div");
         el.style.cssText = `width:${THUMB_SIZE}px;height:${THUMB_SIZE}px;display:flex;align-items:center;justify-content:center;margin:0 auto;`;
-        if (!searchCode || !linkAnh || !String(linkAnh).includes("drive.google.com")) {
+        if (!searchCode || candidateLinks.length === 0) {
             setThumbPlaceholder(el, "image", "Chưa có link ảnh Drive");
             return el;
         }
         setThumbPlaceholder(el, "hourglass_top", "Đang tải...");
-        thumbQueue.push(() => loadThumbnail(el, String(linkAnh), String(searchCode)));
+        thumbQueue.push(() => loadThumbnail(el, candidateLinks, String(searchCode)));
         runThumbQueue();
         return el;
     };
