@@ -788,8 +788,9 @@ async function init() {
             if (bestMatch) return { status: 200, file: bestMatch };
         }
 
-        // 2. Search subfolders (prioritize subfolders whose name matches candidate codes)
-        const subfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+        // 2. Search subfolders (prioritize subfolders whose name matches candidate codes, skip other product-code folders)
+        const productCodePattern = /[a-z]{3,5}\d{2}[a-z]\d{3}/i;
+        const allSubfolders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
         const folderMatchRank = (folderName) => {
             const low = normalizeCodeStr(folderName || "");
             for (let i = 0; i < searchCandidates.length; i++) {
@@ -797,7 +798,14 @@ async function init() {
             }
             return 99;
         };
-        subfolders.sort((a, b) => folderMatchRank(a.name) - folderMatchRank(b.name));
+        const matchingSubfolders = allSubfolders
+            .filter(f => folderMatchRank(f.name) < 99)
+            .sort((a, b) => folderMatchRank(a.name) - folderMatchRank(b.name));
+        // Chỉ quét thêm tối đa 6 thư mục chung (không mang mã sản phẩm khác) nếu chưa tìm thấy
+        const genericSubfolders = allSubfolders
+            .filter(f => folderMatchRank(f.name) === 99 && !productCodePattern.test(f.name || ""))
+            .slice(0, 6);
+        const subfolders = [...matchingSubfolders, ...genericSubfolders];
 
         for (const folder of subfolders) {
             const subData = await getCachedFolderFiles(folder.id, token);
@@ -940,6 +948,15 @@ async function init() {
             }
 
             if (file) {
+                // Nếu ô thumbnail của dòng này đang chờ hoặc chưa có ảnh, cập nhật luôn từ kết quả hover
+                try {
+                    const thumbCell = cell.getRow && cell.getRow().getCell ? cell.getRow().getCell("_thumb") : null;
+                    const thumbEl = thumbCell && thumbCell.getElement ? thumbCell.getElement().querySelector(".nevo-thumb-box") : null;
+                    if (thumbEl && !thumbEl.querySelector("img") && file.thumbnailLink) {
+                        setThumbImage(thumbEl, file.thumbnailLink.replace(/=s\d+$/, `=s${THUMB_SIZE * 3}`), file, token);
+                    }
+                } catch (e) {}
+
                 if (file.mimeType && file.mimeType.startsWith('image/')) {
                     const cachedBlob = imageCache.get(file.id);
                     if (cachedBlob) {
@@ -1065,59 +1082,63 @@ async function init() {
     }
 
     async function loadThumbnail(el, linkInput, searchCode) {
-        if (!el.isConnected) return; // ô đã bị cuộn đi, sẽ render lại khi cần
-        const token = localStorage.getItem("gdrive_access_token");
-        const expires = localStorage.getItem("gdrive_token_expires");
-        if (!token || !expires || Date.now() >= parseInt(expires)) {
-            setThumbConnect(el, "Chưa kết nối Drive - bấm để kết nối");
-            return;
-        }
-        const links = (Array.isArray(linkInput) ? linkInput : [linkInput])
-            .filter(l => l && typeof l === "string" && l.includes("drive.google.com"));
-        const ids = links.map(extractFolderId).filter(Boolean);
-        if (ids.length === 0) {
-            setThumbPlaceholder(el, "image_not_supported", "Link ảnh không đúng định dạng Drive");
-            return;
-        }
+        try {
+            const token = localStorage.getItem("gdrive_access_token");
+            const expires = localStorage.getItem("gdrive_token_expires");
+            if (!token || !expires || Date.now() >= parseInt(expires)) {
+                setThumbConnect(el, "Chưa kết nối Drive - bấm để kết nối");
+                return;
+            }
+            const links = (Array.isArray(linkInput) ? linkInput : [linkInput])
+                .filter(l => l && typeof l === "string" && l.includes("drive.google.com"));
+            const ids = links.map(extractFolderId).filter(Boolean);
+            if (ids.length === 0) {
+                setThumbPlaceholder(el, "image_not_supported", "Link ảnh không đúng định dạng Drive");
+                return;
+            }
 
-        const key = `${ids.join(",")}|${normalizeCodeStr(searchCode.trim())}`;
-        if (thumbUrlCache.has(key)) {
-            const cached = thumbUrlCache.get(key);
-            if (cached) setThumbImage(el, cached.url, cached.file, token);
-            else setThumbPlaceholder(el, "image_not_supported", `Không thấy ảnh chứa mã: ${searchCode.trim()}`);
-            return;
-        }
+            const key = `${ids.join(",")}|${normalizeCodeStr(searchCode.trim())}`;
+            if (thumbUrlCache.has(key)) {
+                const cached = thumbUrlCache.get(key);
+                if (cached) setThumbImage(el, cached.url, cached.file, token);
+                else setThumbPlaceholder(el, "image_not_supported", `Không thấy ảnh chứa mã: ${searchCode.trim()}`);
+                return;
+            }
 
-        const { status, file } = await resolveDriveImageFromLinks(links, searchCode, token);
+            const { status, file } = await resolveDriveImageFromLinks(links, searchCode, token);
 
-        if (status === 401) {
-            localStorage.removeItem("gdrive_access_token");
-            localStorage.removeItem("gdrive_token_expires");
-            updateDriveButton();
-            setThumbConnect(el, "Phiên Drive hết hạn - bấm để kết nối lại");
-            return;
-        }
-        if (status !== 200) { setThumbPlaceholder(el, "lock", `Lỗi quyền truy cập (${status})`); return; }
+            if (status === 401) {
+                localStorage.removeItem("gdrive_access_token");
+                localStorage.removeItem("gdrive_token_expires");
+                updateDriveButton();
+                setThumbConnect(el, "Phiên Drive hết hạn - bấm để kết nối lại");
+                return;
+            }
+            if (status !== 200) { setThumbPlaceholder(el, "lock", `Lỗi quyền truy cập (${status})`); return; }
 
-        if (!file || !isImageOrPreviewable(file)) {
-            thumbUrlCache.set(key, null);
-            setThumbPlaceholder(el, "image_not_supported", `Không thấy ảnh chứa mã: ${searchCode.trim()}`);
-            return;
-        }
-        const url = file.thumbnailLink
-            ? file.thumbnailLink.replace(/=s\d+$/, `=s${THUMB_SIZE * 3}`)
-            : null;
-        if (url) {
-            thumbUrlCache.set(key, { url, file });
-            setThumbImage(el, url, file, token);
-        } else {
-            // Không có thumbnailLink -> tải nội dung ảnh
-            const resp = await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`, token);
-            if (!resp.ok) { setThumbPlaceholder(el, "broken_image", "Không tải được ảnh"); return; }
-            const blobUrl = URL.createObjectURL(await resp.blob());
-            imageCache.set(file.id, blobUrl);
-            thumbUrlCache.set(key, { url: blobUrl, file: null });
-            setThumbImage(el, blobUrl, null, token);
+            if (!file || !isImageOrPreviewable(file)) {
+                thumbUrlCache.set(key, null);
+                setThumbPlaceholder(el, "image_not_supported", `Không thấy ảnh chứa mã: ${searchCode.trim()}`);
+                return;
+            }
+            const url = file.thumbnailLink
+                ? file.thumbnailLink.replace(/=s\d+$/, `=s${THUMB_SIZE * 3}`)
+                : null;
+            if (url) {
+                thumbUrlCache.set(key, { url, file });
+                setThumbImage(el, url, file, token);
+            } else {
+                // Không có thumbnailLink -> tải nội dung ảnh
+                const resp = await driveApiFetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`, token);
+                if (!resp.ok) { setThumbPlaceholder(el, "broken_image", "Không tải được ảnh"); return; }
+                const blobUrl = URL.createObjectURL(await resp.blob());
+                imageCache.set(file.id, blobUrl);
+                thumbUrlCache.set(key, { url: blobUrl, file: null });
+                setThumbImage(el, blobUrl, null, token);
+            }
+        } catch (err) {
+            console.error("Thumbnail load error:", err);
+            setThumbPlaceholder(el, "broken_image", "Lỗi kết nối khi tải ảnh");
         }
     }
 
@@ -1128,6 +1149,7 @@ async function init() {
         const candidateLinks = [rowData.linkAnhModel, rowData.linkAnh]
             .filter(l => l && typeof l === "string" && l.includes("drive.google.com"));
         const el = document.createElement("div");
+        el.className = "nevo-thumb-box";
         el.style.cssText = `width:${THUMB_SIZE}px;height:${THUMB_SIZE}px;display:flex;align-items:center;justify-content:center;margin:0 auto;`;
         if (!searchCode || candidateLinks.length === 0) {
             setThumbPlaceholder(el, "image", "Chưa có link ảnh Drive");
