@@ -3080,7 +3080,15 @@ window.getStatusColor = function(status) {
             populateDropdown('assignedDesign', creativeStaff, '- Chưa chọn -');
 
             // Populate Schedule User Filter
-            populateDropdown('scheduleUserFilter', staff, 'Tất cả thành viên', 'all');
+            if (typeof window.refreshScheduleFilters === 'function') {
+                window.refreshScheduleFilters();
+            } else {
+                populateDropdown('scheduleUserFilter', staff, 'Tất cả thành viên', 'all');
+            }
+
+            if (window.currentPage === 'reports' && typeof window.renderReports === 'function') {
+                window.renderReports();
+            }
 
             if (window.allOrdersData && window.allOrdersData.length > 0) window.renderOrdersTable();
         });
@@ -3103,6 +3111,9 @@ window.getStatusColor = function(status) {
             }
             if (typeof window.updateFinanceDeptDropdown === 'function') {
                 window.updateFinanceDeptDropdown();
+            }
+            if (typeof window.refreshScheduleFilters === 'function') {
+                window.refreshScheduleFilters();
             }
         });
 

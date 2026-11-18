@@ -1213,13 +1213,37 @@
 
                     <!-- System -->
                     <div class="space-y-3 col-span-2 md:col-span-1">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">⚙️ Hệ thống</p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">⚙️ Hệ thống & Lịch làm</p>
                         <div class="space-y-1.5">
                             <label class="perm-checkbox w-full">
                                 <input type="checkbox" data-perm="reports_view">
                                 <div class="flex flex-col">
                                     <span class="text-xs font-semibold flex items-center gap-1.5">
-                                        <span class="material-symbols-outlined text-[14px] text-blue-500">analytics</span> Xem báo cáo/Lịch làm
+                                        <span class="material-symbols-outlined text-[14px] text-blue-500">analytics</span> Xem báo cáo
+                                    </span>
+                                </div>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="schedule_view">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-rose-500">calendar_month</span> Xem Lịch làm việc
+                                    </span>
+                                </div>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="schedule_create_own">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-emerald-600">edit_calendar</span> Thêm/Sửa việc cá nhân
+                                    </span>
+                                </div>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="schedule_manage_all">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-amber-600">verified</span> Quản lý & Duyệt việc toàn team
                                     </span>
                                 </div>
                             </label>
@@ -1414,6 +1438,9 @@
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="finance_view" disabled><span class="text-[10px] font-semibold">Xem tài chính</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="finance_edit" disabled><span class="text-[10px] font-semibold">Sửa tài chính</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="reports_view" disabled><span class="text-[10px] font-semibold">Xem báo cáo</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="schedule_view" disabled><span class="text-[10px] font-semibold">Xem Lịch làm việc</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="schedule_create_own" disabled><span class="text-[10px] font-semibold">Thêm/Sửa việc cá nhân</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="schedule_manage_all" disabled><span class="text-[10px] font-semibold">Duyệt việc team</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="admin_access" disabled><span class="text-[10px] font-semibold">Trang quản trị</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="model_view" disabled><span class="text-[10px] font-semibold">Xem Model</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="model_edit" disabled><span class="text-[10px] font-semibold">Sửa Model</span></label>
@@ -1585,10 +1612,10 @@
     ];
 
     const DEFAULT_ROLES = [
-        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, admin_access:true, model_view:true, model_edit:true } },
-        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, admin_access:false, model_view:true, model_edit:true } },
-        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, admin_access:false, model_view:false, model_edit:false } },
-        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:false, orders_edit_title:false, orders_edit_note:false, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, admin_access:false, model_view:false, model_edit:false } }
+        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, schedule_view:true, schedule_create_own:true, schedule_manage_all:true, admin_access:true, model_view:true, model_edit:true } },
+        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, schedule_view:true, schedule_create_own:true, schedule_manage_all:true, admin_access:false, model_view:true, model_edit:true } },
+        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, schedule_view:true, schedule_create_own:true, schedule_manage_all:false, admin_access:false, model_view:false, model_edit:false } },
+        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:false, orders_edit_title:false, orders_edit_note:false, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, schedule_view:true, schedule_create_own:false, schedule_manage_all:false, admin_access:false, model_view:false, model_edit:false } }
     ];
 
     const DEFAULT_CATEGORIES = [
@@ -2157,6 +2184,15 @@
         document.getElementById('deleteModal').classList.remove('hidden');
     }
 
+    function getEffectiveRolePerm(roleSlug, perms, permKey) {
+        if (perms && perms[permKey] !== undefined) return !!perms[permKey];
+        const s = (roleSlug || '').toLowerCase();
+        if (permKey === 'schedule_view') return ['admin', 'manager', 'user', 'member', 'thành viên', 'viewer'].includes(s);
+        if (permKey === 'schedule_create_own') return ['admin', 'manager', 'user', 'member', 'thành viên'].includes(s);
+        if (permKey === 'schedule_manage_all') return ['admin', 'manager'].includes(s);
+        return !!(perms && perms[permKey]);
+    }
+
     // --- Role Management ---
     window.openRoleModal = function(id = null) {
         document.getElementById('roleModalTitle').textContent = id ? 'Chỉnh sửa nhóm quyền' : 'Thêm nhóm quyền mới';
@@ -2171,7 +2207,7 @@
         // Reset checkboxes
         document.querySelectorAll('#rolePermsGrid input[type="checkbox"]').forEach(cb => {
             const p = cb.getAttribute('data-perm');
-            cb.checked = !!(r.permissions && r.permissions[p]);
+            cb.checked = getEffectiveRolePerm(r.slug, r.permissions, p);
         });
         
         document.getElementById('roleModal').classList.remove('hidden');
@@ -2682,7 +2718,7 @@
         // Update all permission checkboxes
         document.querySelectorAll('#permGroup [data-user-perm]').forEach(cb => {
             const permKey = cb.getAttribute('data-user-perm');
-            const isGranted = !!perms[permKey];
+            const isGranted = getEffectiveRolePerm(roleSlug, perms, permKey);
             cb.checked = isGranted;
             // Visual feedback on parent label
             const label = cb.closest('.perm-checkbox');

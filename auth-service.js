@@ -67,6 +67,9 @@ export function checkPermission(field) {
         'finance_view': 'finance_view',
         'finance_edit': 'finance_edit',
         'reports_view': 'reports_view',
+        'schedule_view': 'schedule_view',
+        'schedule_create_own': 'schedule_create_own',
+        'schedule_manage_all': 'schedule_manage_all',
         'admin_access': 'admin_access'
     };
     const permKey = permissionMap[field] || field;
@@ -76,6 +79,12 @@ export function checkPermission(field) {
         if (roleData.permissions && roleData.permissions[permKey] !== undefined) {
             return !!roleData.permissions[permKey];
         }
+    }
+
+    if (userRoleSlug === 'viewer') return ['orders_view', 'planning_view', 'finance_view', 'reports_view', 'schedule_view'].includes(permKey);
+    if (userRoleSlug === 'manager') return !['admin_access', 'orders_delete'].includes(permKey);
+    if (userRoleSlug === 'user' || userRoleSlug === 'member' || userRoleSlug === 'thành viên') {
+        return ['schedule_view', 'schedule_create_own'].includes(permKey);
     }
     return false;
 }
