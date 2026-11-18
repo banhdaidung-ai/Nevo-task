@@ -86,6 +86,9 @@ export function checkPermission(field) {
     if (userRoleSlug === 'user' || userRoleSlug === 'member' || userRoleSlug === 'thành viên') {
         return ['schedule_view', 'schedule_create_own'].includes(permKey);
     }
+    if (userRoleSlug && userRoleSlug !== 'viewer' && ['schedule_view', 'schedule_create_own', 'reports_view'].includes(permKey)) {
+        return true;
+    }
     return false;
 }
 

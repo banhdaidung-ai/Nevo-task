@@ -3915,10 +3915,18 @@
         else window.weeklyBoardWeekOffset += delta;
         if (window.renderWeeklyBoard) window.renderWeeklyBoard();
     };
+    window.openScheduleTaskModal = function(taskId, prefill) {
+        console.log('[Schedule] Queuing openScheduleTaskModal until module ready...');
+        window._pendingScheduleAction = { type: 'single', taskId: taskId ?? null, prefill: prefill || {} };
+    };
+    window.openBulkScheduleModal = function(opts) {
+        console.log('[Schedule] Queuing openBulkScheduleModal until module ready...');
+        window._pendingScheduleAction = { type: 'bulk', opts: opts || {} };
+    };
 </script>
 <script type="module" src="main.js?v=20260925_opt1"></script>
 <script type="module" src="orders-manager.js?v=20260925_opt1"></script>
-<script type="module" src="schedule-manager.js?v=20261118_2"></script>
+<script type="module" src="schedule-manager.js?v=20261118_3"></script>
 
 <!-- ====== JAVASCRIPT ====== -->
 <script>
@@ -4015,6 +4023,10 @@
             const isAllowed = allowedForUser.includes(permKey);
             console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Allowed: ${isAllowed} (fallback)`);
             return isAllowed;
+        }
+
+        if (userRoleSlug && userRoleSlug !== 'viewer' && ['schedule_view', 'schedule_create_own', 'reports_view'].includes(permKey)) {
+            return true;
         }
 
         console.log(`[Permission Result] Role: ${userRoleSlug}, Key: ${permKey}, Default: false`);

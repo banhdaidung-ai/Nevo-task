@@ -501,61 +501,6 @@ function getFilteredTasks(extraOpts = {}) {
     });
 }
 
-function mapOrderCategoryToSchedule(orderCat) {
-    const c = String(orderCat || "").trim().toLowerCase();
-    if (c.includes("video") || c.includes("live")) return "Quay / dựng video";
-    if (c.includes("ảnh") || c.includes("photo")) return "Chụp / hậu kỳ ảnh";
-    if (c.includes("thiết kế") || c.includes("design")) return "Thiết kế";
-    return "Khác";
-}
-
-function getAssignedActiveOrders(memberName, includeAllTeam = false) {
-    const canonMember = canonicalName(memberName);
-    const closedStatuses = new Set(["Hoàn thành", "Hủy", "Từ chối"]);
-    return (window.allOrdersData || []).filter(o => {
-        if (closedStatuses.has(o.status)) return false;
-        if (includeAllTeam) return true;
-        const assignees = getOrderAssignees(o);
-        return canonMember && assignees.includes(canonMember);
-    });
-}
-
-function isOrderLinkedInDay(order, dayTasks) {
-    const code = String(order?.code || "").replace(/^#/, "").trim().toUpperCase();
-    if (!code) return false;
-    return dayTasks.some(t => String(t.linkedOrderCode || "").replace(/^#/, "").trim().toUpperCase() === code);
-}
-
-export function jumpToOrderByCode(orderCode, event) {
-    if (event) event.stopPropagation();
-    const clean = String(orderCode || "").replace(/^#/, "").trim().toUpperCase();
-    if (!clean) return;
-    const found = (window.allOrdersData || []).find(
-        o => String(o.code || "").replace(/^#/, "").trim().toUpperCase() === clean
-    );
-    if (found && typeof window.jumpToOrder === "function") {
-        window.jumpToOrder(found.id);
-    } else {
-        showToast("Không tìm thấy đơn", `Không thấy mã đơn #${clean} trong danh sách đơn hàng.`, "info", "info");
-    }
-}
-
-export function openScheduleFromOrder(orderId, dateYMD, memberName, event) {
-    if (event) event.stopPropagation();
-    const order = (window.allOrdersData || []).find(o => o.id === orderId);
-    if (!order) return;
-    const normFn = window._normalizeDateToYMD || normalizeDateYMD;
-    openScheduleTaskModal(null, {
-        date: dateYMD || normFn(order.deployDate) || normFn(order.deadline) || toYMD(new Date()),
-        assignee: memberName || canonicalName(getCurrentUser().name),
-        title: order.title || `Đơn #${order.code || ""}`,
-        category: mapOrderCategoryToSchedule(order.category),
-        deadline: normFn(order.deadline),
-        linkedOrderCode: order.code || "",
-        description: order.content || ""
-    });
-}
-
 function getOrderAssignees(order) {
     return [order.assignedVideo, order.assignedPhoto, order.assignedDesign, order.stylist]
         .filter(n => n && n !== "-")
@@ -1688,7 +1633,7 @@ export function openScheduleTaskModal(taskId = null, prefill = {}) {
     if (saveContBtn) saveContBtn.classList.toggle("hidden", !isCreate || !editable);
     if (saveBtn) saveBtn.classList.toggle("hidden", !editable);
 
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
 }
 
 function renderSingleOrderPicker() {
@@ -2137,7 +2082,7 @@ export function openMemberScorecard(rawName) {
         };
     }
 
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
 }
 
 export function closeMemberScorecard() {
@@ -2660,7 +2605,7 @@ export function openBulkScheduleModal(opts = {}) {
     renderBulkOrderPicker();
     renderBulkDraftTable();
 
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
     document.querySelector('#bulkDraftBody input[data-field="title"]')?.focus();
 }
 
@@ -3256,6 +3201,15 @@ function initScheduleManager() {
     startTasksListener();
     if (canViewSchedule() && window.currentPage === "reports") {
         renderReports();
+    }
+    if (window._pendingScheduleAction) {
+        const pending = window._pendingScheduleAction;
+        window._pendingScheduleAction = null;
+        if (pending.type === "bulk") {
+            openBulkScheduleModal(pending.opts || {});
+        } else if (pending.type === "single") {
+            openScheduleTaskModal(pending.taskId ?? null, pending.prefill || {});
+        }
     }
 }
 
