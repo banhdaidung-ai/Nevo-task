@@ -336,6 +336,13 @@ dialog.nevo-dialog.nevo-dialog-xl {
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+select.bulk-grid-input {
+  padding-right: 1.75rem;
+}
+input[type="number"].bulk-grid-input {
+  padding-left: 0.4rem;
+  padding-right: 0.35rem;
+}
 .bulk-grid-input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(184, 0, 53, 0.14);

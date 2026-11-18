@@ -31,6 +31,7 @@ export const SCHEDULE_TIME_SLOTS = [
     "15:00–17:00",
     "08:00–12:00",
     "13:00–17:00",
+    "08:00–17:00",
     "Cả ngày",
     "Linh hoạt"
 ];
@@ -194,6 +195,89 @@ function round2(n) {
 function formatNum(n) {
     const r = round2(n);
     return Number.isInteger(r) ? String(r) : r.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+}
+
+function parseTimePoint(tok) {
+    const m = String(tok || "").trim().match(/^(\d{1,2})(?::(\d{1,2})|[hg](\d{1,2})?)?$/i);
+    if (!m) return null;
+    const hh = Number(m[1]);
+    const mm = Number(m[2] ?? m[3] ?? 0);
+    if (hh < 0 || hh > 24 || mm < 0 || mm >= 60 || (hh === 24 && mm > 0)) return null;
+    return { hh, mm, totalHours: hh + mm / 60 };
+}
+
+/**
+ * Parse custom or preset time slot string into normalized display text and duration in hours.
+ * Supports e.g. "08:30-10:00", "8h30-10h", "9g15–11g45", "8h-5h", "08:00–17:00", "Cả ngày", "Tối 20:00-21:30".
+ */
+export function parseTimeSlotInfo(raw) {
+    const s = String(raw || "").trim();
+    if (!s) return { normalized: "", hours: null };
+    const lower = s.toLowerCase();
+    if (lower === "cả ngày" || lower === "ca ngay" || lower === "full day") {
+        return { normalized: "Cả ngày", hours: 8 };
+    }
+    if (lower === "linh hoạt" || lower === "linh hoat") {
+        return { normalized: "Linh hoạt", hours: null };
+    }
+    if (lower === "buổi sáng" || lower === "ca sáng") {
+        return { normalized: s, hours: 4 };
+    }
+    if (lower === "buổi chiều" || lower === "ca chiều") {
+        return { normalized: s, hours: 4 };
+    }
+
+    const computeSpanHours = (start, end) => {
+        let endHrs = end.totalHours;
+        let endHh = end.hh;
+        if (endHrs <= start.totalHours) {
+            if (start.hh >= 7 && start.hh <= 12 && end.hh >= 1 && end.hh <= 7) {
+                endHrs += 12;
+                endHh += 12;
+            } else if (start.hh >= 18) {
+                endHrs += 24;
+            } else {
+                return null;
+            }
+        }
+        let diff = endHrs - start.totalHours;
+        // Deduct 1h lunch break when span covers 12:00-13:00 and lasts >= 6 hours
+        if (start.totalHours <= 12 && endHrs >= 13 && diff >= 6) {
+            diff -= 1;
+        }
+        return { hours: round2(diff), endHh: endHh % 24, endMm: end.mm };
+    };
+
+    const parts = s.split(/\s*(?:[-–—~]|đến|to)\s*/i);
+    if (parts.length === 2) {
+        const start = parseTimePoint(parts[0]);
+        const end = parseTimePoint(parts[1]);
+        if (start && end) {
+            const span = computeSpanHours(start, end);
+            if (span && span.hours > 0) {
+                const fmt = (h, m) => `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                return {
+                    normalized: `${fmt(start.hh, start.mm)}–${fmt(span.endHh, span.endMm)}`,
+                    hours: span.hours
+                };
+            }
+        }
+    }
+
+    // Embedded time range inside free text, e.g. "Tối 20:00-21:30" or "Ca sáng 8h30-11h"
+    const emb = s.match(/(\d{1,2}(?::\d{1,2}|[hg]\d{0,2}))\s*(?:[-–—~]|đến|to)\s*(\d{1,2}(?::\d{1,2}|[hg]\d{0,2}))/i);
+    if (emb) {
+        const start = parseTimePoint(emb[1]);
+        const end = parseTimePoint(emb[2]);
+        if (start && end) {
+            const span = computeSpanHours(start, end);
+            if (span && span.hours > 0) {
+                return { normalized: s, hours: span.hours };
+            }
+        }
+    }
+
+    return { normalized: s, hours: null };
 }
 
 /** Map Google Sheet nicknames or raw names to canonical user display names. */
@@ -1582,10 +1666,18 @@ export function openScheduleTaskModal(taskId = null, prefill = {}) {
         catEl.value = targetCat;
     }
     document.getElementById("taskSource").value = task?.source || "Trong KH tháng";
-    document.getElementById("taskTimeSlot").value = task?.timeSlot || "Linh hoạt";
+    const initTimeSlot = task
+        ? (task.timeSlot === "Linh hoạt" ? "" : (task.timeSlot || ""))
+        : (prefill.timeSlot && prefill.timeSlot !== "Linh hoạt" ? prefill.timeSlot : "");
+    document.getElementById("taskTimeSlot").value = initTimeSlot;
     document.getElementById("taskDeadline").value = task?.deadline || prefill.deadline || "";
     document.getElementById("taskPriority").value = task?.priority || "Trung bình";
-    document.getElementById("taskPlannedHours").value = task?.plannedHours || "";
+    const plannedHoursEl = document.getElementById("taskPlannedHours");
+    const initPlannedHours = task?.plannedHours || prefill.plannedHours || "";
+    if (plannedHoursEl) {
+        plannedHoursEl.value = initPlannedHours;
+        plannedHoursEl.dataset.auto = initPlannedHours ? "0" : "1";
+    }
     document.getElementById("taskPlannedQty").value = task?.plannedQtyRaw || "";
     document.getElementById("taskUnit").value = task?.unit || "Việc";
     document.getElementById("taskLinkedOrder").value = task?.linkedOrderCode || prefill.linkedOrderCode || "";
@@ -1712,7 +1804,7 @@ export async function saveScheduleTask(event, keepOpen = false) {
         title,
         category: document.getElementById("taskCategory").value,
         source: document.getElementById("taskSource").value,
-        timeSlot: document.getElementById("taskTimeSlot").value,
+        timeSlot: parseTimeSlotInfo(document.getElementById("taskTimeSlot").value).normalized || document.getElementById("taskTimeSlot").value.trim() || "Linh hoạt",
         deadline: document.getElementById("taskDeadline").value || "",
         priority: document.getElementById("taskPriority").value,
         plannedHours,
@@ -1778,10 +1870,12 @@ export async function saveScheduleTask(event, keepOpen = false) {
             }
 
             if (keepOpen) {
-                ["taskTitle", "taskPlannedHours", "taskPlannedQty", "taskLinkedOrder", "taskDescription", "taskResultLink", "taskBlocker", "taskNextStep"].forEach(id => {
+                ["taskTitle", "taskTimeSlot", "taskPlannedHours", "taskPlannedQty", "taskLinkedOrder", "taskDescription", "taskResultLink", "taskBlocker", "taskNextStep"].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.value = "";
                 });
+                const phEl = document.getElementById("taskPlannedHours");
+                if (phEl) phEl.dataset.auto = "1";
                 document.getElementById("taskStatus").value = "Chưa bắt đầu";
                 document.getElementById("taskProgress").value = 0;
                 document.getElementById("taskProgressRange").value = 0;
@@ -2281,14 +2375,16 @@ const bulkState = {
 };
 
 function makeEmptyBulkRow(overrides = {}) {
+    const rawSlot = overrides.timeSlot && overrides.timeSlot !== "Linh hoạt" ? overrides.timeSlot : "";
     return {
         uid: bulkState.nextUid++,
         date: overrides.date || bulkState.targetDate || toYMD(new Date()),
-        timeSlot: overrides.timeSlot || "Linh hoạt",
+        timeSlot: rawSlot,
         title: overrides.title || "",
         category: overrides.category || "Hình ảnh AI",
         priority: overrides.priority || "Trung bình",
         plannedHours: overrides.plannedHours ?? "",
+        hoursAuto: overrides.hoursAuto ?? (overrides.plannedHours === undefined || overrides.plannedHours === ""),
         plannedQtyRaw: overrides.plannedQtyRaw || "",
         unit: overrides.unit || "Ảnh",
         linkedOrderCode: overrides.linkedOrderCode || "",
@@ -2407,11 +2503,11 @@ function renderBulkDraftTable() {
     headEl.innerHTML = `<tr class="bg-slate-50 dark:bg-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
         <th scope="col" class="py-2.5 px-2 text-center w-8">#</th>
         ${isWeek ? `<th scope="col" class="py-2.5 px-2 min-w-[138px]">Ngày / Thứ</th>` : ""}
-        <th scope="col" class="py-2.5 px-2 min-w-[115px]">Khung giờ</th>
+        <th scope="col" class="py-2.5 px-2 min-w-[148px]">Khung giờ</th>
         <th scope="col" class="py-2.5 px-2 min-w-[230px]">Tên công việc *</th>
         <th scope="col" class="py-2.5 px-2 min-w-[145px]">Hạng mục</th>
-        <th scope="col" class="py-2.5 px-2 min-w-[100px]">Ưu tiên</th>
-        <th scope="col" class="py-2.5 px-2 w-20">Giờ DK</th>
+        <th scope="col" class="py-2.5 px-2 min-w-[112px]">Ưu tiên</th>
+        <th scope="col" class="py-2.5 px-2 min-w-[88px] w-24">Giờ DK</th>
         <th scope="col" class="py-2.5 px-2 w-24">SL KH</th>
         <th scope="col" class="py-2.5 px-2 min-w-[110px]">Đơn vị</th>
         <th scope="col" class="py-2.5 px-2 min-w-[105px]">Mã đơn</th>
@@ -2431,9 +2527,7 @@ function renderBulkDraftTable() {
                 </select>
             </td>` : ""}
             <td class="py-1.5 px-1.5">
-                <select data-field="timeSlot" class="bulk-grid-input">
-                    ${SCHEDULE_TIME_SLOTS.map(ts => `<option value="${escapeHtml(ts)}" ${r.timeSlot === ts ? "selected" : ""}>${escapeHtml(ts)}</option>`).join("")}
-                </select>
+                <input type="text" data-field="timeSlot" list="scheduleTimeSlotsDatalist" value="${escapeHtml(r.timeSlot)}" placeholder="Linh hoạt / 08:30–10:00" class="bulk-grid-input"/>
             </td>
             <td class="py-1.5 px-1.5">
                 <input type="text" data-field="title" value="${escapeHtml(r.title)}" placeholder="Nhập tên công việc..." class="bulk-grid-input"/>
@@ -2449,7 +2543,7 @@ function renderBulkDraftTable() {
                 </select>
             </td>
             <td class="py-1.5 px-1.5">
-                <input type="number" step="0.25" min="0" data-field="plannedHours" value="${escapeHtml(r.plannedHours)}" placeholder="1.5" class="bulk-grid-input text-right"/>
+                <input type="number" step="any" min="0" data-field="plannedHours" value="${escapeHtml(r.plannedHours)}" placeholder="1.5" class="bulk-grid-input text-right"/>
             </td>
             <td class="py-1.5 px-1.5">
                 <input type="text" data-field="plannedQtyRaw" value="${escapeHtml(r.plannedQtyRaw)}" placeholder="10" class="bulk-grid-input text-right"/>
@@ -2682,18 +2776,18 @@ function parseBulkPasteText() {
             : clean.split("|").map(s => s.trim());
 
         let titlePart = parts[0] || "";
-        let timeSlot = "Linh hoạt";
-        const timePrefix = titlePart.match(/^(\d{1,2}[:h]\d{0,2}\s*[-–]\s*\d{1,2}[:h]\d{0,2}|cả\s*ngày)\s+(.+)$/i);
+        let timeSlot = "";
+        const timePrefix = titlePart.match(/^(\d{1,2}(?::\d{1,2}|[hg]\d{0,2})\s*(?:[-–—~]|đến|to)\s*\d{1,2}(?::\d{1,2}|[hg]\d{0,2})|cả\s*ngày)\s+(.+)$/i);
         if (timePrefix) {
-            const normSlot = timePrefix[1].replace(/h/g, ":").replace(/\s*[-–]\s*/g, "–").trim();
-            const foundSlot = SCHEDULE_TIME_SLOTS.find(s => s.toLowerCase() === normSlot.toLowerCase());
-            if (foundSlot) timeSlot = foundSlot;
+            const slotInfo = parseTimeSlotInfo(timePrefix[1]);
+            timeSlot = slotInfo.normalized || timePrefix[1].trim();
             titlePart = timePrefix[2].trim();
         }
 
         if (!titlePart) return;
         const catGuess = SCHEDULE_CATEGORIES.find(c => c.toLowerCase() === (parts[1] || "").toLowerCase()) || "Hình ảnh AI";
-        const hrs = parts[2] ? parseHours(parts[2]) : "";
+        const hasManualHrs = Boolean(parts[2] && String(parts[2]).trim());
+        const hrs = hasManualHrs ? parseHours(parts[2]) : (timeSlot ? (parseTimeSlotInfo(timeSlot).hours ?? "") : "");
         const qty = parts[3] || "";
         const unit = SCHEDULE_UNITS.find(u => u.toLowerCase() === (parts[4] || "").toLowerCase()) || "Ảnh";
         const desc = parts[5] || "";
@@ -2703,7 +2797,8 @@ function parseBulkPasteText() {
             timeSlot,
             title: titlePart,
             category: catGuess,
-            plannedHours: hrs || "",
+            plannedHours: hrs,
+            hoursAuto: !hasManualHrs,
             plannedQtyRaw: qty,
             unit,
             description: desc
@@ -2855,7 +2950,7 @@ export async function submitBulkScheduleTasks() {
                     title: String(r.title).trim(),
                     category: r.category || "Hình ảnh AI",
                     source: defaultSource,
-                    timeSlot: r.timeSlot || "Linh hoạt",
+                    timeSlot: parseTimeSlotInfo(r.timeSlot).normalized || String(r.timeSlot || "").trim() || "Linh hoạt",
                     deadline: "",
                     priority: r.priority || "Trung bình",
                     plannedHours,
@@ -3021,7 +3116,46 @@ function bindScheduleUIEvents() {
         const pRange = document.getElementById("taskProgressRange");
         if (pRange) pRange.value = e.target.value;
     });
-    document.getElementById("taskPlannedHours")?.addEventListener("input", updateHoursDiffHint);
+    const computeSlotSync = (rawSlot, currentHours, currentAuto) => {
+        const info = parseTimeSlotInfo(rawSlot);
+        const isEmpty = String(currentHours ?? "").trim() === "";
+        let nextHours = currentHours;
+        let nextAuto = currentAuto;
+        if (info.hours !== null && (isEmpty || currentAuto)) {
+            nextHours = info.hours;
+            nextAuto = true;
+        } else if (info.hours === null && currentAuto) {
+            nextHours = "";
+            nextAuto = true;
+        }
+        return { normalized: info.normalized, nextHours, nextAuto };
+    };
+
+    const singleSlotEl = document.getElementById("taskTimeSlot");
+    const syncSingleTimeSlot = (e) => {
+        const plannedEl = document.getElementById("taskPlannedHours");
+        if (!plannedEl) return;
+        const { normalized, nextHours, nextAuto } = computeSlotSync(
+            e.target.value,
+            plannedEl.value,
+            plannedEl.dataset.auto === "1"
+        );
+        if (e.type === "change" && normalized && normalized !== e.target.value) {
+            e.target.value = normalized;
+        }
+        if (String(plannedEl.value) !== String(nextHours)) {
+            plannedEl.value = nextHours;
+        }
+        plannedEl.dataset.auto = nextAuto ? "1" : "0";
+        updateHoursDiffHint();
+    };
+    singleSlotEl?.addEventListener("input", syncSingleTimeSlot);
+    singleSlotEl?.addEventListener("change", syncSingleTimeSlot);
+
+    document.getElementById("taskPlannedHours")?.addEventListener("input", (e) => {
+        e.target.dataset.auto = e.target.value.trim() === "" ? "1" : "0";
+        updateHoursDiffHint();
+    });
     document.getElementById("taskActualHours")?.addEventListener("input", updateHoursDiffHint);
 
     document.getElementById("btnDeferScheduleTask")?.addEventListener("click", () => {
@@ -3111,14 +3245,38 @@ function bindScheduleUIEvents() {
             const tr = target?.closest("tr[data-row-idx]");
             if (!field || !tr) return;
             const idx = Number(tr.dataset.rowIdx);
-            if (!bulkState.rows[idx]) return;
-            bulkState.rows[idx][field] = target.value;
+            const row = bulkState.rows[idx];
+            if (!row) return;
+
+            if (field === "plannedHours") {
+                row.plannedHours = target.value;
+                row.hoursAuto = String(target.value).trim() === "";
+            } else if (field === "timeSlot") {
+                const { normalized, nextHours, nextAuto } = computeSlotSync(
+                    target.value,
+                    row.plannedHours,
+                    Boolean(row.hoursAuto)
+                );
+                if (e.type === "change" && normalized && normalized !== target.value) {
+                    target.value = normalized;
+                }
+                row.timeSlot = target.value;
+                row.plannedHours = nextHours;
+                row.hoursAuto = nextAuto;
+                const hrsInput = tr.querySelector('input[data-field="plannedHours"]');
+                if (hrsInput && String(hrsInput.value) !== String(nextHours)) {
+                    hrsInput.value = nextHours;
+                }
+            } else {
+                row[field] = target.value;
+            }
             updateBulkFooterSummary();
         };
         bulkBody.addEventListener("input", syncField);
         bulkBody.addEventListener("change", syncField);
 
         bulkBody.addEventListener("keydown", (e) => {
+            if (e.isComposing) return;
             if (e.key !== "Enter" || e.target?.dataset?.field !== "title") return;
             e.preventDefault();
             const tr = e.target.closest("tr[data-row-idx]");
