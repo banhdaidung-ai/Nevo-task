@@ -6,18 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Quản lý Model — Task Manager</title>
     <meta name="description" content="Quản lý hồ sơ người mẫu, talent cho hệ thống NEVO"/>
+    <link rel="manifest" href="manifest.webmanifest"/>
     <!-- Auth + Model Guard (Async - loads role permissions from Firestore) -->
     <script>
         (function() {
             if (localStorage.getItem('nevo_logged_in') !== 'true') {
                 window.location.replace('login.html'); return;
             }
-            // Admin and manager always have access (fast sync check)
             var role = (localStorage.getItem('nevo_role') || '').toLowerCase();
-            if (role === 'admin' || role === 'manager') return;
-            // For other roles, we defer the check until Firestore roles load
-            // The actual guard is enforced in the DOMContentLoaded handler below
-            // after loading system_roles from Firestore.
+            if (role === 'admin') return;
+            // All non-admin roles verify model_view against system_roles before attaching data listeners
             window.__modelGuardPending = true;
         })();
     </script>
@@ -239,7 +237,7 @@
                 </button>
                 <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
                 <!-- Create Order CTA -->
-                <a href="index.html" class="bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 md:px-4 py-2 rounded-lg font-headline font-semibold text-sm flex items-center gap-2 shadow-lg shadow-red-600/20 active:scale-95 transition-transform duration-150 hover:opacity-90">
+                <a href="index.html#create-order" class="bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 md:px-4 py-2 rounded-lg font-headline font-semibold text-sm flex items-center gap-2 shadow-lg shadow-red-600/20 active:scale-95 transition-transform duration-150 hover:opacity-90">
                     <span class="material-symbols-outlined text-sm">add</span>
                     <span class="hidden sm:inline">Tạo đơn mới</span>
                 </a>
@@ -259,7 +257,7 @@
                             <p class="text-[10px] text-slate-400 mt-0.5" id="dropRole">Quản trị viên hệ thống</p>
                         </div>
                         <div class="p-1.5">
-                            <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                            <a href="index.html#profile" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                                 <span class="material-symbols-outlined text-[18px]">account_circle</span>
                                 Hồ sơ cá nhân
                             </a>
@@ -298,6 +296,9 @@
         </a>
         <a href="index.html#budgetReport" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
             <span class="material-symbols-outlined">payments</span> Chi phí
+        </a>
+        <a href="index.html#reports" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
+            <span class="material-symbols-outlined">bar_chart</span> Lịch làm việc
         </a>
         <a href="products.html" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-sm font-semibold text-slate-700">
             <span class="material-symbols-outlined">inventory_2</span> Sản phẩm mới
@@ -405,7 +406,7 @@
             <span class="material-symbols-outlined text-[64px] text-slate-200 mb-4">face_3</span>
             <h3 class="font-headline font-bold text-xl text-slate-400 mb-2">Chưa có Model nào</h3>
             <p class="text-slate-400 text-sm mb-6">Bắt đầu bằng cách thêm người mẫu đầu tiên vào hệ thống</p>
-            <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-headline font-bold text-sm rounded-xl shadow-lg shadow-red-600/25 active:scale-95 transition-all">
+            <button id="btnEmptyAddModel" onclick="openAddModal()" class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-headline font-bold text-sm rounded-xl shadow-lg shadow-red-600/25 active:scale-95 transition-all">
                 <span class="material-symbols-outlined text-[18px]">person_add</span>
                 Thêm người mẫu
             </button>
@@ -510,6 +511,20 @@
                         </div>
                     </div>
 
+                    <!-- Linked Orders Booking History -->
+                    <div id="profileBookingsCard" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-headline font-bold text-sm text-slate-900 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-[18px]">event_available</span>
+                                Lịch sử &amp; Đơn hàng đang Book mẫu
+                            </h3>
+                            <span id="profileBookingsCount" class="px-2.5 py-0.5 bg-rose-50 text-primary rounded-full text-[11px] font-bold">0 đơn</span>
+                        </div>
+                        <div id="profileBookingsList" class="space-y-2.5">
+                            <p class="text-xs text-slate-400 italic">Chưa có đơn hàng nào book mẫu này.</p>
+                        </div>
+                    </div>
+
                     <!-- Meta Info -->
                     <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                         <div class="flex items-center gap-4 text-xs text-slate-400">
@@ -577,8 +592,8 @@
                         </div>
                     </div>
 
-                    <!-- Gender + Age -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <!-- Gender + Age + Tier Badge -->
+                    <div class="grid grid-cols-3 gap-3">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Giới tính</label>
                             <select id="modelGender" class="form-input">
@@ -590,6 +605,14 @@
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Độ tuổi</label>
                             <input id="modelAge" type="number" class="form-input" value="22" min="16" max="60"/>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Phân hạng</label>
+                            <select id="modelTierBadge" class="form-input">
+                                <option value="">Tiêu chuẩn</option>
+                                <option value="TÀI NĂNG">TÀI NĂNG</option>
+                                <option value="ĐỘC QUYỀN">ĐỘC QUYỀN</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -688,6 +711,11 @@
 <!-- ====== JAVASCRIPT ====== -->
 <script type="module">
 import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from './firebase-service.js';
+import { escapeHtml, escapeJsStr, safeUrl } from './security-utils.js';
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 
 (function() {
     'use strict';
@@ -695,13 +723,34 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
     // ===== DATA LAYER (FIRESTORE REALTIME) =====
     const COLLECTION_NAME = 'models';
     let models = [];
+    let linkedOrders = [];
     let currentFilter = '';
     let currentModelId = null;
     let editingModelId = null;
     let currentPhotoData = null;
     let migrationChecked = false;
+    let listenersStarted = false;
+
+    function getOrdersForModel(model) {
+        if (!model || !linkedOrders.length) return [];
+        const targetId = model.id;
+        const targetName = (model.name || '').trim().toLowerCase();
+        return linkedOrders.filter(o => {
+            if (!Array.isArray(o.bookedModels)) return false;
+            return o.bookedModels.some(bm => {
+                if (typeof bm === 'string') return bm.trim().toLowerCase() === targetName;
+                if (bm && typeof bm === 'object') {
+                    return (bm.modelId && bm.modelId === targetId) || ((bm.name || bm.modelName || '').trim().toLowerCase() === targetName);
+                }
+                return false;
+            });
+        });
+    }
 
     function initFirestoreListener() {
+        if (listenersStarted) return;
+        listenersStarted = true;
+
         const modelsRef = collection(db, COLLECTION_NAME);
         onSnapshot(modelsRef, (snapshot) => {
             models = [];
@@ -716,6 +765,10 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
                 return tb - ta;
             });
             renderModelGrid();
+            if (currentModelId) {
+                const cur = models.find(m => m.id === currentModelId);
+                if (cur) renderModelBookings(cur);
+            }
 
             // One-time migration from localStorage
             if (!migrationChecked) {
@@ -726,10 +779,22 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
             console.error('Firestore listener error:', error);
             showToast('Lỗi kết nối', 'Không thể kết nối cơ sở dữ liệu', 'cloud_off', 'error');
         });
+
+        // Subscribe to orders to show live booking status & history per model
+        onSnapshot(collection(db, 'orders'), (snap) => {
+            linkedOrders = [];
+            snap.forEach(d => linkedOrders.push({ id: d.id, ...d.data() }));
+            renderModelGrid();
+            if (currentModelId) {
+                const cur = models.find(m => m.id === currentModelId);
+                if (cur) renderModelBookings(cur);
+            }
+        }, (err) => console.warn('Model orders sync warning:', err));
     }
 
     // One-time migration from localStorage to Firestore
     async function migrateLocalStorageToFirestore() {
+        if (!checkModelPermission('model_edit')) return;
         const raw = localStorage.getItem('nevo_models');
         if (!raw) return;
         try {
@@ -738,7 +803,6 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
                 localStorage.removeItem('nevo_models');
                 return;
             }
-            // Only migrate if Firestore has no models yet
             if (models.length > 0) {
                 localStorage.removeItem('nevo_models');
                 return;
@@ -759,10 +823,12 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
     // Compress image for Firestore storage (keeps under ~200KB)
     function compressImage(file, maxWidth, quality) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const reader = new FileReader();
+            reader.onerror = () => reject(new Error('File read error'));
             reader.onload = function(e) {
                 const img = new Image();
+                img.onerror = () => reject(new Error('Invalid image'));
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     let w = img.width, h = img.height;
@@ -790,7 +856,7 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
     };
 
     function getCatClass(cat) {
-        return catClassMap[cat.toLowerCase()] || 'cat-default';
+        return catClassMap[String(cat || '').toLowerCase()] || 'cat-default';
     }
 
     function formatPrice(num) {
@@ -854,7 +920,7 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
         // Filter by search
         if (searchTerm) {
-            filtered = filtered.filter(m => m.name.toLowerCase().includes(searchTerm));
+            filtered = filtered.filter(m => (m.name || '').toLowerCase().includes(searchTerm));
         }
         
         // Filter by gender
@@ -888,39 +954,48 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
         grid.innerHTML = filtered.map((m, idx) => {
             const genderIcon = m.gender === 'Nam' ? 'male' : m.gender === 'Nữ' ? 'female' : 'transgender';
-            const badge = idx === 0 ? 'TÀI NĂNG' : (idx % 3 === 2 ? 'ĐỘC QUYỀN' : (m.pricePerDay >= 5000000 ? 'TÀI NĂNG' : ''));
+            const badge = m.tierBadge ? String(m.tierBadge) : (m.pricePerDay >= 5000000 ? 'TÀI NĂNG' : '');
             const badgeColor = badge === 'ĐỘC QUYỀN' ? 'bg-amber-500' : 'bg-primary';
             const desc = m.description ? (m.description.length > 100 ? m.description.substring(0, 100) + '...' : m.description) : '';
             const hasPrice = m.pricePerSession > 0 || m.pricePerDay > 0 || m.pricePerSet > 0;
+            const safePhoto = m.photo ? safeUrl(m.photo) : '';
+            const safeIdJs = escapeJsStr(m.id);
+            const safeName = escapeHtml(m.name || 'Chưa đặt tên');
+            const modelOrders = getOrdersForModel(m);
+            const activeBookCount = modelOrders.filter(o => !['Hoàn thành', 'Đã hủy', 'Từ chối'].includes(o.status)).length;
+            const bookingPill = modelOrders.length > 0
+                ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${activeBookCount > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}"><span class="material-symbols-outlined text-[12px]">event_available</span>${activeBookCount > 0 ? `${activeBookCount} lịch đang chạy` : `${modelOrders.length} lần book`}</span>`
+                : '';
 
             if (window.viewMode === 'list') {
                 return `
-                <div class="model-card flex bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up" style="animation-delay: ${idx * 0.05}s">
-                    <div class="w-48 shrink-0 bg-slate-100 relative overflow-hidden cursor-pointer" onclick="openProfile('${m.id}')">
-                        ${m.photo
-                            ? `<img src="${m.photo}" alt="${m.name}" class="model-photo w-full h-full object-cover"/>`
+                <div class="model-card flex bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up" style="animation-delay: ${Math.min(idx, 12) * 0.04}s">
+                    <div class="w-48 shrink-0 bg-slate-100 relative overflow-hidden cursor-pointer" onclick="openProfile('${safeIdJs}')">
+                        ${safePhoto
+                            ? `<img src="${safePhoto}" alt="${safeName}" class="model-photo w-full h-full object-cover"/>`
                             : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
                                    <span class="material-symbols-outlined text-[48px] text-slate-300">face_3</span>
                                </div>`
                         }
-                        ${badge ? `<div class="absolute top-2 left-2"><span class="px-2 py-0.5 ${badgeColor} text-white text-[9px] font-extrabold uppercase tracking-wider rounded-full shadow-md">${badge}</span></div>` : ''}
+                        ${badge ? `<div class="absolute top-2 left-2"><span class="px-2 py-0.5 ${badgeColor} text-white text-[9px] font-extrabold uppercase tracking-wider rounded-full shadow-md">${escapeHtml(badge)}</span></div>` : ''}
                     </div>
                     <div class="p-5 flex-grow flex flex-col justify-center space-y-3 relative">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-headline font-extrabold text-lg text-slate-900 cursor-pointer hover:text-primary transition-colors" onclick="openProfile('${m.id}')">${m.name}</h3>
+                        <div class="flex justify-between items-start gap-2">
+                            <h3 class="font-headline font-extrabold text-lg text-slate-900 cursor-pointer hover:text-primary transition-colors" onclick="openProfile('${safeIdJs}')">${safeName}</h3>
+                            ${bookingPill}
                         </div>
                         <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 font-semibold">
-                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-slate-400">${genderIcon}</span> ${m.gender || '--'}</span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-slate-400">${genderIcon}</span> ${escapeHtml(m.gender || '--')}</span>
                             <span class="text-slate-200">|</span>
-                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Tuổi</span> <strong class="text-slate-700">${m.age || '--'}</strong></span>
+                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Tuổi</span> <strong class="text-slate-700">${escapeHtml(m.age || '--')}</strong></span>
                             <span class="text-slate-200">|</span>
-                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Cao</span> <strong class="text-slate-700">${m.height || '--'}cm</strong></span>
+                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Cao</span> <strong class="text-slate-700">${escapeHtml(m.height || '--')}cm</strong></span>
                             <span class="text-slate-200">|</span>
-                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Nặng</span> <strong class="text-slate-700">${m.weight || '--'}kg</strong></span>
+                            <span class="flex items-center gap-1"><span class="text-[10px] text-slate-400 uppercase">Nặng</span> <strong class="text-slate-700">${escapeHtml(m.weight || '--')}kg</strong></span>
                         </div>
-                        ${desc ? `<p class="text-xs text-slate-500 leading-relaxed line-clamp-1" style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">"${desc}"</p>` : ''}
+                        ${desc ? `<p class="text-xs text-slate-500 leading-relaxed line-clamp-1" style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">"${escapeHtml(desc)}"</p>` : ''}
                         <div class="flex flex-wrap gap-1.5 mt-auto pt-2">
-                            ${(m.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)} !text-[10px] !px-2.5 !py-0.5">${c}</span>`).join('')}
+                            ${(m.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)} !text-[10px] !px-2.5 !py-0.5">${escapeHtml(c)}</span>`).join('')}
                         </div>
                     </div>
                     ${hasPrice ? `
@@ -948,42 +1023,40 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
                 `;
             }
 
-            // Grid view (original)
+            // Grid view
             return `
-            <div class="model-card bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up" style="animation-delay: ${idx * 0.05}s">
-                <div class="aspect-[4/5] bg-slate-100 relative overflow-hidden" onclick="openProfile('${m.id}')">
-                    ${m.photo
-                        ? `<img src="${m.photo}" alt="${m.name}" class="model-photo w-full h-full object-cover"/>`
+            <div class="model-card bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden animate-fade-in-up" style="animation-delay: ${Math.min(idx, 12) * 0.04}s">
+                <div class="aspect-[4/5] bg-slate-100 relative overflow-hidden" onclick="openProfile('${safeIdJs}')">
+                    ${safePhoto
+                        ? `<img src="${safePhoto}" alt="${safeName}" class="model-photo w-full h-full object-cover"/>`
                         : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
                                <span class="material-symbols-outlined text-[64px] text-slate-300">face_3</span>
                            </div>`
                     }
                     <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
-                    ${badge ? `<div class="absolute top-3 left-3"><span class="px-3 py-1 ${badgeColor} text-white text-[10px] font-extrabold uppercase tracking-wider rounded-full shadow-lg">${badge}</span></div>` : ''}
-                    <button onclick="event.stopPropagation()" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:scale-110 transition-all shadow-sm">
-                        <span class="material-symbols-outlined text-slate-400 hover:text-red-500 text-[20px]">favorite</span>
-                    </button>
+                    ${badge ? `<div class="absolute top-3 left-3"><span class="px-3 py-1 ${badgeColor} text-white text-[10px] font-extrabold uppercase tracking-wider rounded-full shadow-lg">${escapeHtml(badge)}</span></div>` : ''}
+                    ${bookingPill ? `<div class="absolute top-3 right-3">${bookingPill}</div>` : ''}
                     <div class="absolute bottom-3 left-4 right-4">
-                        <h3 class="font-headline font-extrabold text-lg text-white drop-shadow-lg truncate">${m.name}</h3>
+                        <h3 class="font-headline font-extrabold text-lg text-white drop-shadow-lg truncate">${safeName}</h3>
                     </div>
                 </div>
                 <div class="p-5 space-y-3">
                     <!-- Stats Row -->
                     <div class="flex items-center gap-1 text-xs text-slate-500 font-semibold">
                         <span class="material-symbols-outlined text-[16px] text-slate-400">${genderIcon}</span>
-                        <span class="flex items-center gap-0.5"><span class="text-[10px] text-slate-400 uppercase">Tuổi</span> <strong class="text-slate-700">${m.age || '--'}</strong></span>
+                        <span class="flex items-center gap-0.5"><span class="text-[10px] text-slate-400 uppercase">Tuổi</span> <strong class="text-slate-700">${escapeHtml(m.age || '--')}</strong></span>
                         <span class="text-slate-200">|</span>
-                        <span class="flex items-center gap-0.5"><strong class="text-slate-700">${m.height || '--'}</strong><span class="text-[10px] text-slate-400">cm</span></span>
+                        <span class="flex items-center gap-0.5"><strong class="text-slate-700">${escapeHtml(m.height || '--')}</strong><span class="text-[10px] text-slate-400">cm</span></span>
                         <span class="text-slate-200">|</span>
-                        <span class="flex items-center gap-0.5"><strong class="text-slate-700">${m.weight || '--'}</strong><span class="text-[10px] text-slate-400">kg</span></span>
+                        <span class="flex items-center gap-0.5"><strong class="text-slate-700">${escapeHtml(m.weight || '--')}</strong><span class="text-[10px] text-slate-400">kg</span></span>
                     </div>
 
                     <!-- Description -->
-                    ${desc ? `<p class="text-xs text-slate-500 leading-relaxed line-clamp-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">"${desc}"</p>` : ''}
+                    ${desc ? `<p class="text-xs text-slate-500 leading-relaxed line-clamp-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">"${escapeHtml(desc)}"</p>` : ''}
 
                     <!-- Category Tags -->
                     <div class="flex flex-wrap gap-1.5">
-                        ${(m.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)} !text-[10px] !px-2.5 !py-0.5">${c}</span>`).join('')}
+                        ${(m.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)} !text-[10px] !px-2.5 !py-0.5">${escapeHtml(c)}</span>`).join('')}
                     </div>
 
                     <!-- Price Grid -->
@@ -1011,8 +1084,8 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
                     <!-- Phone + Profile Link -->
                     <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                        ${m.phone ? `<span class="flex items-center gap-1.5 text-xs text-slate-400 font-medium"><span class="material-symbols-outlined text-[14px]">call</span> SĐT: ${m.phone}</span>` : '<span></span>'}
-                        <a onclick="openProfile('${m.id}')" class="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-dark cursor-pointer transition-colors">
+                        ${m.phone ? `<span class="flex items-center gap-1.5 text-xs text-slate-400 font-medium"><span class="material-symbols-outlined text-[14px]">call</span> SĐT: ${escapeHtml(m.phone)}</span>` : '<span></span>'}
+                        <a onclick="openProfile('${safeIdJs}')" class="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-dark cursor-pointer transition-colors">
                             Xem Profile <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                         </a>
                     </div>
@@ -1079,6 +1152,16 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         if (!val) return;
 
         const container = document.getElementById('categoryTagsContainer');
+        const existing = Array.from(container.querySelectorAll('.cat-toggle-btn')).find(
+            b => (b.getAttribute('data-cat') || '').toLowerCase() === val.toLowerCase()
+        );
+        if (existing) {
+            existing.classList.remove('opacity-50');
+            existing.classList.add('ring-2', 'ring-offset-1');
+            input.value = '';
+            return;
+        }
+
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'cat-toggle-btn cat-tag cat-default ring-2 ring-offset-1';
@@ -1096,6 +1179,10 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
     // ===== MODAL =====
     window.openAddModal = function() {
+        if (!checkModelPermission('model_edit')) {
+            showToast('Từ chối', 'Bạn không có quyền thêm hồ sơ Model', 'lock', 'error');
+            return;
+        }
         editingModelId = null;
         resetModalForm();
         document.getElementById('modalTitle').textContent = 'THÊM NGƯỜI MẪU MỚI';
@@ -1115,6 +1202,8 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         document.getElementById('modelPhone').value = '';
         document.getElementById('modelGender').value = 'Nữ';
         document.getElementById('modelAge').value = '22';
+        const tierEl = document.getElementById('modelTierBadge');
+        if (tierEl) tierEl.value = '';
         document.getElementById('modelHeight').value = '170';
         document.getElementById('modelWeight').value = '52';
         document.getElementById('modelDescription').value = '';
@@ -1150,6 +1239,8 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         document.getElementById('modelPhone').value = m.phone || '';
         document.getElementById('modelGender').value = m.gender || 'Nữ';
         document.getElementById('modelAge').value = m.age || 22;
+        const tierEl = document.getElementById('modelTierBadge');
+        if (tierEl) tierEl.value = m.tierBadge || '';
         document.getElementById('modelHeight').value = m.height || 170;
         document.getElementById('modelWeight').value = m.weight || 52;
         document.getElementById('modelDescription').value = m.description || '';
@@ -1157,11 +1248,12 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         document.getElementById('priceDay').value = formatPrice(m.pricePerDay);
         document.getElementById('priceSet').value = formatPrice(m.pricePerSet);
 
-        if (m.photo) {
-            currentPhotoData = m.photo;
+        const safePhoto = m.photo ? safeUrl(m.photo) : '';
+        if (safePhoto) {
+            currentPhotoData = safePhoto;
             const area = document.getElementById('photoUploadArea');
             area.classList.add('has-photo');
-            area.innerHTML = `<img src="${m.photo}" alt="Preview"/>`;
+            area.innerHTML = `<img src="${safePhoto}" alt="Preview"/>`;
         }
 
         // Set category tags
@@ -1195,6 +1287,10 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
     // ===== SAVE MODEL (FIRESTORE) =====
     window.saveModel = async function() {
+        if (!checkModelPermission('model_edit')) {
+            showToast('Từ chối', 'Bạn không có quyền lưu hồ sơ Model', 'lock', 'error');
+            return;
+        }
         const name = document.getElementById('modelName').value.trim();
         if (!name) {
             showToast('Lỗi', 'Vui lòng nhập họ tên người mẫu', 'error_outline', 'error');
@@ -1202,7 +1298,6 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
             return;
         }
 
-        // Disable button to prevent double submit
         const submitBtn = document.getElementById('btnSubmitModel');
         const btnText = document.getElementById('btnSubmitText');
         const originalText = btnText.textContent;
@@ -1220,6 +1315,7 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
             phone: document.getElementById('modelPhone').value.trim(),
             gender: document.getElementById('modelGender').value,
             age: parseInt(document.getElementById('modelAge').value) || 0,
+            tierBadge: document.getElementById('modelTierBadge')?.value || '',
             categories: getSelectedCategories(),
             pricePerSession: parseInt((document.getElementById('priceSession').value || '').replace(/\D/g, '')) || 0,
             pricePerDay: parseInt((document.getElementById('priceDay').value || '').replace(/\D/g, '')) || 0,
@@ -1228,12 +1324,10 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
         try {
             if (editingModelId) {
-                // Update existing document in Firestore
                 const docRef = doc(db, COLLECTION_NAME, editingModelId);
                 await updateDoc(docRef, modelData);
                 showToast('Đã cập nhật', `Hồ sơ ${name} đã được cập nhật`, 'check_circle', 'success');
             } else {
-                // Create new document in Firestore
                 modelData.createdAt = serverTimestamp();
                 modelData.createdBy = localStorage.getItem('nevo_user') || 'Admin';
                 await addDoc(collection(db, COLLECTION_NAME), modelData);
@@ -1241,7 +1335,6 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
             }
             closeModal();
 
-            // If editing current profile, refresh after Firestore sync
             if (editingModelId && currentModelId === editingModelId) {
                 setTimeout(() => openProfile(currentModelId), 300);
             }
@@ -1255,6 +1348,41 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         }
     };
 
+    function renderModelBookings(model) {
+        const listEl = document.getElementById('profileBookingsList');
+        const countEl = document.getElementById('profileBookingsCount');
+        if (!listEl) return;
+        const ordersForModel = getOrdersForModel(model);
+        if (countEl) countEl.textContent = `${ordersForModel.length} đơn`;
+        if (!ordersForModel.length) {
+            listEl.innerHTML = '<p class="text-xs text-slate-400 italic">Chưa có đơn hàng nào book mẫu này.</p>';
+            return;
+        }
+        listEl.innerHTML = ordersForModel.map(o => {
+            const bmEntry = (o.bookedModels || []).find(bm => {
+                if (typeof bm === 'string') return bm.trim().toLowerCase() === (model.name || '').trim().toLowerCase();
+                return bm && (bm.modelId === model.id || (bm.name || bm.modelName || '').trim().toLowerCase() === (model.name || '').trim().toLowerCase());
+            });
+            const fee = bmEntry && typeof bmEntry === 'object' && bmEntry.fee ? `${formatPrice(bmEntry.fee)} đ` : '';
+            const shootDate = (bmEntry && typeof bmEntry === 'object' && bmEntry.shootDate) || o.deployDate || o.deadline || '--';
+            const statusText = o.status || 'Chờ xử lý';
+            const isDone = statusText === 'Hoàn thành';
+            return `
+                <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-rose-200 transition-colors">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <a href="index.html#orders" class="font-mono text-xs font-extrabold text-primary hover:underline">${escapeHtml(o.orderCode || o.id)}</a>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isDone ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">${escapeHtml(statusText)}</span>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-800 truncate mt-0.5">${escapeHtml(o.title || 'Không tiêu đề')}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Ngày quay/chụp: ${escapeHtml(String(shootDate))}</p>
+                    </div>
+                    ${fee ? `<span class="text-xs font-extrabold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg">${escapeHtml(fee)}</span>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
     // ===== VIEW PROFILE =====
     window.openProfile = function(id) {
         const model = models.find(m => m.id === id);
@@ -1262,11 +1390,12 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
         currentModelId = id;
 
-        // Fill profile view
-        document.getElementById('profilePhoto').src = model.photo || '';
-        document.getElementById('profilePhoto').style.display = model.photo ? '' : 'none';
-        document.getElementById('profileName').textContent = model.name;
-        document.getElementById('profileGenderAge').textContent = `${model.gender || 'Chưa rõ'} • ${model.age || '--'} tuổi`;
+        // Fill profile view safely
+        const safePhoto = model.photo ? safeUrl(model.photo) : '';
+        document.getElementById('profilePhoto').src = safePhoto;
+        document.getElementById('profilePhoto').style.display = safePhoto ? '' : 'none';
+        document.getElementById('profileName').textContent = model.name || '';
+        document.getElementById('profileGenderAge').textContent = `${model.gender || 'Chưa rõ'} • ${model.age || '--'} tuổi${model.tierBadge ? ' • ' + model.tierBadge : ''}`;
         document.getElementById('profileHeight').textContent = `${model.height || '--'} cm`;
         document.getElementById('profileWeight').textContent = `${model.weight || '--'} kg`;
         document.getElementById('profileDescription').textContent = model.description || 'Chưa có mô tả';
@@ -1274,9 +1403,15 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         // Facebook
         const fbEl = document.getElementById('profileFacebook');
         if (model.facebookLink) {
-            fbEl.href = model.facebookLink.startsWith('http') ? model.facebookLink : `https://${model.facebookLink}`;
-            fbEl.querySelector('span:last-child').textContent = model.facebookLink;
-            fbEl.classList.remove('hidden');
+            const rawFb = model.facebookLink.startsWith('http') ? model.facebookLink : `https://${model.facebookLink}`;
+            const validFb = safeUrl(rawFb);
+            if (validFb) {
+                fbEl.href = validFb;
+                fbEl.querySelector('span:last-child').textContent = model.facebookLink;
+                fbEl.classList.remove('hidden');
+            } else {
+                fbEl.classList.add('hidden');
+            }
         } else {
             fbEl.classList.add('hidden');
         }
@@ -1293,19 +1428,21 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
         // Categories
         const catContainer = document.getElementById('profileCategories');
-        catContainer.innerHTML = (model.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)}">${c}</span>`).join('');
+        catContainer.innerHTML = (model.categories || []).map(c => `<span class="cat-tag ${getCatClass(c)}">${escapeHtml(c)}</span>`).join('');
 
         // Pricing
         document.getElementById('profilePriceSession').textContent = `${formatPrice(model.pricePerSession)} VND`;
         document.getElementById('profilePriceDay').textContent = `${formatPrice(model.pricePerDay)} VND`;
         document.getElementById('profilePriceSet').textContent = `${formatPrice(model.pricePerSet)} VND`;
 
+        // Linked orders booking history
+        renderModelBookings(model);
+
         // Meta
         const _createdDate = model.createdAt?.toDate ? model.createdAt.toDate() : (model.createdAt ? new Date(model.createdAt) : null);
-        document.getElementById('profileCreatedAt').textContent = _createdDate ? _createdDate.toLocaleDateString('vi-VN') : '--';
+        document.getElementById('profileCreatedAt').textContent = _createdDate && !Number.isNaN(_createdDate.getTime()) ? _createdDate.toLocaleDateString('vi-VN') : '--';
         document.getElementById('profileCreatedBy').textContent = model.createdBy || '--';
 
-        // Show profile view
         showView('profile');
     };
 
@@ -1322,6 +1459,10 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
 
     // ===== EDIT / DELETE =====
     window.editCurrentModel = function() {
+        if (!checkModelPermission('model_edit')) {
+            showToast('Từ chối', 'Bạn không có quyền chỉnh sửa hồ sơ Model', 'lock', 'error');
+            return;
+        }
         if (!currentModelId) return;
         const model = models.find(m => m.id === currentModelId);
         if (!model) return;
@@ -1336,6 +1477,10 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
     };
 
     window.deleteCurrentModel = async function() {
+        if (!checkModelPermission('model_edit')) {
+            showToast('Từ chối', 'Bạn không có quyền xóa hồ sơ Model', 'lock', 'error');
+            return;
+        }
         if (!currentModelId) return;
         const model = models.find(m => m.id === currentModelId);
         if (!model) return;
@@ -1346,7 +1491,6 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
             await deleteDoc(doc(db, COLLECTION_NAME, currentModelId));
             showToast('Đã xóa', `${model.name} đã được xóa khỏi hệ thống`, 'delete', 'error');
             showListView();
-            // renderModelGrid() sẽ được gọi tự động bởi onSnapshot
         } catch (error) {
             console.error('Delete error:', error);
             showToast('Lỗi', 'Không thể xóa. Vui lòng thử lại.', 'error_outline', 'error');
@@ -1379,9 +1523,11 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
     };
 
     window.handleLogout = function() {
-        localStorage.removeItem('nevo_logged_in');
-        localStorage.removeItem('nevo_user');
-        localStorage.removeItem('nevo_role');
+        const savedTheme = localStorage.getItem('nevo_theme');
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('nevo_') && key !== 'nevo_theme') localStorage.removeItem(key);
+        });
+        if (savedTheme) localStorage.setItem('nevo_theme', savedTheme);
         window.location.replace('login.html');
     };
 
@@ -1413,54 +1559,49 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         if (e.target === this) closeModal();
     });
 
-    // ===== ADMIN LINK VISIBILITY =====
-    // Permission helper: checks model_view/model_edit from Firestore roles
+    // ===== PERMISSION HELPERS (RBAC synced with system_roles) =====
+    function findRoleData(roleSlug) {
+        if (!window.__modelAppRoles) return null;
+        if (window.__modelAppRoles[roleSlug]) return window.__modelAppRoles[roleSlug];
+        const lower = (roleSlug || '').toLowerCase();
+        const key = Object.keys(window.__modelAppRoles).find(k => k.toLowerCase() === lower || (window.__modelAppRoles[k]?.slug || '').toLowerCase() === lower);
+        return key ? window.__modelAppRoles[key] : null;
+    }
+
     function checkModelPermission(permKey) {
         const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
         if (role === 'admin') return true;
-        if (window.__modelAppRoles && window.__modelAppRoles[role]) {
-            const roleData = window.__modelAppRoles[role];
-            if (roleData.permissions && roleData.permissions[permKey] !== undefined) {
-                return !!roleData.permissions[permKey];
-            }
+        const roleData = findRoleData(role);
+        if (roleData && roleData.permissions && roleData.permissions[permKey] !== undefined) {
+            return !!roleData.permissions[permKey];
         }
-        // Fallback for manager
-        if (role === 'manager') return true;
+        // Safe defaults when role has no explicit field in Firestore yet
+        if (permKey === 'admin_access') return false;
+        if (permKey === 'model_view' || permKey === 'model_edit') return role === 'manager';
         return false;
     }
 
     function updateNavVisibility() {
-        const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
         const hasAdminAccess = checkModelPermission('admin_access');
-        const hasModelEdit = checkModelPermission('model_edit');
+        const canEdit = checkModelPermission('model_edit');
 
-        // Show/hide admin link
+        // Show/hide admin link strictly via admin_access permission
         const adminLink = document.getElementById('navAdminLink');
         const mobileAdminLink = document.getElementById('mobileAdminLink');
-        if (role === 'admin' || role === 'manager' || hasAdminAccess) {
-            if (adminLink) adminLink.classList.remove('hidden');
-            if (mobileAdminLink) mobileAdminLink.classList.remove('hidden');
-        }
+        if (adminLink) adminLink.classList.toggle('hidden', !hasAdminAccess);
+        if (mobileAdminLink) mobileAdminLink.classList.toggle('hidden', !hasAdminAccess);
 
-        // Show/hide add model button (admin/manager or users with model_edit)
-        const addBtn = document.getElementById('btnAddModel');
-        const editBtn = document.getElementById('btnEditProfile');
-        const deleteBtn = document.getElementById('btnDeleteProfile');
-        const canEdit = role === 'admin' || role === 'manager' || hasModelEdit;
-        if (!canEdit) {
-            if (addBtn) addBtn.classList.add('hidden');
-            if (editBtn) editBtn.classList.add('hidden');
-            if (deleteBtn) deleteBtn.classList.add('hidden');
-        } else {
-            if (addBtn) addBtn.classList.remove('hidden');
-            if (editBtn) editBtn.classList.remove('hidden');
-            if (deleteBtn) deleteBtn.classList.remove('hidden');
-        }
+        // Show/hide add/edit/delete model buttons (including empty state CTA)
+        ['btnAddModel', 'btnEmptyAddModel', 'btnEditProfile', 'btnDeleteProfile'].forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.classList.toggle('hidden', !canEdit);
+        });
 
         // Update user info in nav
         const userName = localStorage.getItem('nevo_user') || 'Admin';
-        const userRole = localStorage.getItem('nevo_role') || 'admin';
-        const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const userRole = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
+        const initials = userName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'NV';
+        const roleNames = { admin: 'Quản trị viên hệ thống', manager: 'Quản lý', user: 'Nhân viên', viewer: 'Người xem' };
         
         const navInit = document.getElementById('navInit');
         const navName = document.getElementById('navName');
@@ -1470,54 +1611,62 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTi
         if (navInit) navInit.textContent = initials;
         if (navName) navName.textContent = userName;
         if (dropName) dropName.textContent = userName;
-        if (dropRole) dropRole.textContent = userRole.toUpperCase();
+        if (dropRole) {
+            const rData = findRoleData(userRole);
+            dropRole.textContent = rData?.name || roleNames[userRole] || userRole.toUpperCase();
+        }
     }
 
-    // ===== LOAD ROLES FROM FIRESTORE (for permission checking) =====
+    // ===== LOAD ROLES FROM FIRESTORE BEFORE ATTACHING DATA LISTENERS =====
     window.__modelAppRoles = {};
     function loadRolesFromFirestore() {
+        const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
+        if (role === 'admin') {
+            initFirestoreListener();
+        }
+
         try {
-            // Use onSnapshot for realtime updates from Firestore system_roles collection
             onSnapshot(collection(db, 'system_roles'), (snapshot) => {
                 const roles = {};
                 snapshot.forEach((docSnap) => {
                     roles[docSnap.id] = docSnap.data();
                 });
                 window.__modelAppRoles = roles;
-                console.log('[Model] Roles loaded:', Object.keys(roles).length, 'roles');
                 
-                // Enforce guard for non-admin/manager users
-                if (window.__modelGuardPending) {
-                    window.__modelGuardPending = false;
-                    const hasView = checkModelPermission('model_view');
-                    if (!hasView) {
-                        console.warn('[Model] User does not have model_view permission, redirecting...');
-                        window.location.replace('index.html');
-                        return;
-                    }
+                const hasView = checkModelPermission('model_view');
+                if (!hasView) {
+                    console.warn('[Model] User does not have model_view permission, redirecting...');
+                    window.location.replace('index.html');
+                    return;
                 }
-                
-                // Refresh UI based on new permissions
+                window.__modelGuardPending = false;
+                initFirestoreListener();
+                updateNavVisibility();
+            }, (error) => {
+                console.error('[Model] Roles listener error:', error);
+                if (!checkModelPermission('model_view')) {
+                    window.location.replace('index.html');
+                    return;
+                }
+                window.__modelGuardPending = false;
+                initFirestoreListener();
                 updateNavVisibility();
             });
         } catch (e) {
             console.error('[Model] Error loading roles:', e);
-            // Fallback: if roles fail to load, enforce guard based on role slug only
-            if (window.__modelGuardPending) {
-                window.__modelGuardPending = false;
-                const role = (localStorage.getItem('nevo_role') || '').toLowerCase();
-                if (role !== 'admin' && role !== 'manager') {
-                    window.location.replace('index.html');
-                }
+            if (!checkModelPermission('model_view')) {
+                window.location.replace('index.html');
+                return;
             }
+            window.__modelGuardPending = false;
+            initFirestoreListener();
         }
     }
 
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', function() {
-        initFirestoreListener();
-        loadRolesFromFirestore();
         updateNavVisibility();
+        loadRolesFromFirestore();
 
         // Mobile menu button
         const mobileBtn = document.getElementById('mobileMenuBtn');

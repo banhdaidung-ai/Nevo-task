@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Quản trị hệ thống — Task Manager</title>
     <meta name="description" content="Trang quản trị người dùng và phân quyền hệ thống NEVO"/>
+    <link rel="manifest" href="manifest.webmanifest"/>
     <!-- Auth + Admin Guard -->
     <script>
         (function() {
@@ -14,7 +15,7 @@
             }
             var role = (localStorage.getItem('nevo_role') || '').toLowerCase();
             var hasAdminAccess = localStorage.getItem('nevo_admin_access') === 'true';
-            if (role !== 'admin' && role !== 'manager' && !hasAdminAccess) {
+            if (role !== 'admin' && !hasAdminAccess) {
                 window.location.replace('index.html');
             }
         })();
@@ -115,6 +116,7 @@
             font-weight: 500; transition: all 0.2s ease; outline: none;
         }
         .form-input:focus { background: #E8EDF5; border-color: rgba(198,40,40,0.35); box-shadow: 0 0 0 4px rgba(198,40,40,0.08); }
+        .form-input:disabled { opacity: 0.65; cursor: not-allowed; }
         .form-input::placeholder { color: #94A3B8; font-weight: 400; }
         select.form-input { cursor: pointer; }
 
@@ -159,6 +161,8 @@
         .toast.show { transform:translateX(0); }
         .toast-success { background:#16a34a; color:#fff; }
         .toast-error   { background:#C62828; color:#fff; }
+        .toast-warning { background:#d97706; color:#fff; }
+        .toast-info    { background:#2563eb; color:#fff; }
         .toast .material-symbols-outlined { font-variation-settings:'FILL' 1,'wght' 500; font-size:20px; }
 
         /* Search input */
@@ -221,12 +225,12 @@
                         <span class="material-symbols-outlined text-slate-600">notifications</span>
                     </button>
                 </div>
-                <button class="p-2 rounded-full hover:bg-slate-50 transition-all duration-200 hidden sm:block">
+                <button onclick="switchTab('integrations')" title="Cấu hình & Webhook" class="p-2 rounded-full hover:bg-slate-50 transition-all duration-200 hidden sm:block">
                     <span class="material-symbols-outlined text-slate-600">settings</span>
                 </button>
                 <div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
                 <!-- Create Order CTA -->
-                <a href="index.html" class="bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 md:px-4 py-2 rounded-lg font-headline font-semibold text-sm flex items-center gap-2 shadow-lg shadow-red-600/20 active:scale-95 transition-transform duration-150 hover:opacity-90">
+                <a href="index.html#create-order" class="bg-gradient-to-r from-red-600 to-rose-600 text-white px-3 md:px-4 py-2 rounded-lg font-headline font-semibold text-sm flex items-center gap-2 shadow-lg shadow-red-600/20 active:scale-95 transition-transform duration-150 hover:opacity-90">
                     <span class="material-symbols-outlined text-sm">add</span>
                     <span class="hidden sm:inline">Tạo đơn mới</span>
                 </a>
@@ -246,7 +250,7 @@
                             <p class="text-[10px] text-slate-400 mt-0.5" id="dropRole">Quản trị viên hệ thống</p>
                         </div>
                         <div class="p-1.5">
-                            <a href="index.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                            <a href="index.html#profile" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                                 <span class="material-symbols-outlined text-[18px]">account_circle</span>
                                 Hồ sơ cá nhân
                             </a>
@@ -345,9 +349,9 @@
         <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Cài đặt khác</p>
             <nav class="space-y-1">
-                <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 cursor-not-allowed">
-                    <span class="material-symbols-outlined text-[20px]">settings</span>
-                    Cấu hình chung
+                <button onclick="switchTab('integrations')" id="tab-integrations" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                    <span class="material-symbols-outlined text-[20px]">webhook</span>
+                    Cấu hình &amp; Webhook
                 </button>
                 <button onclick="switchTab('activities')" id="tab-activities" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
                     <span class="material-symbols-outlined text-[20px]">history</span>
@@ -363,7 +367,7 @@
                     <span class="text-[10px] font-bold uppercase tracking-wider">Hỗ trợ kỹ thuật</span>
                 </div>
                 <p class="text-[11px] text-slate-500 leading-relaxed mb-3">Nếu gặp sự cố vận hành, vui lòng liên hệ bộ phận IT Creative.</p>
-                <button class="w-full py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors">Gửi yêu cầu</button>
+                <a href="support.html" target="_blank" class="block text-center w-full py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors">Gửi yêu cầu</a>
             </div>
         </div>
     </aside>
@@ -936,6 +940,115 @@
             </div>
         </div>
 
+        <!-- SECTION: INTEGRATIONS & WEBHOOKS -->
+        <div id="section-integrations" class="tab-content hidden">
+            <div class="mb-8 animate-fade-in-up">
+                <p class="text-emerald-600 font-bold tracking-widest text-[11px] uppercase mb-1.5">Tự động hóa &amp; Tích hợp</p>
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 class="font-headline font-extrabold text-3xl text-slate-900 tracking-tight">Cấu hình &amp; Webhook<span class="text-emerald-600">.</span></h1>
+                        <p class="text-slate-500 text-sm mt-1.5">Kết nối thông báo tự động thời gian thực sang GapoWork, Telegram và quản lý PWA</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="testIntegrationWebhook()" id="btnTestWebhook" class="btn-secondary">
+                            <span class="material-symbols-outlined text-[18px]">send</span>
+                            Gửi tin thử nghiệm
+                        </button>
+                        <button onclick="saveIntegrationSettings()" id="btnSaveIntegrations" class="btn-primary !bg-emerald-600">
+                            <span class="material-symbols-outlined text-[18px]">save</span>
+                            Lưu cấu hình
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- GapoWork & Telegram Endpoints -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 space-y-5">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined">hub</span>
+                            </div>
+                            <div>
+                                <h3 class="font-headline font-bold text-slate-900 text-base">Kênh nhận thông báo (Outbound Webhook)</h3>
+                                <p class="text-xs text-slate-400">Tự động bắn tin nhắn vào nhóm chat khi có sự kiện quan trọng</p>
+                            </div>
+                        </div>
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="intEnabled" class="w-5 h-5 rounded accent-emerald-600 cursor-pointer"/>
+                            <span class="text-xs font-bold text-slate-700">Kích hoạt</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">GapoWork / Slack / Discord Incoming Webhook URL</label>
+                        <input type="url" id="intGapoWebhookUrl" class="form-input" placeholder="https://open.gapowork.vn/webhook/..."/>
+                        <p class="text-[11px] text-slate-400 mt-1">Hỗ trợ chuẩn JSON payload <code class="bg-slate-100 px-1 rounded">{"text": "..."}</code></p>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 space-y-3">
+                        <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sky-500 text-[16px]">near_me</span> Telegram Bot API
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Bot Token</label>
+                                <input type="password" id="intTelegramBotToken" class="form-input" placeholder="123456789:AAH..."/>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Chat ID / Group ID</label>
+                                <input type="text" id="intTelegramChatId" class="form-input" placeholder="-1001234567890"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Triggers & PWA Info -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 space-y-4">
+                        <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined">notifications_active</span>
+                            </div>
+                            <div>
+                                <h3 class="font-headline font-bold text-slate-900 text-base">Sự kiện kích hoạt gửi tin</h3>
+                                <p class="text-xs text-slate-400">Chọn các loại sự kiện muốn đẩy sang nhóm chat</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <label class="perm-checkbox">
+                                <input type="checkbox" class="int-event-cb" value="new_order" checked/>
+                                <span class="text-xs font-semibold text-slate-700">Đơn hàng mới tạo</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" class="int-event-cb" value="status_change" checked/>
+                                <span class="text-xs font-semibold text-slate-700">Đổi trạng thái / Hoàn thành</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" class="int-event-cb" value="proofing" checked/>
+                                <span class="text-xs font-semibold text-slate-700">Gửi duyệt &amp; Nghiệm thu File</span>
+                            </label>
+                            <label class="perm-checkbox">
+                                <input type="checkbox" class="int-event-cb" value="mention" checked/>
+                                <span class="text-xs font-semibold text-slate-700">Nhắc tên @Tag bình luận</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="material-symbols-outlined text-red-400">install_mobile</span>
+                            <h3 class="font-headline font-bold text-sm">Ứng dụng PWA &amp; Command Palette</h3>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Hệ thống đã tích hợp chuẩn Progressive Web App (<code class="text-emerald-300">manifest.webmanifest</code> + <code class="text-emerald-300">sw.js</code>) và tìm kiếm toàn cục <kbd class="px-1.5 py-0.5 bg-white/10 rounded text-[11px] font-mono">Ctrl / ⌘ + K</kbd> tại trang điều hành chính.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer class="mt-12 py-8 border-t border-slate-200/60 text-center">
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600 transition-colors transition-all cursor-default">
                 © 2026 Admin Dashboard · Nevo-Task System
@@ -1129,7 +1242,7 @@
                             <p class="text-[9px] font-bold text-teal-500 uppercase tracking-wider flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-[12px]">group</span> Sửa phân công nhân sự
                             </p>
-                            <div class="grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <label class="perm-checkbox">
                                     <input type="checkbox" data-perm="orders_edit_stylist">
                                     <span class="text-xs font-semibold">Stylist</span>
@@ -1141,6 +1254,10 @@
                                 <label class="perm-checkbox">
                                     <input type="checkbox" data-perm="orders_edit_photo">
                                     <span class="text-xs font-semibold">Photo</span>
+                                </label>
+                                <label class="perm-checkbox">
+                                    <input type="checkbox" data-perm="orders_edit_design">
+                                    <span class="text-xs font-semibold">Design</span>
                                 </label>
                             </div>
                         </div>
@@ -1268,6 +1385,22 @@
                                 <div class="flex flex-col">
                                     <span class="text-xs font-semibold flex items-center gap-1.5">
                                         <span class="material-symbols-outlined text-[14px] text-pink-600">edit</span> Sửa Trang Model
+                                    </span>
+                                </div>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="products_view">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-orange-600">inventory_2</span> Xem Sản phẩm mới
+                                    </span>
+                                </div>
+                            </label>
+                            <label class="perm-checkbox w-full">
+                                <input type="checkbox" data-perm="products_edit">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-semibold flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[14px] text-orange-600">edit_square</span> Sửa Sản phẩm mới
                                     </span>
                                 </div>
                             </label>
@@ -1411,10 +1544,11 @@
                         <p class="text-[9px] font-bold text-teal-500 uppercase tracking-wider flex items-center gap-1">
                             <span class="material-symbols-outlined text-[11px]">group</span> Sửa phân công nhân sự
                         </p>
-                        <div class="grid grid-cols-3 gap-1.5">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_stylist" disabled><span class="text-[10px] font-semibold">Stylist</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_video" disabled><span class="text-[10px] font-semibold">Video</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_photo" disabled><span class="text-[10px] font-semibold">Photo</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="orders_edit_design" disabled><span class="text-[10px] font-semibold">Design</span></label>
                         </div>
                     </div>
                     <!-- Dữ liệu nhạy cảm -->
@@ -1435,6 +1569,7 @@
                         <div class="grid grid-cols-3 gap-1.5">
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="planning_view" disabled><span class="text-[10px] font-semibold">Xem kế hoạch</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="planning_edit" disabled><span class="text-[10px] font-semibold">Sửa kế hoạch</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="planning_delete" disabled><span class="text-[10px] font-semibold">Xóa dòng KH</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="finance_view" disabled><span class="text-[10px] font-semibold">Xem tài chính</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="finance_edit" disabled><span class="text-[10px] font-semibold">Sửa tài chính</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="reports_view" disabled><span class="text-[10px] font-semibold">Xem báo cáo</span></label>
@@ -1444,6 +1579,8 @@
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="admin_access" disabled><span class="text-[10px] font-semibold">Trang quản trị</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="model_view" disabled><span class="text-[10px] font-semibold">Xem Model</span></label>
                             <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="model_edit" disabled><span class="text-[10px] font-semibold">Sửa Model</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="products_view" disabled><span class="text-[10px] font-semibold">Xem SP mới</span></label>
+                            <label class="perm-checkbox !py-1.5 !px-2"><input type="checkbox" data-user-perm="products_edit" disabled><span class="text-[10px] font-semibold">Sửa SP mới</span></label>
                         </div>
                     </div>
                 </div>
@@ -1475,7 +1612,7 @@
                 <span class="material-symbols-outlined text-red-600 text-3xl" style="font-variation-settings:'FILL' 1,'wght' 500">warning</span>
             </div>
             <h2 class="font-headline font-bold text-slate-900 text-lg mb-2">Xác nhận xóa?</h2>
-            <p class="text-slate-500 text-sm mb-1">Bạn sắp xóa người dùng:</p>
+            <p id="deleteEntityLabel" class="text-slate-500 text-sm mb-1">Bạn sắp xóa người dùng:</p>
             <p id="deleteUserName" class="font-bold text-slate-800 text-base mb-1"></p>
             <p id="deleteUserEmpId" class="text-xs text-slate-400 mb-5"></p>
             <p class="text-xs text-red-600 bg-red-50 rounded-lg px-4 py-2 mb-6">⚠️ Hành động này không thể hoàn tác</p>
@@ -1513,16 +1650,12 @@
       appId: "1:1031918825498:web:16f85584b81072db0be1a3"
     };
 
-    // Helper function to hash password with SHA-256 (Native Client-side)
-    async function hashPassword(password) {
-        if (!password) return "";
-        const msgBuffer = new TextEncoder().encode(password);
-        const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-        return hashHex;
-    }
+    import { hashPassword } from "./security-utils.js";
     window.hashPassword = hashPassword;
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
 
     const app = initializeApp(firebaseConfig);
     let db;
@@ -1543,11 +1676,30 @@
         collection, addDoc, getDocs, onSnapshot, query, orderBy, 
         serverTimestamp, setDoc, doc, deleteDoc, updateDoc, getDoc, where, writeBatch, limit, Timestamp
     };
-    
-    console.log("Firebase System Initialized with Persistent Cache");
-    
-    // Trigger initial data load from UI script
-    if (window.startSync) window.startSync();
+
+    // Live RBAC verification against Firestore system_roles before attaching data listeners
+    (async function verifyLiveAdminAccessAndStart() {
+        const currentRole = (localStorage.getItem('nevo_role') || '').toLowerCase();
+        if (currentRole !== 'admin') {
+            try {
+                const roleSnap = await getDoc(doc(db, 'system_roles', currentRole));
+                const allowed = roleSnap.exists() && !!(roleSnap.data()?.permissions?.admin_access);
+                localStorage.setItem('nevo_admin_access', allowed ? 'true' : 'false');
+                if (!allowed) {
+                    window.location.replace('index.html');
+                    return;
+                }
+            } catch (err) {
+                console.error('Admin RBAC check failed:', err);
+                if (localStorage.getItem('nevo_admin_access') !== 'true') {
+                    window.location.replace('index.html');
+                    return;
+                }
+            }
+        }
+        console.log("Firebase System Initialized with Persistent Cache");
+        if (window.startSync) window.startSync();
+    })();
 </script>
 
 <!-- ====== UI & BUSINESS LOGIC ====== -->
@@ -1612,26 +1764,31 @@
     ];
 
     const DEFAULT_ROLES = [
-        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:true, planning_view:true, planning_edit:true, finance_view:true, finance_edit:true, reports_view:true, schedule_view:true, schedule_create_own:true, schedule_manage_all:true, admin_access:true, model_view:true, model_edit:true } },
-        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_status:true, orders_edit_costs:false, planning_view:true, planning_edit:false, finance_view:true, finance_edit:false, reports_view:true, schedule_view:true, schedule_create_own:true, schedule_manage_all:true, admin_access:false, model_view:true, model_edit:true } },
-        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:false, schedule_view:true, schedule_create_own:true, schedule_manage_all:false, admin_access:false, model_view:false, model_edit:false } },
-        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:false, orders_edit_title:false, orders_edit_note:false, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, finance_view:false, finance_edit:false, reports_view:true, schedule_view:true, schedule_create_own:false, schedule_manage_all:false, admin_access:false, model_view:false, model_edit:false } }
+        { name: "Administrator", slug: "admin", description: "Toàn quyền quản trị hệ thống", permissions: { orders_view:true, orders_create:true, orders_delete:true, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_design:true, orders_edit_status:true, orders_edit_costs:true, planning_view:true, planning_edit:true, planning_delete:true, finance_view:true, finance_edit:true, reports_view:true, schedule_view:true, schedule_create_own:true, schedule_manage_all:true, admin_access:true, model_view:true, model_edit:true, products_view:true, products_edit:true } },
+        { name: "Manager", slug: "manager", description: "Quản lý phòng ban, duyệt đơn hàng", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:true, orders_edit_department:true, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:true, orders_edit_deployDate:true, orders_edit_deadline:true, orders_edit_stylist:true, orders_edit_video:true, orders_edit_photo:true, orders_edit_design:true, orders_edit_status:true, orders_edit_costs:false, planning_view:true, planning_edit:false, planning_delete:false, finance_view:true, finance_edit:false, reports_view:true, schedule_view:true, schedule_create_own:true, schedule_manage_all:true, admin_access:false, model_view:true, model_edit:true, products_view:true, products_edit:true } },
+        { name: "User", slug: "user", description: "Nhân viên vận hành cơ bản", permissions: { orders_view:true, orders_create:true, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:true, orders_edit_title:true, orders_edit_note:true, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_design:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, planning_delete:false, finance_view:false, finance_edit:false, reports_view:false, schedule_view:true, schedule_create_own:true, schedule_manage_all:false, admin_access:false, model_view:false, model_edit:false, products_view:true, products_edit:true } },
+        { name: "Viewer", slug: "viewer", description: "Chỉ xem dữ liệu, không được sửa", permissions: { orders_view:true, orders_create:false, orders_delete:false, orders_edit_requester:false, orders_edit_department:false, orders_edit_category:false, orders_edit_title:false, orders_edit_note:false, orders_edit_orderDate:false, orders_edit_deployDate:false, orders_edit_deadline:false, orders_edit_stylist:false, orders_edit_video:false, orders_edit_photo:false, orders_edit_design:false, orders_edit_status:false, orders_edit_costs:false, planning_view:false, planning_edit:false, planning_delete:false, finance_view:false, finance_edit:false, reports_view:true, schedule_view:true, schedule_create_own:false, schedule_manage_all:false, admin_access:false, model_view:false, model_edit:false, products_view:true, products_edit:false } }
     ];
 
     const DEFAULT_CATEGORIES = [
         "Video", "Hình Ảnh", "Livestream", "Giả Live"
     ];
 
+    const VALID_ADMIN_TABS = ['overview', 'users', 'depts', 'statuses', 'categories', 'roles', 'activities', 'orderwindow', 'integrations'];
+
     // =============================================
     // FIREBASE SYNC (Linked to window.db)
     // =============================================
     window.startSync = async function() {
-        if (!window.db) return;
+        if (!window.db || window._adminSyncStarted) return;
+        window._adminSyncStarted = true;
         
         // Handle initial tab from Hash
         const hash = window.location.hash.replace('#', '');
-        if (hash && ['users', 'depts', 'statuses', 'categories', 'activities', 'orderwindow'].includes(hash)) {
+        if (hash && VALID_ADMIN_TABS.includes(hash)) {
             switchTab(hash);
+        } else {
+            switchTab('overview');
         }
         
         // --- 1. USERS SYNC ---
@@ -1646,11 +1803,12 @@
             console.log("Kiểm tra nâng cấp bảo mật mật khẩu...");
             for (const docSnap of snapUsers.docs) {
                 const u = docSnap.data();
+                const targetDocId = docSnap.id;
                 if (u.password && u.password.length !== 64) {
-                    console.log(`Nâng cấp mật khẩu bảo mật cho tài khoản: ${u.empId}`);
+                    console.log(`Nâng cấp mật khẩu bảo mật cho tài khoản: ${u.empId || targetDocId}`);
                     const hashedPwd = await window.hashPassword(u.password);
-                    await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, u.empId), {
-                        ...u,
+                    await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, targetDocId), {
+                        empId: u.empId || targetDocId,
                         password: hashedPwd
                     }, { merge: true });
                 }
@@ -1729,11 +1887,11 @@
             updateRoleOptions();
         });
 
-        // --- 6. ACTIVITIES SYNC (Limit to 50 to conserve reads) ---
+        // --- 6. ACTIVITIES SYNC (Limit to 200) ---
         const qActivities = window.fs.query(
             window.fs.collection(window.db, "activities"), 
             window.fs.orderBy("createdAt", "desc"), 
-            window.fs.limit(50)
+            window.fs.limit(200)
         );
         window.fs.onSnapshot(qActivities, (snap) => {
             window.activities = [];
@@ -1748,6 +1906,9 @@
             snap.forEach(doc => orders.push({ id: doc.id, ...doc.data() }));
             renderDashboard();
         });
+
+        // --- 8. INTEGRATIONS SETTINGS ---
+        loadIntegrationSettings();
     }
 
     // =============================================
@@ -1757,18 +1918,31 @@
     // DASHBOARD LOGIC
     // =============================================
     function renderDashboard() {
-        if (!orders.length) return;
+        const total = orders.length;
+        if (!total) {
+            document.getElementById('stat-total-orders').textContent = '0';
+            document.getElementById('stat-pending-orders').textContent = '0';
+            document.getElementById('stat-completed-orders').textContent = '0';
+            document.getElementById('stat-total-budget').textContent = '0đ';
+            document.getElementById('stat-pending-percent').textContent = '0%';
+            document.getElementById('stat-completed-percent').textContent = '0%';
+            if (statusChart) { statusChart.destroy(); statusChart = null; }
+            if (deptChart) { deptChart.destroy(); deptChart = null; }
+            return;
+        }
 
         // 1. Calculate Stats
-        const total = orders.length;
-        const pending = orders.filter(o => !['Hoàn thành', 'Đã hủy'].includes(o.status)).length;
+        const pending = orders.filter(o => !['Hoàn thành', 'Đã hủy', 'Từ chối'].includes(o.status)).length;
         const completed = orders.filter(o => o.status === 'Hoàn thành').length;
         
         let totalBudget = 0;
         orders.forEach(o => {
-            if (o.budget) {
-                const val = parseFloat(o.budget.toString().replace(/,/g, '')) || 0;
-                totalBudget += val;
+            const rawCost = o.totalCost !== undefined ? o.totalCost : o.budget;
+            if (rawCost !== undefined && rawCost !== null && rawCost !== '') {
+                const cleaned = typeof rawCost === 'number'
+                    ? rawCost
+                    : Number(String(rawCost).replace(/\./g, '').replace(/,/g, '').replace(/[^0-9-]/g, ''));
+                if (!Number.isNaN(cleaned)) totalBudget += cleaned;
             }
         });
 
@@ -1848,8 +2022,9 @@
     }
 
     function getRoleLabel(slug) {
-        const r = systemRoles.find(x => x.slug === slug);
-        return r ? r.name : (slug.charAt(0).toUpperCase() + slug.slice(1));
+        const s = String(slug || 'user');
+        const r = systemRoles.find(x => (x.slug || '').toLowerCase() === s.toLowerCase());
+        return r ? r.name : (s.charAt(0).toUpperCase() + s.slice(1));
     }
 
     const ROLE_BADGE  = { admin:'badge-admin', manager:'badge-manager', user:'badge-user', viewer:'badge-viewer' };
@@ -1857,12 +2032,14 @@
     const STATUS_LABEL = { active:'Hoạt động', inactive:'Bị khóa' };
 
     function renderTable() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const role   = document.getElementById('roleFilter').value;
-        const status = document.getElementById('statusFilter').value;
+        const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+        const role   = document.getElementById('roleFilter')?.value || '';
+        const status = document.getElementById('statusFilter')?.value || '';
 
         let filtered = users.filter(u => {
-            const matchSearch = !search || u.name.toLowerCase().includes(search) || u.empId.toLowerCase().includes(search) || (u.email||'').toLowerCase().includes(search);
+            const uName = (u.name || '').toLowerCase();
+            const uEmpId = (u.empId || u.id || '').toLowerCase();
+            const matchSearch = !search || uName.includes(search) || uEmpId.includes(search) || (u.email||'').toLowerCase().includes(search);
             const matchRole   = !role   || u.role === role;
             const matchStatus = !status || u.status === status;
             return matchSearch && matchRole && matchStatus;
@@ -1884,25 +2061,25 @@
                 <td class="px-5 py-3.5 text-xs font-bold text-slate-400">${i + 1}</td>
                 <td class="px-5 py-3.5">
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${avatarBg(u.role)}">${(u.name||'??').split(' ').map(x=>x[0]).slice(-2).join('').toUpperCase()}</div>
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 ${avatarBg(u.role)}">${escHtml((u.name||'??').split(' ').filter(Boolean).map(x=>x[0]).slice(-2).join('').toUpperCase())}</div>
                         <div>
                             <p class="text-sm font-semibold text-slate-800">${escHtml(u.name)}</p>
-                            <p class="text-[11px] text-slate-400 mt-0.5">${u.createdAt ? 'Tạo: ' + u.createdAt : ''}</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">${u.createdAt ? 'Tạo: ' + escHtml(u.createdAt) : ''}</p>
                         </div>
                     </div>
                 </td>
-                <td class="px-5 py-3.5 font-mono text-sm font-semibold text-primary">${escHtml(u.empId)}</td>
+                <td class="px-5 py-3.5 font-mono text-sm font-semibold text-primary">${escHtml(u.empId || u.id)}</td>
                 <td class="px-5 py-3.5 text-sm text-slate-500">${escHtml(u.email||'—')}</td>
                 <td class="px-5 py-3.5 text-sm text-slate-500 font-medium">${escHtml(u.phone||'—')}</td>
                 <td class="px-5 py-3.5 text-xs font-medium text-slate-500">${escHtml(u.dept||'—')}</td>
-                <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${getRoleLabel(u.role)}</span></td>
-                <td class="px-5 py-3.5"><span class="badge ${STATUS_BADGE[u.status]}">${STATUS_LABEL[u.status]||u.status}</span></td>
+                <td class="px-5 py-3.5"><span class="badge ${ROLE_BADGE[u.role]||'badge-user'}">${escHtml(getRoleLabel(u.role))}</span></td>
+                <td class="px-5 py-3.5"><span class="badge ${STATUS_BADGE[u.status]}">${escHtml(STATUS_LABEL[u.status]||u.status)}</span></td>
                 <td class="px-5 py-3.5">
                     <div class="flex items-center gap-2 justify-end">
-                        <button class="btn-icon-sm btn-edit" onclick="openEditModal('${u.id}')" title="Chỉnh sửa">
+                        <button class="btn-icon-sm btn-edit" onclick="openEditModal('${escJs(u.id)}')" title="Chỉnh sửa">
                             <span class="material-symbols-outlined text-[17px]">edit</span>
                         </button>
-                        <button class="btn-icon-sm btn-delete" onclick="openDeleteModal('${u.id}')" title="Xóa" ${u.empId==='admin'?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
+                        <button class="btn-icon-sm btn-delete" onclick="openDeleteModal('${escJs(u.id)}')" title="Xóa" ${(u.empId==='admin' || u.id==='admin')?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
                             <span class="material-symbols-outlined text-[17px]">delete</span>
                         </button>
                     </div>
@@ -1917,7 +2094,11 @@
     }
 
     function escHtml(str) {
-        return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function escJs(str) {
+        return String(str||'').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
 
     // =============================================
@@ -2016,7 +2197,7 @@
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-indigo-500 text-sm">shield</span>
                         <span class="text-sm font-bold text-slate-800">${escHtml(r.name)}</span>
-                        <code class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">${r.slug}</code>
+                        <code class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">${escHtml(r.slug)}</code>
                     </div>
                 </td>
                 <td class="px-6 py-4 text-xs text-slate-500">${escHtml(r.description || '—')}</td>
@@ -2027,8 +2208,8 @@
                 </td>
                 <td class="px-6 py-4 text-right">
                     <div class="flex items-center gap-2 justify-end">
-                        <button class="btn-icon-sm btn-edit" onclick="openRoleModal('${r.id}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
-                        <button class="btn-icon-sm btn-delete" onclick="openDeleteModal('${r.id}', 'role')" ${['admin','user','viewer','manager'].includes(r.slug) ? 'disabled style="opacity:0.3"' : ''}><span class="material-symbols-outlined text-[17px]">delete</span></button>
+                        <button class="btn-icon-sm btn-edit" onclick="openRoleModal('${escJs(r.id)}')"><span class="material-symbols-outlined text-[17px]">edit</span></button>
+                        <button class="btn-icon-sm btn-delete" onclick="openDeleteModal('${escJs(r.id)}', 'role')" ${['admin','user','viewer','manager'].includes((r.slug||'').toLowerCase()) ? 'disabled style="opacity:0.3;cursor:not-allowed"' : ''}><span class="material-symbols-outlined text-[17px]">delete</span></button>
                     </div>
                 </td>
             </tr>
@@ -2043,7 +2224,7 @@
         const currentVal = select.value;
         const currentFilter = filter ? filter.value : '';
 
-        const optionsHtml = (systemRoles || []).map(r => `<option value="${r.slug}">${r.name}</option>`).join('');
+        const optionsHtml = (systemRoles || []).map(r => `<option value="${escHtml(r.slug)}">${escHtml(r.name)}</option>`).join('');
         select.innerHTML = optionsHtml;
         if (currentVal) select.value = currentVal;
 
@@ -2071,6 +2252,7 @@
         document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-red-500">*</span>';
         document.getElementById('editUserId').value = '';
         ['fieldName','fieldEmpId','fieldPassword','fieldEmail','fieldPhone'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('fieldEmpId').disabled = false;
         document.getElementById('fieldDept').value   = '';
         document.getElementById('fieldRole').value   = 'user';
         document.getElementById('fieldStatus').value = 'active';
@@ -2086,14 +2268,15 @@
         document.getElementById('btnSaveText').textContent = 'Lưu thay đổi';
         document.getElementById('passLabel').innerHTML = 'Mật khẩu <span class="text-slate-400 font-normal">(để trống = không đổi)</span>';
         document.getElementById('editUserId').value = id;
-        document.getElementById('fieldName').value     = u.name;
-        document.getElementById('fieldEmpId').value    = u.empId;
+        document.getElementById('fieldName').value     = u.name || '';
+        document.getElementById('fieldEmpId').value    = u.empId || id;
+        document.getElementById('fieldEmpId').disabled = true;
         document.getElementById('fieldPassword').value = '';
-        document.getElementById('fieldEmail').value    = u ? (u.email || '') : '';
-        document.getElementById('fieldPhone').value    = u ? (u.phone || '') : '';
+        document.getElementById('fieldEmail').value    = u.email || '';
+        document.getElementById('fieldPhone').value    = u.phone || '';
         document.getElementById('fieldDept').value     = u.dept || '';
-        document.getElementById('fieldRole').value     = u.role;
-        document.getElementById('fieldStatus').value   = u.status;
+        document.getElementById('fieldRole').value     = u.role || 'user';
+        document.getElementById('fieldStatus').value   = u.status || 'active';
         hideModalError();
 
         // Load permissions from selected role (synced with Role permissions)
@@ -2110,7 +2293,7 @@
         hideModalError();
         const id       = document.getElementById('editUserId').value;
         const name     = document.getElementById('fieldName').value.trim();
-        const empId    = document.getElementById('fieldEmpId').value.trim();
+        const empId    = id ? (users.find(x => x.id === id)?.empId || id) : document.getElementById('fieldEmpId').value.trim();
         const password = document.getElementById('fieldPassword').value;
         const email    = document.getElementById('fieldEmail').value.trim();
         const phone    = document.getElementById('fieldPhone').value.trim();
@@ -2120,9 +2303,11 @@
 
         if (!name)  return showModalError('Vui lòng nhập họ và tên.');
         if (!empId) return showModalError('Vui lòng nhập mã nhân viên.');
+        if (/[\/\\]/.test(empId)) return showModalError('Mã nhân viên không được chứa ký tự gạch chéo (/ hoặc \\).');
         if (!id && !password) return showModalError('Vui lòng nhập mật khẩu.');
+        if (password && password.length < 4) return showModalError('Mật khẩu phải có tối thiểu 4 ký tự.');
         
-        const isDuplicate = users.find(u => u.empId === empId && u.id !== id);
+        const isDuplicate = users.find(u => (u.empId || u.id || '').toLowerCase() === empId.toLowerCase() && u.id !== id);
         if (isDuplicate) return showModalError('Mã nhân viên đã tồn tại trên hệ thống.');
 
         const btn = document.getElementById('btnSave');
@@ -2130,6 +2315,7 @@
         btn.textContent = 'Đang lưu...';
 
         try {
+            const targetDocId = id || empId;
             const userData = {
                 name, empId, email, phone, dept, role, status,
                 updatedAt: new Date().toISOString()
@@ -2139,7 +2325,7 @@
 
             if (!window.db) throw new Error("Firebase not ready");
 
-            await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, empId), userData, { merge: true });
+            await window.fs.setDoc(window.fs.doc(window.db, USERS_COLLECTION, targetDocId), userData, { merge: true });
 
             showToast(id ? 'Cập nhật thành công!' : 'Thêm người dùng thành công!');
             
@@ -2158,27 +2344,36 @@
     }
 
     window.openDeleteModal = function(id, type = 'user') {
-        let name = '', sub = '';
+        let name = '', sub = '', label = 'Bạn sắp xóa mục này:';
         deleteTargetId = id;
         deleteTargetType = type;
 
         if (type === 'user') {
             const u = users.find(x => x.id === id);
-            name = u.name; sub = u.empId;
+            if (!u || u.empId === 'admin' || u.id === 'admin') return;
+            name = u.name || u.empId || id;
+            sub = u.empId || id;
+            label = 'Bạn sắp xóa người dùng:';
         } else if (type === 'dept') {
             const d = departments.find(x => x.id === id);
-            name = d.name; sub = 'Phòng ban';
+            if (!d) return;
+            name = d.name; sub = 'Phòng ban'; label = 'Bạn sắp xóa phòng ban:';
         } else if (type === 'status') {
             const s = orderStatuses.find(x => x.id === id);
-            name = s.name; sub = 'Trạng thái đơn';
+            if (!s) return;
+            name = s.name; sub = 'Trạng thái đơn'; label = 'Bạn sắp xóa trạng thái đơn:';
         } else if (type === 'category') {
             const c = orderCategories.find(x => x.id === id);
-            name = c.name; sub = 'Thể loại đơn';
+            if (!c) return;
+            name = c.name; sub = 'Thể loại đơn'; label = 'Bạn sắp xóa thể loại đơn:';
         } else if (type === 'role') {
             const r = systemRoles.find(x => x.id === id);
-            name = r.name; sub = 'Nhóm quyền';
+            if (!r || ['admin','user','viewer','manager'].includes((r.slug || '').toLowerCase())) return;
+            name = r.name; sub = 'Nhóm quyền'; label = 'Bạn sắp xóa nhóm quyền:';
         }
 
+        const labelEl = document.getElementById('deleteEntityLabel');
+        if (labelEl) labelEl.textContent = label;
         document.getElementById('deleteUserName').textContent = name;
         document.getElementById('deleteUserEmpId').textContent = sub;
         document.getElementById('deleteModal').classList.remove('hidden');
@@ -2187,9 +2382,10 @@
     function getEffectiveRolePerm(roleSlug, perms, permKey) {
         if (perms && perms[permKey] !== undefined) return !!perms[permKey];
         const s = (roleSlug || '').toLowerCase();
-        if (permKey === 'schedule_view') return ['admin', 'manager', 'user', 'member', 'thành viên', 'viewer'].includes(s);
-        if (permKey === 'schedule_create_own') return ['admin', 'manager', 'user', 'member', 'thành viên'].includes(s);
-        if (permKey === 'schedule_manage_all') return ['admin', 'manager'].includes(s);
+        if (s === 'admin') return true;
+        if (permKey === 'schedule_view' || permKey === 'products_view') return ['admin', 'manager', 'user', 'member', 'thành viên', 'viewer'].includes(s);
+        if (permKey === 'schedule_create_own' || permKey === 'products_edit') return ['admin', 'manager', 'user', 'member', 'thành viên'].includes(s);
+        if (permKey === 'schedule_manage_all' || permKey === 'orders_edit_design' || permKey === 'model_view' || permKey === 'model_edit') return ['admin', 'manager'].includes(s);
         return !!(perms && perms[permKey]);
     }
 
@@ -2197,10 +2393,10 @@
     window.openRoleModal = function(id = null) {
         document.getElementById('roleModalTitle').textContent = id ? 'Chỉnh sửa nhóm quyền' : 'Thêm nhóm quyền mới';
         document.getElementById('editRoleId').value = id || '';
-        const r = id ? systemRoles.find(x => x.id === id) : { name:'', slug:'', description:'', permissions:{} };
+        const r = id ? (systemRoles.find(x => x.id === id) || { name:'', slug:'', description:'', permissions:{} }) : { name:'', slug:'', description:'', permissions:{} };
         
-        document.getElementById('roleNameInput').value = r.name;
-        document.getElementById('roleSlugInput').value = r.slug;
+        document.getElementById('roleNameInput').value = r.name || '';
+        document.getElementById('roleSlugInput').value = r.slug || '';
         document.getElementById('roleSlugInput').disabled = !!id;
         document.getElementById('roleDescInput').value = r.description || '';
         
@@ -2220,10 +2416,11 @@
     window.saveRole = async function() {
         const id   = document.getElementById('editRoleId').value;
         const name = document.getElementById('roleNameInput').value.trim();
-        const slug = document.getElementById('roleSlugInput').value.trim();
+        const rawSlug = document.getElementById('roleSlugInput').value.trim();
+        const slug = rawSlug.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
         const desc = document.getElementById('roleDescInput').value.trim();
         
-        if (!name || !slug) return showToast('Vui lòng điền đủ tên và mã!', 'error');
+        if (!name || !slug) return showToast('Vui lòng điền đủ tên và mã hợp lệ!', 'error');
         
         const perms = {};
         document.querySelectorAll('#rolePermsGrid input[type="checkbox"]').forEach(cb => {
@@ -2234,12 +2431,13 @@
         btn.disabled = true;
         
         try {
-            await window.fs.setDoc(window.fs.doc(window.db, ROLES_COLLECTION, slug), {
+            const docId = id || slug;
+            await window.fs.setDoc(window.fs.doc(window.db, ROLES_COLLECTION, docId), {
                 name, slug, description: desc, permissions: perms
             }, { merge: true });
             
             showToast('Đã lưu nhóm quyền!');
-            window.logActivity(id ? 'update' : 'create', 'Quản trị quyền', `Đã cập nhật nhóm quyền ${name}`);
+            window.logActivity(id ? 'update' : 'create', 'Quản trị quyền', `Đã cập nhật nhóm quyền ${name} (${slug})`);
             closeRoleModal();
         } catch (e) {
             console.error(e);
@@ -2268,7 +2466,7 @@
             
             // LOG ACTIVITY
             const typeLabels = { 'user': 'người dùng', 'dept': 'phòng ban', 'status': 'trạng thái', 'category': 'thể loại', 'role': 'nhóm quyền' };
-            window.logActivity('delete', `Xóa ${typeLabels[deleteTargetType] || 'đối tượng'}`, `Đã xóa ${typeLabels[deleteTargetType] || 'một đối tượng'} khỏi hệ thống.`);
+            window.logActivity('delete', `Xóa ${typeLabels[deleteTargetType] || 'đối tượng'}`, `Đã xóa ${typeLabels[deleteTargetType] || 'một đối tượng'} (${deleteTargetId}) khỏi hệ thống.`);
             
             closeDeleteModal();
         } catch (e) {
@@ -2279,11 +2477,14 @@
     // =============================================
     // TAB SWITCHER
     // =============================================
-    window.switchTab = function(tabId) {
+    window.switchTab = async function(tabId) {
+        if (!VALID_ADMIN_TABS.includes(tabId)) tabId = 'overview';
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-        document.getElementById('section-' + tabId).classList.remove('hidden');
+        const sectionEl = document.getElementById('section-' + tabId);
+        if (sectionEl) sectionEl.classList.remove('hidden');
+        try { history.replaceState(null, '', '#' + tabId); } catch (_) {}
 
-        ['overview', 'users', 'depts', 'statuses', 'categories', 'roles', 'activities', 'orderwindow'].forEach(id => {
+        VALID_ADMIN_TABS.forEach(id => {
             const btn = document.getElementById('tab-' + id);
             if (!btn) return;
             const icon = btn.querySelector('.material-symbols-outlined');
@@ -2302,9 +2503,13 @@
             window.renderActivitiesTable();
         }
         if (tabId === 'orderwindow') {
-            loadOrderWindowConfig();
-            loadOrderWindowSessions();
-            populateUserDropdown();
+            await populateCategoryCheckboxes();
+            await populateUserDropdown();
+            await loadOrderWindowConfig();
+            await loadOrderWindowSessions();
+        }
+        if (tabId === 'integrations') {
+            await loadIntegrationSettings();
         }
     }
 
@@ -2362,26 +2567,26 @@
                 if (type === 'create') typeBadge = '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold uppercase tracking-wider">Tạo mới</span>';
                 else if (type === 'update') typeBadge = '<span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-bold uppercase tracking-wider">Cập nhật</span>';
                 else if (type === 'delete') typeBadge = '<span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[10px] font-bold uppercase tracking-wider">Xóa</span>';
-                else typeBadge = `<span class="px-2 py-0.5 bg-slate-50 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">${type}</span>`;
+                else typeBadge = `<span class="px-2 py-0.5 bg-slate-50 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">${escHtml(type)}</span>`;
 
                 return `
                     <tr class="hover:bg-slate-50/50 transition-colors">
                         <td class="py-4 px-6 text-xs text-slate-500 font-medium text-center">${stt}</td>
-                        <td class="py-4 px-6 text-xs text-slate-400 font-medium">${dateStr}</td>
+                        <td class="py-4 px-6 text-xs text-slate-400 font-medium">${escHtml(dateStr)}</td>
                         <td class="py-4 px-6">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                    ${(a.user || 'U').substring(0,2).toUpperCase()}
+                                    ${escHtml((a.user || 'U').substring(0,2).toUpperCase())}
                                 </div>
-                                <span class="text-sm font-semibold text-slate-700">${a.user || 'Hệ thống'}</span>
+                                <span class="text-sm font-semibold text-slate-700">${escHtml(a.user || 'Hệ thống')}</span>
                             </div>
                         </td>
                         <td class="py-4 px-6">${typeBadge}</td>
                         <td class="py-4 px-6">
-                            <span class="text-sm font-bold text-slate-800">${a.title || 'N/A'}</span>
+                            <span class="text-sm font-bold text-slate-800">${escHtml(a.title || 'N/A')}</span>
                         </td>
                         <td class="py-4 px-6">
-                            <p class="text-xs text-slate-500 max-w-[400px] leading-relaxed">${a.description || a.details || ''}</p>
+                            <p class="text-xs text-slate-500 max-w-[400px] leading-relaxed">${escHtml(a.description || a.details || '')}</p>
                         </td>
                     </tr>
                 `;
@@ -2436,13 +2641,24 @@
     }
     window.closeCategoryModal = () => document.getElementById('categoryModal').classList.add('hidden');
 
+    // Helper: chunk Firestore writeBatch updates safely (<= 450 ops per batch)
+    async function commitBatchUpdates(updates) {
+        const CHUNK_SIZE = 450;
+        for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
+            const batch = window.fs.writeBatch(window.db);
+            const slice = updates.slice(i, i + CHUNK_SIZE);
+            slice.forEach(item => batch.update(item.ref, item.data));
+            await batch.commit();
+        }
+    }
+
     window.saveCategory = async function() {
         const name = document.getElementById('categoryNameInput').value.trim();
         const id = document.getElementById('editCategoryId').value;
         if (!name) return showToast('Vui lòng nhập tên thể loại', 'error');
 
         // Kiểm tra tên trùng lặp (trừ khi đang sửa chính nó)
-        const isDuplicate = orderCategories.some(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== id);
+        const isDuplicate = orderCategories.some(c => (c.name || '').toLowerCase() === name.toLowerCase() && c.id !== id);
         if (isDuplicate) return showToast('Tên thể loại này đã tồn tại', 'error');
 
         const btn = document.getElementById('btnSaveCategory');
@@ -2454,20 +2670,14 @@
                 
                 // Batch Update Data Consistency
                 if (existingCat && existingCat.name !== name) {
-                    const batch = window.fs.writeBatch(window.db);
-                    let batchCount = 0;
-                    
                     const qOrders = window.fs.query(window.fs.collection(window.db, "orders"), window.fs.where("category", "==", existingCat.name));
                     const snapOrders = await window.fs.getDocs(qOrders);
-                    snapOrders.forEach(docSnap => {
-                        batch.update(docSnap.ref, { category: name });
-                        batchCount++;
-                    });
-                    
-                    if (batchCount > 0) {
-                        await batch.commit();
-                        console.log(`Tiến hành đồng bộ (Batch Update) đổi tên thể loại trên ${batchCount} bản ghi.`);
+                    const updates = [];
+                    snapOrders.forEach(docSnap => updates.push({ ref: docSnap.ref, data: { category: name } }));
+                    if (updates.length > 0) {
+                        await commitBatchUpdates(updates);
                     }
+                    window.logActivity('update', 'Đổi tên thể loại đơn', `${existingCat.name} → ${name} (${updates.length} đơn đồng bộ)`);
                 }
             } else {
                 await window.fs.addDoc(window.fs.collection(window.db, CATEGORY_COLLECTION), { name, createdAt: new Date().toISOString() });
@@ -2526,6 +2736,9 @@
         const id = document.getElementById('editDeptId').value;
         if (!name) return showToast('Vui lòng nhập tên phòng ban', 'error');
 
+        const isDup = departments.some(d => (d.name || '').toLowerCase() === name.toLowerCase() && d.id !== id);
+        if (isDup) return showToast('Tên phòng ban này đã tồn tại', 'error');
+
         const btn = document.getElementById('btnSaveDept');
         btn.disabled = true;
         try {
@@ -2535,34 +2748,22 @@
                 
                 // Batch Update Data Consistency
                 if (existingDept && existingDept.name !== name) {
-                    const batch = window.fs.writeBatch(window.db);
-                    let batchCount = 0;
-                    
-                    // Update Users Collection
+                    const updates = [];
                     const qUsers = window.fs.query(window.fs.collection(window.db, "users"), window.fs.where("dept", "==", existingDept.name));
                     const snapUsers = await window.fs.getDocs(qUsers);
-                    snapUsers.forEach(docSnap => {
-                        batch.update(docSnap.ref, { dept: name });
-                        batchCount++;
-                    });
+                    snapUsers.forEach(docSnap => updates.push({ ref: docSnap.ref, data: { dept: name } }));
                     
-                    // Update Orders Collection
                     const qOrders = window.fs.query(window.fs.collection(window.db, "orders"), window.fs.where("department", "==", existingDept.name));
                     const snapOrders = await window.fs.getDocs(qOrders);
-                    snapOrders.forEach(docSnap => {
-                        batch.update(docSnap.ref, { department: name });
-                        batchCount++;
-                    });
+                    snapOrders.forEach(docSnap => updates.push({ ref: docSnap.ref, data: { department: name } }));
                     
-                    if (batchCount > 0) {
-                        await batch.commit();
-                        console.log(`Tiến hành đồng bộ (Batch Update) đổi tên phòng ban trên ${batchCount} bản ghi.`);
+                    if (updates.length > 0) {
+                        await commitBatchUpdates(updates);
                     }
+                    window.logActivity('update', 'Đổi tên phòng ban', `${existingDept.name} → ${name} (${updates.length} bản ghi đồng bộ)`);
                 }
             } else {
                 await window.fs.addDoc(window.fs.collection(window.db, DEPTS_COLLECTION), { name, createdAt: new Date().toISOString() });
-                
-                // LOG ACTIVITY
                 window.logActivity('create', 'Thêm phòng ban', `Đã tạo phòng ban mới: ${name}`);
             }
             showToast('Lưu phòng ban thành công');
@@ -2591,6 +2792,8 @@
         const id = document.getElementById('editStatusId').value;
 
         if (!name) return showToast('Vui lòng nhập tên trạng thái', 'error');
+        const isDup = orderStatuses.some(s => (s.name || '').toLowerCase() === name.toLowerCase() && s.id !== id);
+        if (isDup) return showToast('Tên trạng thái này đã tồn tại', 'error');
 
         const btn = document.getElementById('btnSaveStatus');
         btn.disabled = true;
@@ -2602,26 +2805,20 @@
                 
                 // Batch Update Data Consistency
                 if (existingStatus && existingStatus.name !== name) {
-                    const batch = window.fs.writeBatch(window.db);
-                    let batchCount = 0;
-                    
                     const qOrders = window.fs.query(window.fs.collection(window.db, "orders"), window.fs.where("status", "==", existingStatus.name));
                     const snapOrders = await window.fs.getDocs(qOrders);
-                    snapOrders.forEach(docSnap => {
-                        batch.update(docSnap.ref, { status: name });
-                        batchCount++;
-                    });
-                    
-                    if (batchCount > 0) {
-                        await batch.commit();
-                        console.log(`Tiến hành đồng bộ (Batch Update) đổi tên trạng thái trên ${batchCount} bản ghi.`);
+                    const updates = [];
+                    snapOrders.forEach(docSnap => updates.push({ ref: docSnap.ref, data: { status: name } }));
+                    if (updates.length > 0) {
+                        await commitBatchUpdates(updates);
                     }
+                    window.logActivity('update', 'Đổi tên trạng thái đơn', `${existingStatus.name} → ${name} (${updates.length} đơn đồng bộ)`);
+                } else {
+                    window.logActivity('update', 'Cập nhật trạng thái đơn', `Đã cập nhật trạng thái: ${name}`);
                 }
             } else {
                 data.createdAt = new Date().toISOString();
                 await window.fs.addDoc(window.fs.collection(window.db, STATUS_COLLECTION), data);
-                
-                // LOG ACTIVITY
                 window.logActivity('create', 'Thêm trạng thái đơn', `Đã tạo trạng thái mới: ${name}`);
             }
             showToast('Lưu trạng thái thành công');
@@ -2630,27 +2827,6 @@
             console.error(e);
             showToast('Lỗi lưu dữ liệu', 'error');
         } finally { btn.disabled = false; }
-    }
-
-    window.openDeleteModal = function(id, type = 'user') {
-        const u = users.find(x => x.id === id);
-        const d = departments.find(x => x.id === id);
-        const s = orderStatuses.find(x => x.id === id);
-        const c = orderCategories.find(x => x.id === id);
-        
-        let name = '';
-        if (type === 'user') name = u ? u.name : '';
-        if (type === 'dept') name = d ? d.name : '';
-        if (type === 'status') name = s ? s.name : '';
-        if (type === 'category') name = c ? c.name : '';
-
-        if (type === 'user' && u && u.empId === 'admin') return;
-
-        deleteTargetId = id;
-        deleteTargetType = type;
-        document.getElementById('deleteUserName').textContent  = name;
-        document.getElementById('deleteUserEmpId').textContent = type === 'user' ? (u ? u.empId : '') : '';
-        document.getElementById('deleteModal').classList.remove('hidden');
     }
 
     // UI Helper Functions
@@ -2666,10 +2842,7 @@
     window.toggleNavUser = function() {
         const d = document.getElementById('navUserDropdown');
         if (!d) return;
-        
-        // In the future, if a notifDropdown is added, close it here
         const isCurrentlyOpen = d.classList.contains('opacity-100');
-        
         if (isCurrentlyOpen) {
             d.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
         } else {
@@ -2678,9 +2851,11 @@
     }
 
     window.handleLogout = function() {
+        const savedTheme = localStorage.getItem('nevo_theme');
         Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('nevo_')) localStorage.removeItem(key);
+            if (key.startsWith('nevo_') && key !== 'nevo_theme') localStorage.removeItem(key);
         });
+        if (savedTheme) localStorage.setItem('nevo_theme', savedTheme);
         window.location.replace('login.html');
     }
 
@@ -2696,20 +2871,12 @@
         document.body.style.overflow = '';
     }
 
-    // Attach event listener for mobile menu button
-    document.addEventListener('DOMContentLoaded', () => {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', window.openMobileMenu);
-        }
-    });
-
     window.updatePermCheckboxes = function() {
         const roleSlug = document.getElementById('fieldRole').value;
         const badge = document.getElementById('userPermRoleBadge');
         
         // Find the role data from systemRoles (Firestore)
-        const roleData = systemRoles.find(r => r.slug === roleSlug || r.id === roleSlug);
+        const roleData = systemRoles.find(r => (r.slug || '').toLowerCase() === (roleSlug || '').toLowerCase() || r.id === roleSlug);
         const perms = roleData ? (roleData.permissions || {}) : {};
         
         // Update badge
@@ -2720,7 +2887,6 @@
             const permKey = cb.getAttribute('data-user-perm');
             const isGranted = getEffectiveRolePerm(roleSlug, perms, permKey);
             cb.checked = isGranted;
-            // Visual feedback on parent label
             const label = cb.closest('.perm-checkbox');
             if (label) {
                 label.classList.toggle('checked', isGranted);
@@ -2729,29 +2895,134 @@
         });
     }
 
-    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+    function cap(s) { return String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1); }
 
     let toastTimer;
     window.showToast = function(msg, type = 'success') {
         const t = document.getElementById('toast');
         const m = document.getElementById('toastMsg');
+        const icon = document.getElementById('toastIcon');
+        const iconMap = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
         if (t && m) {
             t.className = `toast toast-${type} show`;
             m.textContent = msg;
+            if (icon) icon.textContent = iconMap[type] || 'check_circle';
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
         }
     }
 
     // =============================================
+    // INTEGRATIONS & OUTBOUND WEBHOOK SETTINGS
+    // =============================================
+    window.loadIntegrationSettings = async function() {
+        if (!window.db) return;
+        try {
+            const snap = await window.fs.getDoc(window.fs.doc(window.db, 'settings', 'integrations'));
+            if (!snap.exists()) return;
+            const cfg = snap.data() || {};
+            const enabledEl = document.getElementById('intEnabled');
+            const gapoEl = document.getElementById('intGapoWebhookUrl');
+            const tgTokenEl = document.getElementById('intTelegramBotToken');
+            const tgChatEl = document.getElementById('intTelegramChatId');
+            if (enabledEl) enabledEl.checked = cfg.enabled !== false;
+            if (gapoEl) gapoEl.value = cfg.gapoWebhookUrl || '';
+            if (tgTokenEl) tgTokenEl.value = cfg.telegramBotToken || '';
+            if (tgChatEl) tgChatEl.value = cfg.telegramChatId || '';
+            const events = Array.isArray(cfg.enabledEvents) ? cfg.enabledEvents : ['new_order', 'status_change', 'proofing', 'mention'];
+            document.querySelectorAll('.int-event-cb').forEach(cb => {
+                cb.checked = events.includes(cb.value);
+            });
+        } catch (err) {
+            console.warn('Load integration settings error:', err);
+        }
+    };
+
+    window.saveIntegrationSettings = async function() {
+        if (!window.db) return;
+        const btn = document.getElementById('btnSaveIntegrations');
+        if (btn) btn.disabled = true;
+        try {
+            const enabledEvents = Array.from(document.querySelectorAll('.int-event-cb:checked')).map(cb => cb.value);
+            const payload = {
+                enabled: !!document.getElementById('intEnabled')?.checked,
+                gapoWebhookUrl: (document.getElementById('intGapoWebhookUrl')?.value || '').trim(),
+                telegramBotToken: (document.getElementById('intTelegramBotToken')?.value || '').trim(),
+                telegramChatId: (document.getElementById('intTelegramChatId')?.value || '').trim(),
+                enabledEvents,
+                updatedAt: window.fs.serverTimestamp(),
+                updatedBy: localStorage.getItem('nevo_user') || 'Admin'
+            };
+            await window.fs.setDoc(window.fs.doc(window.db, 'settings', 'integrations'), payload, { merge: true });
+            showToast('Đã lưu cấu hình Webhook thành công!');
+            window.logActivity('update', 'Cập nhật Webhook', `Enabled=${payload.enabled}, Sự kiện=${enabledEvents.join(', ')}`);
+        } catch (err) {
+            console.error(err);
+            showToast('Lỗi khi lưu cấu hình Webhook', 'error');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    };
+
+    window.testIntegrationWebhook = async function() {
+        const gapoUrl = (document.getElementById('intGapoWebhookUrl')?.value || '').trim();
+        const tgToken = (document.getElementById('intTelegramBotToken')?.value || '').trim();
+        const tgChatId = (document.getElementById('intTelegramChatId')?.value || '').trim();
+        if (!gapoUrl && (!tgToken || !tgChatId)) {
+            return showToast('Vui lòng nhập Webhook URL hoặc Telegram Token + Chat ID trước khi thử nghiệm!', 'warning');
+        }
+        const btn = document.getElementById('btnTestWebhook');
+        if (btn) btn.disabled = true;
+        const sampleMsg = `🔔 [NEVO Task] Tin nhắn kiểm tra kết nối tự động\n• Người gửi: ${localStorage.getItem('nevo_user') || 'Admin'}\n• Thời gian: ${new Date().toLocaleString('vi-VN')}`;
+        let sentCount = 0;
+        try {
+            if (gapoUrl && /^https:\/\//i.test(gapoUrl)) {
+                await fetch(gapoUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: sampleMsg, content: sampleMsg })
+                });
+                sentCount++;
+            }
+            if (tgToken && tgChatId) {
+                const tgRes = await fetch(`https://api.telegram.org/bot${encodeURIComponent(tgToken)}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: tgChatId, text: sampleMsg })
+                });
+                if (!tgRes.ok) throw new Error('Telegram trả về lỗi HTTP ' + tgRes.status);
+                sentCount++;
+            }
+            showToast(`Đã gửi tin thử nghiệm tới ${sentCount} kênh!`);
+        } catch (err) {
+            console.error(err);
+            showToast('Không thể gửi tin thử nghiệm: ' + (err.message || 'Kiểm tra CORS/URL'), 'error');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    };
+
+    // =============================================
     // INITIALIZATION & EVENT LISTENERS
     // =============================================
     document.addEventListener('DOMContentLoaded', () => {
-        // UI event listeners for static elements
-        document.getElementById('searchInput').addEventListener('input', renderTable);
-        document.getElementById('roleFilter').addEventListener('change', renderTable);
-        document.getElementById('statusFilter').addEventListener('change', renderTable);
-        document.getElementById('fieldRole').addEventListener('change', updatePermCheckboxes);
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', window.openMobileMenu);
+        }
+
+        // Global search in header jumps to Users search
+        const globalSearch = document.getElementById('globalSearch');
+        if (globalSearch) {
+            globalSearch.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) searchInput.value = globalSearch.value;
+                    switchTab('users');
+                    renderTable();
+                }
+            });
+        }
         
         // Clicks outside dropdown
         document.addEventListener('click', e => {
@@ -2763,7 +3034,7 @@
         });
 
         const navName = localStorage.getItem('nevo_user') || 'Admin';
-        const role = localStorage.getItem('nevo_role') || 'user';
+        const role = (localStorage.getItem('nevo_role') || 'user').toLowerCase();
         
         document.getElementById('navInit').textContent = navName.substring(0,2).toUpperCase();
         document.getElementById('navName').textContent = navName;
@@ -2775,11 +3046,9 @@
             roleLabel.textContent = roleNames[role] || 'Nhân viên';
         }
 
-        // Try sync if db ready
-        if (window.db) window.startSync();
-        
-        // Default tab
-        if (window.switchTab) window.switchTab('overview');
+        // Initial tab before async RBAC check finishes
+        const hash = window.location.hash.replace('#', '');
+        switchTab(hash && VALID_ADMIN_TABS.includes(hash) ? hash : 'overview');
     });
 
     // =============================================
@@ -2925,18 +3194,18 @@
             const statusBadge = isActive
                 ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 animate-pulse">● Đang mở</span>'
                 : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">Đã hết hạn</span>';
-            const target = (s.targetUsers && s.targetUsers[0] === 'all') ? 'Tất cả' : (s.targetUsers || []).join(', ');
+            const target = (s.targetUsers && s.targetUsers[0] === 'all') ? 'Tất cả' : escHtml((s.targetUsers || []).join(', '));
             const cats = s.targetCategories || ['all'];
-            const catDisplay = cats.includes('all') ? '<span class="text-slate-400">Tất cả</span>' : cats.map(c => `<span class="inline-flex px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 text-[10px] font-medium mr-0.5 mb-0.5">${c}</span>`).join('');
+            const catDisplay = cats.includes('all') ? '<span class="text-slate-400">Tất cả</span>' : cats.map(c => `<span class="inline-flex px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 text-[10px] font-medium mr-0.5 mb-0.5">${escHtml(c)}</span>`).join('');
             return `<tr class="table-row text-[12px]">
                 <td class="px-5 py-3">${typeBadge}</td>
-                <td class="px-5 py-3 text-slate-600 font-medium">${fmt(s.startTime)}</td>
-                <td class="px-5 py-3 text-slate-600 font-medium">${fmt(s.endTime)}</td>
+                <td class="px-5 py-3 text-slate-600 font-medium">${escHtml(fmt(s.startTime))}</td>
+                <td class="px-5 py-3 text-slate-600 font-medium">${escHtml(fmt(s.endTime))}</td>
                 <td class="px-5 py-3 text-slate-600">${target}</td>
                 <td class="px-5 py-3">${catDisplay}</td>
-                <td class="px-5 py-3 text-slate-500 italic">${s.reason || '--'}</td>
+                <td class="px-5 py-3 text-slate-500 italic">${escHtml(s.reason || '--')}</td>
                 <td class="px-5 py-3">${statusBadge}</td>
-                <td class="px-5 py-3 text-right">${isActive ? `<button onclick="closeActiveSession('${s.id}')" class="btn-icon-sm btn-delete" title="Đóng sớm"><span class="material-symbols-outlined text-[16px]">close</span></button>` : ''}</td>
+                <td class="px-5 py-3 text-right">${isActive ? `<button onclick="closeActiveSession('${escJs(s.id)}')" class="btn-icon-sm btn-delete" title="Đóng sớm"><span class="material-symbols-outlined text-[16px]">close</span></button>` : ''}</td>
             </tr>`;
         }).join('');
     }
@@ -3071,7 +3340,7 @@
             snap.forEach(d => {
                 const u = d.data();
                 if (u.status === 'active') {
-                    select.innerHTML += `<option value="${u.empId || d.id}">${u.name || u.empId} (${u.role || 'user'})</option>`;
+                    select.innerHTML += `<option value="${escHtml(u.empId || d.id)}">${escHtml(u.name || u.empId || d.id)} (${escHtml(u.role || 'user')})</option>`;
                 }
             });
         } catch (e) { console.error('Populate users error:', e); }
@@ -3101,16 +3370,26 @@
         }
     };
 
-    // Auto-uncheck "all" when individual category is checked
+    // Sync "all" checkbox and save config on BOTH check & uncheck of individual categories
     document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('ow-auto-cat') && e.target.value !== 'all' && e.target.checked) {
+        if (e.target.classList.contains('ow-auto-cat') && e.target.value !== 'all') {
             const allCb = document.querySelector('#owAutoCategoryList input[value="all"]');
-            if (allCb) allCb.checked = false;
+            if (e.target.checked) {
+                if (allCb) allCb.checked = false;
+            } else {
+                const anyChecked = document.querySelectorAll('#owAutoCategoryList input.ow-auto-cat:checked:not([value="all"])').length > 0;
+                if (!anyChecked && allCb) allCb.checked = true;
+            }
             saveOrderWindowConfig();
         }
-        if (e.target.classList.contains('ow-manual-cat') && e.target.value !== 'all' && e.target.checked) {
+        if (e.target.classList.contains('ow-manual-cat') && e.target.value !== 'all') {
             const allCb = document.querySelector('#owManualCategoryList input[value="all"]');
-            if (allCb) allCb.checked = false;
+            if (e.target.checked) {
+                if (allCb) allCb.checked = false;
+            } else {
+                const anyChecked = document.querySelectorAll('#owManualCategoryList input.ow-manual-cat:checked:not([value="all"])').length > 0;
+                if (!anyChecked && allCb) allCb.checked = true;
+            }
         }
     });
 
@@ -3129,8 +3408,8 @@
                 if (allLabel) autoList.appendChild(allLabel);
                 cats.forEach(name => {
                     autoList.innerHTML += `<label class="flex items-center gap-2 cursor-pointer hover:bg-white rounded-lg px-2 py-1 transition-colors">
-                        <input type="checkbox" value="${name}" class="ow-auto-cat accent-teal-600 w-4 h-4 rounded">
-                        <span class="text-xs font-medium text-slate-700">${name}</span>
+                        <input type="checkbox" value="${escHtml(name)}" class="ow-auto-cat accent-teal-600 w-4 h-4 rounded">
+                        <span class="text-xs font-medium text-slate-700">${escHtml(name)}</span>
                     </label>`;
                 });
             }
@@ -3143,8 +3422,8 @@
                 if (allLabel) manualList.appendChild(allLabel);
                 cats.forEach(name => {
                     manualList.innerHTML += `<label class="flex items-center gap-2 cursor-pointer hover:bg-white rounded-lg px-2 py-1 transition-colors">
-                        <input type="checkbox" value="${name}" class="ow-manual-cat accent-amber-600 w-4 h-4 rounded">
-                        <span class="text-xs font-medium text-slate-700">${name}</span>
+                        <input type="checkbox" value="${escHtml(name)}" class="ow-manual-cat accent-amber-600 w-4 h-4 rounded">
+                        <span class="text-xs font-medium text-slate-700">${escHtml(name)}</span>
                     </label>`;
                 });
             }

@@ -104,6 +104,21 @@ h1, h2, h3, h4, h5, h6, .font-headline {
 .text-on-surface-variant { color: var(--text-on-surface-variant); }
 .bg-surface-container-low { background-color: var(--bg-surface-container-low); }
 .bg-surface-container-lowest { background-color: var(--bg-surface-container-lowest); }
+.bg-surface-container { background-color: #f8fafc; }
+.bg-surface-container-high { background-color: #f1f5f9; }
+.bg-surface-container-highest { background-color: #eef2f6; }
+.text-on-primary { color: #ffffff; }
+.bg-primary-fixed { background-color: #ffe4e6; }
+.bg-secondary-container { background-color: #e2e8f0; }
+.text-on-secondary-container { color: #334155; }
+.border-outline-variant { border-color: #cbd5e1; }
+.text-error { color: #e11d48; }
+.bg-error { background-color: #e11d48; }
+html.dark .bg-surface-container { background-color: #1e293b; }
+html.dark .bg-surface-container-high { background-color: #273449; }
+html.dark .bg-surface-container-highest { background-color: #334155; color: #f1f5f9; }
+html.dark .bg-primary-fixed { background-color: rgba(184, 0, 53, 0.25); }
+html.dark .border-outline-variant { border-color: rgba(255, 255, 255, 0.14); }
 
 /* Animations */
 @keyframes fadeIn {
@@ -225,7 +240,7 @@ html.dark .form-input:focus {
 }
 
 .premium-table tr:hover td {
-  background: rgba(var(--primary), 0.02);
+  background: color-mix(in srgb, var(--primary) 4%, transparent);
 }
 
 /* Modal Enhancements */
@@ -470,4 +485,236 @@ html.dark .schedule-table-wrapper tbody th[scope="row"] {
   .schedule-list-table td:nth-child(7)::before { content: var(--label-7) ": "; }
   .schedule-list-table td:nth-child(8)::before { content: var(--label-8) ": "; }
   .schedule-list-table td:nth-child(9)::before { content: var(--label-9) ": "; }
+}
+
+
+/* ===== Missing Modal & Planning Grid Classes ===== */
+.cost-input-group {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.cost-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+.cost-input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+}
+.cost-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(184, 0, 53, 0.12);
+}
+html.dark .cost-input-group {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+html.dark .cost-label { color: #94a3b8; }
+html.dark .cost-input {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+}
+
+.planning-day-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #ffffff;
+  min-width: 0;
+}
+.planning-day-header {
+  background: #f8fafc;
+  padding: 0.35rem 0.25rem;
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+}
+.planning-day-body {
+  padding: 0.35rem;
+}
+.pm-day-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.25rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #ffffff;
+  color: #0f172a;
+}
+.pm-day-input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+html.dark .planning-day-box { background: #1e293b; border-color: rgba(255, 255, 255, 0.12); }
+html.dark .planning-day-header { background: #0f172a; color: #cbd5e1; border-color: rgba(255, 255, 255, 0.1); }
+html.dark .pm-day-input { background: #0f172a; border-color: rgba(255, 255, 255, 0.15); color: #f1f5f9; }
+
+.animate-modal-in, .animate-scale-in {
+  animation: scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ===== Comprehensive Dark Mode Overrides for Legacy Containers ===== */
+html.dark #topNav {
+  background-color: rgba(15, 23, 42, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+html.dark #topNav a,
+html.dark #navUserName {
+  color: #e2e8f0;
+}
+html.dark #notifDropdown,
+html.dark #userDropdown,
+html.dark #mobileMenu {
+  background-color: #1e293b;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+html.dark #userDropdown .bg-slate-50,
+html.dark #notifDropdown .bg-slate-50 {
+  background-color: #0f172a;
+}
+html.dark #userDropdown p,
+html.dark #userDropdown button:not(.text-red-600),
+html.dark #mobileMenu a,
+html.dark #mobileMenu span:not(.text-primary) {
+  color: #e2e8f0;
+}
+html.dark #page-planning .bg-white,
+html.dark #page-budgetReport .bg-white,
+html.dark #page-detailed-report .bg-white,
+html.dark #page-profile .bg-white,
+html.dark #editOrderModal > div,
+html.dark #costModal > div,
+html.dark #viewOrderModal > div,
+html.dark #expenseModal > div,
+html.dark #financeColumnsModal > div,
+html.dark #financeConfigModal > div,
+html.dark #planningModal > div,
+html.dark #historyDrawer .bg-white {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark #editOrderModal input,
+html.dark #editOrderModal select,
+html.dark #editOrderModal textarea,
+html.dark #editOrderContent {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+html.dark .column-filter,
+html.dark .multi-select-trigger,
+html.dark .date-range-trigger,
+html.dark .multi-select-menu,
+html.dark .date-range-menu {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* ===== Kanban Drag & Drop Board ===== */
+.kanban-board-scroll {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(285px, 1fr);
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 1rem;
+  height: 100%;
+  align-items: stretch;
+}
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  min-height: 0;
+  max-height: 100%;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+html.dark .kanban-column {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.kanban-column.drag-over {
+  border-color: var(--primary);
+  background: rgba(184, 0, 53, 0.05);
+  box-shadow: 0 0 0 2px rgba(184, 0, 53, 0.18);
+}
+.kanban-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 0.85rem;
+  cursor: grab;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+html.dark .kanban-card {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.kanban-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -8px rgba(15, 23, 42, 0.15);
+  border-color: rgba(184, 0, 53, 0.35);
+}
+.kanban-card.dragging {
+  opacity: 0.45;
+  transform: rotate(1.5deg) scale(0.98);
+}
+
+/* ===== Command Palette (Ctrl+K) ===== */
+dialog#nevoCommandPalette {
+  max-width: min(94vw, 660px);
+  width: 100%;
+  margin: 10vh auto auto;
+  border-radius: 1.5rem;
+  padding: 0;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 30px 70px -15px rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+}
+dialog#nevoCommandPalette[open] {
+  display: flex;
+  flex-direction: column;
+  animation: scaleIn 0.16s ease-out both;
+}
+html.dark dialog#nevoCommandPalette {
+  background: #0f172a;
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.cmd-item.active {
+  background: rgba(184, 0, 53, 0.1);
+  color: var(--primary);
+}
+html.dark .cmd-item.active {
+  background: rgba(225, 29, 72, 0.22);
+  color: #fda4af;
 }

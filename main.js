@@ -1,58 +1,68 @@
 /* 
   MAIN ENTRY POINT
-  Initializes all services and handles global state
+  Initializes all services and handles global state without duplicating inline listeners
 */
 
-import { initDarkMode, toggleDarkMode, initPremiumEffects, navigateTo } from './ui-service.js?v=20260907_1';
-import { checkAuth, getCurrentUser } from './auth-service.js';
-import './firebase-service.js'; // Ensure Firebase is initialized
+import { initDarkMode, toggleDarkMode, initPremiumEffects, navigateTo, showToast } from './ui-service.js';
+import { checkAuth, getCurrentUser, getRoleDisplayName, performLogout } from './auth-service.js';
+import './firebase-service.js';
+
+// Apply Dark Mode immediately before DOM paint finishes
+initDarkMode();
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Check Authentication
     if (!checkAuth()) return;
 
-    // 2. Initialize UI
     initDarkMode();
     initPremiumEffects();
 
-    // 3. Setup Global Events
     const darkModeBtn = document.getElementById('darkModeBtn');
-    if (darkModeBtn) {
+    if (darkModeBtn && !darkModeBtn.dataset.bound) {
+        darkModeBtn.dataset.bound = '1';
         darkModeBtn.addEventListener('click', () => {
-            const isDark = toggleDarkMode();
-            const icon = darkModeBtn.querySelector('span');
-            if (icon) {
-                icon.textContent = isDark ? 'light_mode' : 'dark_mode';
-            }
+            toggleDarkMode();
         });
     }
 
-    // 4. Handle initial navigation based on hash
-    const initialPage = window.location.hash.replace('#', '') || 'dashboard';
-    navigateTo(initialPage);
-
-    // 5. Update UI with user info
+    // Populate user badge with localized Vietnamese role
     const user = getCurrentUser();
     const navUserName = document.getElementById('navUserName');
     const navUserInitial = document.getElementById('navUserInitial');
     const dropUserName = document.getElementById('dropUserName');
     const dropUserRole = document.getElementById('dropUserRole');
 
-    if (navUserName) navUserName.textContent = user.name;
-    if (navUserInitial) navUserInitial.textContent = user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    if (dropUserName) dropUserName.textContent = user.name;
-    if (dropUserRole) dropUserRole.textContent = user.role.toUpperCase();
+    const initials = (user.name || 'NV')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2) || 'NV';
 
-    console.log('Nevo-Task Premium Initialized');
+    if (navUserName) navUserName.textContent = user.name;
+    if (navUserInitial) navUserInitial.textContent = initials;
+    if (dropUserName) dropUserName.textContent = user.name;
+    if (dropUserRole) dropUserRole.textContent = getRoleDisplayName(user.role);
+
+    // Single authoritative hash navigation
+    const initialPage = window.location.hash.replace('#', '') || 'dashboard';
+    navigateTo(initialPage);
+
+    window.addEventListener('hashchange', () => {
+        const hashPage = window.location.hash.replace('#', '') || 'dashboard';
+        if (window.currentPage !== hashPage) navigateTo(hashPage);
+    });
+
+    console.log('Nevo-Task Enterprise Initialized');
 });
 
-// Export global functions for HTML inline calls
 window.navigateTo = navigateTo;
-window.handleLogout = () => {
-    localStorage.clear();
-    window.location.replace('login.html');
-};
-window.toggleUserMenu = () => {
+window.showToast = showToast;
+window.handleLogout = performLogout;
+window.toggleUserMenu = (e) => {
+    if (e) e.stopPropagation();
     const dropdown = document.getElementById('userDropdown');
+    const notifDropdown = document.getElementById('notifDropdown');
+    if (notifDropdown) notifDropdown.classList.remove('open');
     if (dropdown) dropdown.classList.toggle('open');
 };

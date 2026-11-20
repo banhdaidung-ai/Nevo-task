@@ -1,22 +1,28 @@
 import { 
     db, collection, addDoc, getDocs, doc, getDoc,
     updateDoc, deleteDoc, serverTimestamp, setDoc,
-    query, orderBy 
+    query, orderBy, onSnapshot, deleteField, runTransaction
 } from "./firebase-service.js";
+import { escapeHtml, safeUrl, buildLocalYMD } from "./security-utils.js";
 
 // Auth Guard
-if (localStorage.getItem('nevo_logged_in') !== 'true') {
+const isLoggedIn = localStorage.getItem('nevo_logged_in') === 'true';
+if (!isLoggedIn) {
     window.location.replace('login.html');
 }
 
-const userRole = localStorage.getItem('nevo_role') || 'user';
-const isUser = !['admin', 'manager'].includes(userRole.toLowerCase());
+const userRole = (localStorage.getItem('nevo_role') || 'user').trim();
+const roleLower = userRole.toLowerCase();
+const isViewer = roleLower === 'viewer';
+const isUser = !['admin', 'manager'].includes(roleLower);
 
 let currentMonth = "";
 let COLLECTION_NAME = "";
 let currentViewMode = "month"; // "month" or "all"
-let selectedYear = "2026";
+let selectedYear = String(new Date().getFullYear());
 let allProductsData = [];
+let activeRealtimeUnsub = null;
+let hoverPreviewReqId = 0;
 const SETTINGS_DOC = "products_table_config";
 
 let table;
@@ -33,29 +39,36 @@ const driveCache = new Map();
 const imageCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 min
 
-// Reusable Link Formatter
+// Reusable Link Formatter (XSS-hardened)
 const linkFormatter = function(cell) {
-    let val = cell.getValue();
-    if (val && (typeof val === 'string') && (val.toLowerCase().startsWith("http") || val.toLowerCase().startsWith("www"))) {
-        let url = val.toLowerCase().startsWith("http") ? val : "https://" + val;
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${val}" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" onpointerdown="event.stopPropagation();"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
+    const val = cell.getValue();
+    if (val && typeof val === 'string') {
+        const trimmed = val.trim();
+        if (trimmed.toLowerCase().startsWith("http") || trimmed.toLowerCase().startsWith("www") || trimmed.toLowerCase().startsWith("drive.google.com")) {
+            const candidate = trimmed.toLowerCase().startsWith("http") ? trimmed : "https://" + trimmed;
+            const cleanHref = safeUrl(candidate);
+            if (cleanHref) {
+                return `<a href="${escapeHtml(cleanHref)}" target="_blank" rel="noopener noreferrer" class="link-access text-blue-600 hover:underline cursor-pointer inline-flex items-center gap-1" title="${escapeHtml(trimmed)}" onclick="event.stopPropagation();" onmousedown="event.stopPropagation();" onpointerdown="event.stopPropagation();"><span class="material-symbols-outlined text-[14px]">link</span> Truy cập</a>`;
+            }
+        }
+        return escapeHtml(val);
     }
-    return val || "";
+    return val ?? "";
 };
 
-// Custom Formatter for Status
-const statusFormatter = function(cell, formatterParams) {
+// Custom Formatter for Status (XSS-hardened)
+const statusFormatter = function(cell) {
     let val = cell.getValue() || "Chưa thực hiện";
-    // Normalize legacy values
     if (val === "Chưa có" || val === "Chưa chụp") val = "Chưa thực hiện";
-    let color = statusColors[val] || "#e2e8f0";
+    const rawColor = statusColors[val] || "#e2e8f0";
+    const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(rawColor) ? rawColor : "#e2e8f0";
+    const escVal = escapeHtml(val);
     
-    // Use predefined classes for legacy statuses if they match, otherwise use inline styles
-    if (val === "Hoàn tất") return `<span class="status-badge status-hoan-tat">${val}</span>`;
-    if (val === "Đang xử lý") return `<span class="status-badge status-dang-xu-ly">${val}</span>`;
-    if (val === "Chưa thực hiện") return `<span class="status-badge status-chua-co">${val}</span>`;
+    if (val === "Hoàn tất") return `<span class="status-badge status-hoan-tat">${escVal}</span>`;
+    if (val === "Đang xử lý") return `<span class="status-badge status-dang-xu-ly">${escVal}</span>`;
+    if (val === "Chưa thực hiện") return `<span class="status-badge status-chua-co">${escVal}</span>`;
     
-    return `<span class="status-badge" style="background-color: ${color}; color: #475569; border: 1px solid rgba(0,0,0,0.05)">${val}</span>`;
+    return `<span class="status-badge" style="background-color: ${safeColor}; color: #475569; border: 1px solid rgba(0,0,0,0.05)">${escVal}</span>`;
 };
 
 const dateEditor = function(cell, onRendered, success, cancel) {
@@ -141,6 +154,9 @@ const rowColorFormatter = function(row) {
 function setSyncing(status) {
     isSyncing = status;
     const el = document.getElementById("syncStatus");
+    const ind = document.getElementById("sync-indicator");
+    if (ind) ind.style.display = status ? "inline-flex" : "none";
+    if (!el) return;
     if (status) {
         el.innerHTML = `<span class="material-symbols-outlined text-[14px] animate-spin text-amber-500">sync</span>
                         <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wide">Đang lưu...</span>`;
@@ -154,20 +170,16 @@ function setSyncing(status) {
 
 // Update Stats
 function updateStats(data) {
-    // 0. Tổng số dòng (Rows count)
-    document.getElementById('stat-rows').innerText = data.length;
-
-    // 1. Tổng số lượng = SUM of soLuongVe (as requested)
-    let totalQty = data.reduce((sum, item) => sum + (parseInt(item.soLuongVe) || 0), 0);
-    document.getElementById('stat-total').innerText = totalQty;
-    
-    // 2. Tổng Mã SP = COUNT of rows where Ma 10 is NOT empty
-    let totalMa10 = data.filter(d => d.ma10 && d.ma10.toString().trim() !== '').length;
-    document.getElementById('stat-ma10').innerText = totalMa10;
-
-    document.getElementById('stat-traisan').innerText = data.filter(d => d.anhTraiSanTrangThai === 'Hoàn tất').length;
-    document.getElementById('stat-model').innerText = data.filter(d => d.anhModelTrangThai === 'Hoàn tất').length;
-    document.getElementById('stat-video').innerText = data.filter(d => d.videoModelTrangThai === 'Hoàn tất').length;
+    const safeData = Array.isArray(data) ? data : [];
+    const setTxt = (id, v) => { const n = document.getElementById(id); if (n) n.innerText = v; };
+    setTxt('stat-rows', safeData.length);
+    const totalQty = safeData.reduce((sum, item) => sum + (parseInt(item.soLuongVe, 10) || 0), 0);
+    setTxt('stat-total', totalQty);
+    const totalMa10 = safeData.filter(d => d.ma10 && d.ma10.toString().trim() !== '').length;
+    setTxt('stat-ma10', totalMa10);
+    setTxt('stat-traisan', safeData.filter(d => d.anhTraiSanTrangThai === 'Hoàn tất').length);
+    setTxt('stat-model', safeData.filter(d => d.anhModelTrangThai === 'Hoàn tất').length);
+    setTxt('stat-video', safeData.filter(d => d.videoModelTrangThai === 'Hoàn tất').length);
 }
 
 // Date helpers for "Xem toàn bộ" by year & arrival date
@@ -184,17 +196,22 @@ function extractYearFromDateStr(dateStr) {
 
 function parseDateStrToTimestamp(dateStr) {
     if (!dateStr || typeof dateStr !== 'string') return 0;
-    const parts = dateStr.trim().split('/');
+    const trimmed = dateStr.trim();
+    const parts = trimmed.split('/');
     if (parts.length === 3) {
         const day = parseInt(parts[0], 10) || 1;
         const month = (parseInt(parts[1], 10) || 1) - 1;
         const year = parseInt(parts[2], 10) || 2026;
         return new Date(year, month, day).getTime();
     }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const [y, m, d] = trimmed.split('-').map(Number);
+        return new Date(y, m - 1, d).getTime();
+    }
     return 0;
 }
 
-// Setup Months
+// Setup Months across 2025-2028
 function setupMonths() {
     const sel = document.getElementById('month-selector');
     if (!sel) return;
@@ -202,23 +219,37 @@ function setupMonths() {
     const now = new Date();
     const curYearNum = now.getFullYear();
     const curMonthNum = now.getMonth() + 1;
+    const years = Array.from(new Set([2025, 2026, 2027, Math.max(2028, curYearNum + 1)])).sort((a, b) => b - a);
     
-    // Generate all 12 months of the year
-    for (let m = 1; m <= 12; m++) {
-        const mStr = String(m).padStart(2, '0');
-        const val = `${mStr}-${curYearNum}`;
-        
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.text = `Tháng ${mStr}/${curYearNum}`;
-        
-        // Default to the current real month (e.g. Tháng 09/2026)
-        if (m === curMonthNum) {
-            opt.selected = true;
-            currentMonth = val;
-            COLLECTION_NAME = "new_products_" + val;
+    years.forEach(y => {
+        const grp = document.createElement('optgroup');
+        grp.label = `Năm ${y}`;
+        for (let m = 1; m <= 12; m++) {
+            const mStr = String(m).padStart(2, '0');
+            const val = `${mStr}-${y}`;
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.text = `Tháng ${mStr}/${y}`;
+            if (y === curYearNum && m === curMonthNum) {
+                opt.selected = true;
+                currentMonth = val;
+                COLLECTION_NAME = "new_products_" + val;
+            }
+            grp.appendChild(opt);
         }
-        sel.appendChild(opt);
+        sel.appendChild(grp);
+    });
+
+    if (!currentMonth) {
+        const mStr = String(curMonthNum).padStart(2, '0');
+        currentMonth = `${mStr}-${curYearNum}`;
+        COLLECTION_NAME = "new_products_" + currentMonth;
+    }
+
+    const yearSelect = document.getElementById('year-selector');
+    if (yearSelect && yearSelect.querySelector(`option[value="${curYearNum}"]`)) {
+        yearSelect.value = String(curYearNum);
+        selectedYear = String(curYearNum);
     }
     
     sel.addEventListener('change', (e) => {
@@ -228,20 +259,55 @@ function setupMonths() {
     });
 }
 
+function attachMonthRealtimeListener(collName, monthVal) {
+    if (activeRealtimeUnsub) {
+        activeRealtimeUnsub();
+        activeRealtimeUnsub = null;
+    }
+    let isFirstSnap = true;
+    activeRealtimeUnsub = onSnapshot(collection(db, collName), (snap) => {
+        if (isFirstSnap) {
+            isFirstSnap = false;
+            return;
+        }
+        if (!table || currentViewMode !== 'month' || COLLECTION_NAME !== collName) return;
+        // Avoid disrupting active inline cell editing
+        if (document.querySelector('#products-table .tabulator-editing')) return;
+
+        snap.docChanges().forEach(change => {
+            const d = change.doc;
+            const rowObj = {
+                id: d.id,
+                _collectionName: collName,
+                _monthStr: monthVal,
+                ...d.data()
+            };
+            if (change.type === 'removed') {
+                const existing = table.getRow(d.id);
+                if (existing) existing.delete();
+            } else {
+                table.updateOrAddData([rowObj]).catch(() => {});
+            }
+        });
+        setTimeout(() => {
+            if (table) updateStats(table.getData('active'));
+        }, 60);
+    }, (err) => console.warn('Realtime products sync warning:', err));
+}
+
 // Load Data into Table (Month View)
 async function loadTableData() {
     setSyncing(true);
     try {
-        // Sort by createdAt DESC so newest rows are at the top by default
         const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         const tableData = [];
-        snapshot.forEach(doc => {
+        snapshot.forEach(docSnap => {
             tableData.push({
-                id: doc.id,
+                id: docSnap.id,
                 _collectionName: COLLECTION_NAME,
                 _monthStr: currentMonth,
-                ...doc.data()
+                ...docSnap.data()
             });
         });
         
@@ -250,23 +316,24 @@ async function loadTableData() {
             await table.setData(tableData);
             updateStats(tableData);
         }
+        attachMonthRealtimeListener(COLLECTION_NAME, currentMonth);
         setSyncing(false);
         return tableData;
     } catch (e) {
         console.error("Error loading data:", e);
-        // Fallback: if index not created yet, load without sort
         const snapshot = await getDocs(collection(db, COLLECTION_NAME));
-        const tableData = snapshot.docs.map(doc => ({
-            id: doc.id,
+        const tableData = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
             _collectionName: COLLECTION_NAME,
             _monthStr: currentMonth,
-            ...doc.data()
+            ...docSnap.data()
         }));
         if (table) {
             try { table.hideColumn('_monthStr'); } catch(e) {}
             table.setData(tableData);
             updateStats(tableData);
         }
+        attachMonthRealtimeListener(COLLECTION_NAME, currentMonth);
         setSyncing(false);
         return tableData;
     }
@@ -274,10 +341,16 @@ async function loadTableData() {
 
 // Load All Year Data for "Xem toàn bộ" tab
 async function loadAllYearData(year = "2026") {
+    if (activeRealtimeUnsub) {
+        activeRealtimeUnsub();
+        activeRealtimeUnsub = null;
+    }
     setSyncing(true);
     try {
         const promises = [];
-        const yearsToScan = (year === 'all') ? ['2026', '2025'] : [year];
+        const curY = new Date().getFullYear();
+        const dynamicYears = Array.from(new Set(['2025', '2026', '2027', '2028', String(curY)]));
+        const yearsToScan = (year === 'all') ? dynamicYears : [year];
         
         for (const y of yearsToScan) {
             for (let m = 1; m <= 12; m++) {
@@ -493,15 +566,42 @@ async function init() {
     const DRIVE_REFRESH_MARGIN = 5 * 60 * 1000; // gia hạn trước khi hết hạn 5 phút
 
     // silent = true: tự gia hạn im lặng (không hộp thoại, không báo lỗi khi thất bại)
-    async function connectGoogleDrive(silent = false) {
+    async function connectGoogleDrive(silent = false, forceSelectAccount = false) {
+        if (silent !== true && !forceSelectAccount) {
+            const curToken = localStorage.getItem("gdrive_access_token");
+            const curExp = parseInt(localStorage.getItem("gdrive_token_expires") || "0", 10);
+            if (curToken && curExp && Date.now() < curExp) {
+                const hintEmail = localStorage.getItem("gdrive_hint") || "Tài khoản hiện tại";
+                const choice = await Swal.fire({
+                    title: 'Google Drive đã kết nối',
+                    text: `Đang kết nối: ${hintEmail}`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: 'Đổi tài khoản Google',
+                    denyButtonText: 'Ngắt kết nối',
+                    cancelButtonText: 'Đóng'
+                });
+                if (choice.isDenied) {
+                    localStorage.removeItem("gdrive_access_token");
+                    localStorage.removeItem("gdrive_token_expires");
+                    localStorage.removeItem("gdrive_connected");
+                    localStorage.removeItem("gdrive_hint");
+                    updateDriveButton();
+                    if (table) table.redraw(true);
+                    return;
+                }
+                if (!choice.isConfirmed) return;
+                forceSelectAccount = true;
+            }
+        }
+
         if (isConnectingDrive) return;
         isConnectingDrive = true;
         let popupOpened = false;
         try {
-            popupOpened = await connectGoogleDriveFlow(silent === true);
+            popupOpened = await connectGoogleDriveFlow(silent === true, forceSelectAccount === true);
         } finally {
-            // Chưa mở được cửa sổ Google (thiếu Client ID, lỗi thư viện...) thì cho bấm lại.
-            // Nếu đã mở cửa sổ, cờ được reset trong callback / error_callback của Google.
             if (!popupOpened) isConnectingDrive = false;
         }
     }
@@ -545,7 +645,7 @@ async function init() {
         } catch (e) { /* không quan trọng */ }
     }
 
-    async function connectGoogleDriveFlow(silent) {
+    async function connectGoogleDriveFlow(silent, forceSelectAccount = false) {
         // Fetch googleClientId from settings document
         let clientId = cachedClientId;
         try {
@@ -555,8 +655,12 @@ async function init() {
             }
         } catch (err) { console.error("Error loading config for Google Drive:", err); }
         
-        if (!clientId && silent) return false; // im lặng thì không hỏi Client ID
+        if (!clientId && silent) return false;
         if (!clientId) {
+            if (isUser) {
+                Swal.fire('Chưa cấu hình Google Client ID', 'Vui lòng liên hệ Quản trị viên để cấu hình Google Client ID cho tổ chức.', 'warning');
+                return false;
+            }
             const { value: newId } = await Swal.fire({
                 title: 'Cấu hình Google Client ID',
                 text: 'Hệ thống chưa có Google Client ID. Vui lòng nhập Client ID của tổ chức Yody để kết nối trực tiếp với Google Drive:',
@@ -583,7 +687,6 @@ async function init() {
             }
         }
         
-        // Trigger Google OAuth 2.0 Token Flow
         if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
             if (!silent) Swal.fire('Lỗi thư viện', 'Thư viện Google Identity Services chưa tải xong. Vui lòng thử lại sau vài giây!', 'error');
             return false;
@@ -602,21 +705,18 @@ async function init() {
                         localStorage.setItem("gdrive_connected", "1");
                         updateDriveButton();
                         scheduleDriveRefresh();
-                        if (!localStorage.getItem("gdrive_hint")) rememberDriveAccount(tokenResponse.access_token);
-                        // Tải lại thumbnail sau khi có token
+                        rememberDriveAccount(tokenResponse.access_token);
                         if (table) table.redraw(true);
                         if (!silent) Swal.fire('Thành công', 'Đã kết nối trực tiếp với Google Drive thành công!', 'success');
                     } else if (!silent) {
                         Swal.fire('Lỗi ủy quyền', 'Sếp đã từ chối hoặc có lỗi trong quá trình cấp quyền.', 'error');
                     }
                 },
-                // Người dùng đóng cửa sổ Google / popup bị chặn: cho phép bấm lại
                 error_callback: () => { isConnectingDrive = false; }
             });
-            // Không ép màn hình đồng ý: đã cấp quyền trước đó thì Google tự cấp lại token
-            const request = { prompt: '' };
+            const request = { prompt: forceSelectAccount ? 'select_account' : '' };
             const hint = localStorage.getItem("gdrive_hint");
-            if (hint) request.hint = hint;
+            if (hint && !forceSelectAccount) request.hint = hint;
             tokenClient.requestAccessToken(request);
             return true;
         } catch (err) {
@@ -640,6 +740,7 @@ async function init() {
     }
 
     function hideImagePreview() {
+        hoverPreviewReqId++;
         const card = document.getElementById("hover-preview-card");
         if (card) {
             card.style.display = "none";
@@ -888,6 +989,7 @@ async function init() {
     }
 
     async function showImagePreview(e, cell) {
+        const reqId = ++hoverPreviewReqId;
         const rowData = cell.getRow().getData();
         const searchCode = rowData.ma16 || rowData.ma10;
         const field = cell.getField();
@@ -898,7 +1000,6 @@ async function init() {
         } else if (field === "linkAnhModel") {
             candidateLinks = [rowData.linkAnhModel];
         } else {
-            // Priority: linkAnhModel > linkAnh (trải sàn), tự động fallback nếu link đầu chưa có ảnh
             candidateLinks = [rowData.linkAnhModel, rowData.linkAnh];
         }
         candidateLinks = candidateLinks.filter(l => l && typeof l === 'string' && l.includes("drive.google.com"));
@@ -909,6 +1010,9 @@ async function init() {
         const previewImg = document.getElementById("preview-img");
         const previewTitle = document.getElementById("preview-title");
         const spinner = card.querySelector(".loading-spinner");
+        previewImg.style.display = "none";
+        spinner.style.display = "block";
+        previewTitle.innerText = "";
 
         let x = e.clientX + 20, y = e.clientY - 150;
         if (x + 350 > window.innerWidth) x = e.clientX - 340;
@@ -935,6 +1039,7 @@ async function init() {
 
         try {
             const { status, file, isFolder } = await resolveDriveImageFromLinks(candidateLinks, searchCode, token);
+            if (reqId !== hoverPreviewReqId) return;
 
             if (status === 401 || status === 403) {
                 if (status === 401) {
@@ -1184,22 +1289,29 @@ async function init() {
     // Các cột air channels — TẤT CẢ user đều được phép điền
     const AIR_FIELDS = ['airWeb', 'airTiktok', 'airShopee'];
 
-    // Header Menu (chuột phải vào tiêu đề cột)
-    const headerMenu = [
+    // Header Menu (chỉ dành cho các cột tuỳ chỉnh do người dùng thêm)
+    const customHeaderMenu = [
         {
             label: "Đổi tên cột",
             action: async function(e, column){
                 const { value: newName } = await Swal.fire({ title: 'Đổi tên cột', input: 'text', inputValue: column.getDefinition().title, showCancelButton: true });
-                if(newName) {
+                if (newName && newName.trim()) {
+                    const cleanTitle = newName.trim();
                     setSyncing(true);
-                    column.updateDefinition({title: newName});
+                    column.updateDefinition({ title: cleanTitle });
+                    // Đồng bộ trong mảng columns cục bộ
+                    const field = column.getField();
+                    columns.forEach(c => {
+                        if (c.field === field) c.title = cleanTitle;
+                        if (c.columns) c.columns.forEach(sc => { if (sc.field === field) sc.title = cleanTitle; });
+                    });
                     try {
                         const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
                         let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
-                        let colDef = cols.find(c => c.field === column.getField());
-                        if(colDef) colDef.title = newName;
+                        let colDef = cols.find(c => c.field === field);
+                        if (colDef) colDef.title = cleanTitle;
                         await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
-                    } catch(e) {}
+                    } catch (e) {}
                     setSyncing(false);
                 }
             }
@@ -1207,22 +1319,35 @@ async function init() {
         {
             label: "Xoá cột",
             action: async function(e, column){
-                let field = column.getField();
+                const field = column.getField();
                 const result = await Swal.fire({ title: 'Xoá cột?', text: `Xoá "${column.getDefinition().title}"?`, icon: 'warning', showCancelButton: true });
-                if(result.isConfirmed) {
+                if (result.isConfirmed) {
                     setSyncing(true);
                     column.delete();
+                    // Xoá khỏi mảng columns cục bộ để không bị hồi sinh khi thêm cột mới
+                    for (let i = columns.length - 1; i >= 0; i--) {
+                        if (columns[i].field === field) {
+                            columns.splice(i, 1);
+                        } else if (columns[i].columns) {
+                            columns[i].columns = columns[i].columns.filter(sc => sc.field !== field);
+                            if (columns[i].columns.length === 0) columns.splice(i, 1);
+                        }
+                    }
                     try {
                         const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
                         let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
                         cols = cols.filter(c => c.field !== field);
                         await setDoc(doc(db, "settings", SETTINGS_DOC), { customColumns: cols }, { merge: true });
-                    } catch(e) {}
+                    } catch (e) {}
                     setSyncing(false);
                 }
             }
         }
     ];
+
+    const dateColSorter = function(a, b) {
+        return parseDateStrToTimestamp(a) - parseDateStrToTimestamp(b);
+    };
 
     // Base Columns
     let columns = [
@@ -1230,7 +1355,7 @@ async function init() {
         { formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:40, frozen:true },
         { 
             title: "STT", formatter:"rownum", hozAlign:"center", width:50, frozen:true, headerSort:false,
-            headerFilter: function(cell, onRendered, success, cancel, filterParams) {
+            headerFilter: function() {
                 const container = document.createElement("div");
                 container.className = "flex justify-center items-center h-full w-full px-1";
                 const btn = document.createElement("button");
@@ -1252,32 +1377,26 @@ async function init() {
             width: 105, 
             headerFilter: "input", 
             visible: false,
-            headerMenu: headerMenu,
             formatter: function(cell) {
                 const rowData = cell.getRow().getData();
                 let monthStr = "";
-                
-                // Ưu tiên 1: Tự động tính toán theo "Ngày về kho Media" (ngayVeKho)
                 if (rowData.ngayVeKho && typeof rowData.ngayVeKho === 'string') {
                     const parts = rowData.ngayVeKho.trim().split('/');
                     if (parts.length === 3 && parts[1] && parts[2]) {
                         monthStr = `${parts[1].padStart(2, '0')}-${parts[2].trim()}`;
                     } else if (parts.length === 2 && parts[1]) {
-                        const y = (rowData._monthStr ? rowData._monthStr.split('-')[1] : null) || '2026';
+                        const y = (rowData._monthStr ? rowData._monthStr.split('-')[1] : null) || String(new Date().getFullYear());
                         monthStr = `${parts[1].padStart(2, '0')}-${y}`;
                     }
                 }
-                
-                // Ưu tiên 2: Lấy theo collection tháng của dòng đó hoặc tháng hiện tại
                 if (!monthStr) {
                     monthStr = rowData._monthStr || currentMonth || `${String(new Date().getMonth() + 1).padStart(2, '0')}-${new Date().getFullYear()}`;
                 }
-                
                 const parts = monthStr.split('-');
-                return `<span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-extrabold text-[11px] border border-indigo-100 whitespace-nowrap">T${parts[0]}/${parts[1] || ''}</span>`;
+                return `<span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-extrabold text-[11px] border border-indigo-100 whitespace-nowrap">T${escapeHtml(parts[0] || '')}/${escapeHtml(parts[1] || '')}</span>`;
             }
         },
-        { title: "Mã 10", field: "ma10", editor: "input", width: 120, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+        { title: "Mã 10", field: "ma10", editor: "input", width: 120, minWidth: 80, headerFilter: "input" },
         {
             title: "Ảnh", field: "_thumb", formatter: thumbnailFormatter, width: 70, minWidth: 60,
             hozAlign: "center", vertAlign: "middle", headerSort: false, download: false, clipboard: false,
@@ -1285,11 +1404,10 @@ async function init() {
         },
         { 
             title: "Mã Màu (mã 16)", field: "ma16", editor: "input", width: 140, minWidth: 100, headerFilter: "input",
-            cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview,
-            headerMenu: headerMenu
+            cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview
         },
-        { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
-        { title: "Số lượng về", field: "soLuongVe", editor: "input", width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
+        { title: "Phân loại", field: "phanLoai", editor: "input", width: 120, minWidth: 80, headerFilter: "input" },
+        { title: "Số lượng về", field: "soLuongVe", editor: "number", sorter: "number", width: 100, minWidth: 80, headerFilter: "input" },
         { 
             title: "Ngày về kho", 
             field: "ngayVeKho", 
@@ -1298,61 +1416,57 @@ async function init() {
             width: 120, 
             minWidth: 100,
             headerFilter: "input",
-            headerMenu: headerMenu,
-            sorter: function(a, b) {
-                return parseDateStrToTimestamp(a) - parseDateStrToTimestamp(b);
-            }
+            sorter: dateColSorter
         },
         {
             title: "Hình ảnh trải sàn",
             columns: [
                 { title: "Link Ảnh", field: "linkAnh", editor: "input", width: 130, minWidth: 90, headerFilter: "input",
-                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter, headerMenu: headerMenu },
-                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 105, minWidth: 90, headerFilter: "input", headerMenu: headerMenu },
-                { title: "Ngày có ảnh", field: "anhTraiSanNgayCo", editor: dateEditor, formatter: dateDisplayFormatter, width: 115, minWidth: 100, headerFilter: "input", headerMenu: headerMenu,
+                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter },
+                { title: "Ngày chụp", field: "anhTraiSanNgay", editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 105, minWidth: 90, headerFilter: "input" },
+                { title: "Ngày có ảnh", field: "anhTraiSanNgayCo", editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 115, minWidth: 100, headerFilter: "input",
                     tooltip: "Tự động = Ngày về kho + 7 ngày. Có thể chỉnh tay." },
-                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]}, headerMenu: headerMenu }
+                { title: "Trạng thái", field: "anhTraiSanTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         {
             title: "Hình ảnh model",
             columns: [
                 { title: "Link Ảnh", field: "linkAnhModel", editor: "input", width: 130, minWidth: 90, headerFilter: "input",
-                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter, headerMenu: headerMenu },
-                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 105, minWidth: 90, headerFilter: "input", headerMenu: headerMenu },
-                { title: "Ngày có ảnh", field: "anhModelNgayCo", editor: dateEditor, formatter: dateDisplayFormatter, width: 115, minWidth: 100, headerFilter: "input", headerMenu: headerMenu,
+                    cellMouseEnter: showImagePreview, cellMouseLeave: hideImagePreview, formatter: linkFormatter },
+                { title: "Ngày chụp", field: "anhModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 105, minWidth: 90, headerFilter: "input" },
+                { title: "Ngày có ảnh", field: "anhModelNgayCo", editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 115, minWidth: 100, headerFilter: "input",
                     tooltip: "Tự động = Ngày về kho + 7 ngày. Có thể chỉnh tay." },
-                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]}, headerMenu: headerMenu }
+                { title: "Trạng thái", field: "anhModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         {
             title: "Video model",
             columns: [
-                { title: "Link Video", field: "linkVideo", editor: "input", width: 130, minWidth: 90, headerFilter: "input", formatter: linkFormatter, headerMenu: headerMenu },
-                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, width: 105, minWidth: 90, headerFilter: "input", headerMenu: headerMenu },
-                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]}, headerMenu: headerMenu }
+                { title: "Link Video", field: "linkVideo", editor: "input", width: 130, minWidth: 90, headerFilter: "input", formatter: linkFormatter },
+                { title: "Ngày quay", field: "videoModelNgay", editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 105, minWidth: 90, headerFilter: "input" },
+                { title: "Trạng thái", field: "videoModelTrangThai", editor: "list", editorParams:{values: statusOptions}, formatter: statusFormatter, width: 130, minWidth: 110, headerFilter: "list", headerFilterParams: {values: ["", ...statusOptions]} }
             ]
         },
         {
             title: "Ngày air các kênh",
             columns: [
-                { title: "Web",    field: "airWeb",    editor: dateEditor, formatter: dateDisplayFormatter, width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
-                { title: "Tiktok", field: "airTiktok", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu },
-                { title: "Shopee", field: "airShopee", editor: dateEditor, formatter: dateDisplayFormatter, width: 100, minWidth: 80, headerFilter: "input", headerMenu: headerMenu }
+                { title: "Web",    field: "airWeb",    editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 100, minWidth: 80, headerFilter: "input" },
+                { title: "Tiktok", field: "airTiktok", editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 100, minWidth: 80, headerFilter: "input" },
+                { title: "Shopee", field: "airShopee", editor: dateEditor, formatter: dateDisplayFormatter, sorter: dateColSorter, width: 100, minWidth: 80, headerFilter: "input" }
             ]
         },
-        { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, minWidth: 120, headerFilter: "input", headerMenu: headerMenu }
+        { title: "Ghi chú", field: "ghiChu", editor: "textarea", width: 250, minWidth: 120, headerFilter: "input" }
     ];
 
     // Load custom columns từ Firebase (hỗ trợ cả cột đơn và cột thuộc nhóm)
     customCols.forEach(col => {
-        const colDef = { title: col.title, field: col.field, editor: "input", width: 150, headerMenu: headerMenu };
+        const colDef = { title: col.title, field: col.field, editor: "input", headerFilter: "input", width: 150, headerMenu: isUser ? [] : customHeaderMenu };
         if (col.group) {
             const groupCol = columns.find(c => c.title === col.group && c.columns);
             if (groupCol) {
                 groupCol.columns.push(colDef);
             } else {
-                // Tạo nhóm mới ngay trước cột Ghi chú
                 const ghiChuIdx = columns.findIndex(c => c.field === 'ghiChu');
                 const newGroup = { title: col.group, columns: [colDef] };
                 if (ghiChuIdx > -1) columns.splice(ghiChuIdx, 0, newGroup);
@@ -1369,12 +1483,10 @@ async function init() {
         const disableEditing = (cols) => {
             cols.forEach(c => {
                 if (c.columns) {
-                    // Nhóm "Ngày air các kênh": giữ nguyên quyền chỉnh sửa cho tất cả user
-                    if (c.title === 'Ngày air các kênh') return;
+                    if (!isViewer && c.title === 'Ngày air các kênh') return;
                     disableEditing(c.columns);
                 } else {
-                    // Các cột air channels luôn cho phép user điền
-                    if (AIR_FIELDS.includes(c.field)) return;
+                    if (!isViewer && AIR_FIELDS.includes(c.field)) return;
                     c.editor = false;
                     c.headerMenu = [];
                 }
@@ -1383,9 +1495,10 @@ async function init() {
         disableEditing(columns);
     }
 
-    // Setup Tabulator
+    // Setup Tabulator (removed column/row localStorage persistence so custom column renames/deletes take effect cleanly)
     table = new Tabulator("#products-table", {
         data: tableData,
+        index: "id",
         layout: "fitColumns",
         height: "100%", 
         history: true, 
@@ -1394,12 +1507,11 @@ async function init() {
         reactiveData: true,
         rowFormatter: rowColorFormatter,
         movableColumns: true, 
-        movableRows: true,
+        movableRows: !isUser,
         headerWordWrap: true,
-        persistence: { columns: true, rows: true },
-        persistenceID: "productsTable_v8",
         columns: columns,
     });
+    updateStats(tableData);
 
     // Tracking last cell for pasting
     let lastClickedCell = null;
@@ -1420,10 +1532,11 @@ async function init() {
 
     table.on("cellMouseDown", function(e, cell) {
         if (isUser) return;
-        if (e.altKey && cell.getField()) {
+        const fld = cell.getField();
+        if (e.altKey && fld && !['_thumb', '_monthStr'].includes(fld)) {
             e.preventDefault();
             fillSource = cell;
-            fillField = cell.getField();
+            fillField = fld;
             fillActive = true;
             fillTargets = [];
             cell.getElement().style.outline = "2px solid #6366f1";
@@ -1459,8 +1572,9 @@ async function init() {
                 const f = cell.getField();
                 if (d.id) {
                     const targetCollection = d._collectionName || COLLECTION_NAME;
+                    const normalizedVal = f === 'soLuongVe' ? (Number(sourceValue) || 0) : (sourceValue ?? "");
                     const payload = {
-                        [f]: sourceValue || "",
+                        [f]: normalizedVal,
                         updatedAt: serverTimestamp()
                     };
                     if (f === 'ngayVeKho') {
@@ -1486,24 +1600,27 @@ async function init() {
         fillTargets = [];
     });
 
-    // --- FIREBASE SYNC ---
-    table.on("cellEdited", async function(cell) {
+    // --- FIREBASE SYNC (Inline Edit + Undo/Redo + Clipboard Paste) ---
+    async function persistCellChange(cell) {
+        if (isViewer) return;
         const row = cell.getRow();
         const data = row.getData();
         const field = cell.getField();
         const value = cell.getValue();
-
-        // Chỉ admin/manager mới được sửa — ngoại trừ cột air channels (mọi user đều được)
+        if (!field || ['_thumb', '_monthStr'].includes(field)) return;
         if (isUser && !AIR_FIELDS.includes(field)) return;
 
+        const cleanValue = field === 'soLuongVe'
+            ? (value === '' || value === null || value === undefined ? 0 : (Number(value) || 0))
+            : (value ?? "");
+
         const updatePayload = {
-            [field]: value || "",
+            [field]: cleanValue,
             updatedAt: serverTimestamp()
         };
 
-        // Khi thay ngày về kho: Tự động tính và cập nhật ngày có ảnh (cả trải sàn và model)
         if (field === 'ngayVeKho') {
-            const newNgayCo = value ? addDaysToDateStr(value, 7) : "";
+            const newNgayCo = value ? addDaysToDateStr(String(value), 7) : "";
             const traiSanCell = row.getCell('anhTraiSanNgayCo');
             const modelCell   = row.getCell('anhModelNgayCo');
             if (traiSanCell) traiSanCell.setValue(newNgayCo);
@@ -1521,38 +1638,75 @@ async function init() {
             row.reformat();
             setSyncing(false);
         }
+    }
+
+    table.on("cellEdited", persistCellChange);
+    table.on("historyUndo", function(action, component) {
+        if (action === "cellEdit" && component) persistCellChange(component);
+    });
+    table.on("historyRedo", function(action, component) {
+        if (action === "cellEdit" && component) persistCellChange(component);
+    });
+    table.on("clipboardPasted", async function(clipboard, rowData, rows) {
+        if (isUser || !Array.isArray(rows) || rows.length === 0) return;
+        setSyncing(true);
+        try {
+            const targetColl = COLLECTION_NAME || `new_products_${currentMonth}`;
+            for (const row of rows) {
+                const d = { ...row.getData() };
+                const existingId = d.id;
+                delete d.id;
+                delete d._collectionName;
+                delete d._monthStr;
+                delete d._thumb;
+                d.updatedAt = serverTimestamp();
+                if (existingId) {
+                    await updateDoc(doc(db, row.getData()._collectionName || targetColl, existingId), d);
+                } else {
+                    d.createdAt = serverTimestamp();
+                    const ref = await addDoc(collection(db, targetColl), d);
+                    row.update({ id: ref.id, _collectionName: targetColl, _monthStr: currentMonth });
+                }
+            }
+            updateStats(table.getData());
+        } catch (err) {
+            console.error("Clipboard paste sync error:", err);
+        }
+        setSyncing(false);
     });
 
     // --- BUTTON LISTENERS ---
     
-    // Add Row
+    // Add Row (respects currently selected month in 'month' view)
     document.getElementById("btn-add-row").addEventListener("click", async () => {
         if (isUser) return;
         setSyncing(true);
         try {
             const now = new Date();
-            const curM = String(now.getMonth() + 1).padStart(2, '0');
-            const curY = now.getFullYear();
-            const defaultMonthStr = `${curM}-${curY}`;
-            const targetCollection = (currentViewMode === 'all')
-                ? (`new_products_${defaultMonthStr}`)
-                : (COLLECTION_NAME || `new_products_${defaultMonthStr}`);
-            
-            const todayStr = `${String(now.getDate()).padStart(2, '0')}/${curM}/${curY}`;
-            // Ngày có ảnh mặc định = ngày về kho + 7 ngày
-            const defaultNgayCo = addDaysToDateStr(todayStr, 7);
+            const realM = String(now.getMonth() + 1).padStart(2, '0');
+            const realY = String(now.getFullYear());
+            const activeMonthStr = (currentViewMode === 'month' && currentMonth) ? currentMonth : `${realM}-${realY}`;
+            const [selM, selY] = activeMonthStr.split('-');
+            const targetCollection = `new_products_${activeMonthStr}`;
+
+            const arrivalStr = (selM === realM && selY === realY)
+                ? `${String(now.getDate()).padStart(2, '0')}/${realM}/${realY}`
+                : `01/${selM}/${selY}`;
+            const defaultNgayCo = addDaysToDateStr(arrivalStr, 7);
             
             const newDoc = {
                 ma10: "", ma16: "", phanLoai: "", soLuongVe: 0,
-                ngayVeKho: todayStr, linkAnh: "", linkAnhModel: "", linkVideo: "",
+                ngayVeKho: arrivalStr, linkAnh: "", linkAnhModel: "", linkVideo: "",
                 anhTraiSanNgay: "", anhTraiSanNgayCo: defaultNgayCo, anhTraiSanTrangThai: "Chưa thực hiện",
                 anhModelNgay: "", anhModelNgayCo: defaultNgayCo, anhModelTrangThai: "Chưa thực hiện",
                 videoModelNgay: "", videoModelTrangThai: "Chưa thực hiện",
                 airWeb: "", airTiktok: "", airShopee: "",
+                ghiChu: "",
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(collection(db, targetCollection), newDoc);
-            table.addRow({ id: docRef.id, _collectionName: targetCollection, _monthStr: defaultMonthStr, ...newDoc }, true);
+            table.addRow({ id: docRef.id, _collectionName: targetCollection, _monthStr: activeMonthStr, ...newDoc }, true);
+            updateStats(table.getData());
         } catch (err) { console.error(err); }
         setSyncing(false);
     });
@@ -1614,16 +1768,14 @@ async function init() {
             setSyncing(true);
             const { name: colName, group: colGroup } = formValues;
             const field = "custom_" + Date.now();
-            const newColDef = { title: colName, field: field, editor: "input", width: 150, headerMenu: headerMenu };
+            const newColDef = { title: colName, field: field, editor: "input", headerFilter: "input", width: 150, headerMenu: customHeaderMenu };
 
             try {
-                // Cập nhật mảng columns để rebuild đúng vị trí
                 if (colGroup) {
                     const groupCol = columns.find(c => c.title === colGroup && c.columns);
                     if (groupCol) {
                         groupCol.columns.push({...newColDef});
                     } else {
-                        // Tạo nhóm mới trước cột Ghi chú
                         const ghiChuIdx = columns.findIndex(c => c.field === 'ghiChu');
                         const newGroup = { title: colGroup, columns: [{...newColDef}] };
                         if (ghiChuIdx > -1) columns.splice(ghiChuIdx, 0, newGroup);
@@ -1635,10 +1787,8 @@ async function init() {
                     else columns.push({...newColDef});
                 }
 
-                // Rebuild bảng với cấu trúc cột mới
                 table.setColumns(columns);
 
-                // Lưu vào Firebase
                 const configSnap = await getDoc(doc(db, "settings", SETTINGS_DOC));
                 let cols = configSnap.exists() ? configSnap.data().customColumns || [] : [];
                 cols.push({ title: colName, field: field, group: colGroup || null });
@@ -1651,28 +1801,31 @@ async function init() {
         }
     });
 
-    // Manage Statuses
+    // Manage Statuses (no nested Swal.fire that closes modal)
     document.getElementById("btn-manage-status").addEventListener("click", async () => {
         if (isUser) return;
         let tempStatuses = [...statusOptions];
         let tempColors = {...statusColors};
 
         const renderList = () => {
-            let html = '<div class="space-y-3 max-h-[60vh] overflow-y-auto px-1">';
+            let html = '<div id="status-inline-error" class="hidden mb-2 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold"></div>';
+            html += '<div class="space-y-3 max-h-[60vh] overflow-y-auto px-1">';
             tempStatuses.forEach((s, i) => {
+                const escS = escapeHtml(s);
+                const safeCol = /^#[0-9a-fA-F]{6}$/.test(tempColors[s] || '') ? tempColors[s] : '#e2e8f0';
                 html += `
                     <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100 mb-2">
                         <div class="flex flex-col">
-                            <button class="btn-move-up text-slate-400 hover:text-indigo-600 disabled:opacity-30" data-index="${i}" ${i === 0 ? 'disabled' : ''}>
+                            <button type="button" class="btn-move-up text-slate-400 hover:text-indigo-600 disabled:opacity-30" data-index="${i}" ${i === 0 ? 'disabled' : ''}>
                                 <span class="material-symbols-outlined text-[20px]">expand_less</span>
                             </button>
-                            <button class="btn-move-down text-slate-400 hover:text-indigo-600 disabled:opacity-30" data-index="${i}" ${i === tempStatuses.length - 1 ? 'disabled' : ''}>
+                            <button type="button" class="btn-move-down text-slate-400 hover:text-indigo-600 disabled:opacity-30" data-index="${i}" ${i === tempStatuses.length - 1 ? 'disabled' : ''}>
                                 <span class="material-symbols-outlined text-[20px]">expand_more</span>
                             </button>
                         </div>
-                        <input type="text" value="${s}" class="status-name-input flex-grow px-3 py-1.5 rounded border border-slate-200 text-sm font-medium" data-index="${i}" placeholder="Tên trạng thái">
-                        <input type="color" value="${tempColors[s] || '#e2e8f0'}" class="status-color-input w-10 h-8 p-0 border-none cursor-pointer rounded" data-index="${i}">
-                        <button class="btn-remove-status text-rose-500 hover:bg-rose-50 p-1.5 rounded transition-all flex items-center justify-center" data-index="${i}">
+                        <input type="text" value="${escS}" class="status-name-input flex-grow px-3 py-1.5 rounded border border-slate-200 text-sm font-medium" data-index="${i}" placeholder="Tên trạng thái">
+                        <input type="color" value="${safeCol}" class="status-color-input w-10 h-8 p-0 border-none cursor-pointer rounded" data-index="${i}">
+                        <button type="button" class="btn-remove-status text-rose-500 hover:bg-rose-50 p-1.5 rounded transition-all flex items-center justify-center" data-index="${i}">
                             <span class="material-symbols-outlined text-[18px]">delete</span>
                         </button>
                     </div>
@@ -1680,7 +1833,7 @@ async function init() {
             });
             html += '</div>';
             html += `
-                <button id="btn-add-status-item" class="mt-4 w-full py-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition-all font-bold flex items-center justify-center gap-2 text-sm">
+                <button type="button" id="btn-add-status-item" class="mt-4 w-full py-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-500 hover:border-indigo-400 hover:text-indigo-500 transition-all font-bold flex items-center justify-center gap-2 text-sm">
                     <span class="material-symbols-outlined text-[18px]">add</span>
                     Thêm trạng thái mới
                 </button>
@@ -1698,12 +1851,18 @@ async function init() {
             focusConfirm: false,
             didOpen: () => {
                 const container = document.getElementById('status-manager-container');
+                const showInlineErr = (msg) => {
+                    const errEl = document.getElementById('status-inline-error');
+                    if (!errEl) return;
+                    errEl.textContent = msg;
+                    errEl.classList.remove('hidden');
+                    setTimeout(() => errEl.classList.add('hidden'), 3200);
+                };
                 
                 const attachEvents = () => {
-                    // Name change
                     container.querySelectorAll('.status-name-input').forEach(input => {
                         input.addEventListener('change', (e) => {
-                            const idx = e.target.dataset.index;
+                            const idx = Number(e.target.dataset.index);
                             const oldName = tempStatuses[idx];
                             const newName = e.target.value.trim();
                             if (newName && !tempStatuses.includes(newName)) {
@@ -1713,25 +1872,23 @@ async function init() {
                                     delete tempColors[oldName];
                                 }
                             } else if (newName !== oldName) {
-                                Swal.fire('Lỗi', 'Tên trạng thái đã tồn tại hoặc không hợp lệ', 'error');
+                                showInlineErr('Tên trạng thái đã tồn tại hoặc không hợp lệ.');
                                 e.target.value = oldName;
                             }
                         });
                     });
 
-                    // Color change
                     container.querySelectorAll('.status-color-input').forEach(input => {
                         input.addEventListener('change', (e) => {
-                            const idx = e.target.dataset.index;
+                            const idx = Number(e.target.dataset.index);
                             const name = tempStatuses[idx];
                             tempColors[name] = e.target.value;
                         });
                     });
 
-                    // Move Up
                     container.querySelectorAll('.btn-move-up').forEach(btn => {
                         btn.addEventListener('click', (e) => {
-                            const idx = parseInt(e.currentTarget.dataset.index);
+                            const idx = parseInt(e.currentTarget.dataset.index, 10);
                             if (idx > 0) {
                                 [tempStatuses[idx], tempStatuses[idx-1]] = [tempStatuses[idx-1], tempStatuses[idx]];
                                 container.innerHTML = renderList();
@@ -1740,10 +1897,9 @@ async function init() {
                         });
                     });
 
-                    // Move Down
                     container.querySelectorAll('.btn-move-down').forEach(btn => {
                         btn.addEventListener('click', (e) => {
-                            const idx = parseInt(e.currentTarget.dataset.index);
+                            const idx = parseInt(e.currentTarget.dataset.index, 10);
                             if (idx < tempStatuses.length - 1) {
                                 [tempStatuses[idx], tempStatuses[idx+1]] = [tempStatuses[idx+1], tempStatuses[idx]];
                                 container.innerHTML = renderList();
@@ -1752,10 +1908,13 @@ async function init() {
                         });
                     });
 
-                    // Remove
                     container.querySelectorAll('.btn-remove-status').forEach(btn => {
                         btn.addEventListener('click', (e) => {
-                            const idx = e.currentTarget.dataset.index;
+                            if (tempStatuses.length <= 1) {
+                                showInlineErr('Cần giữ lại ít nhất 1 trạng thái.');
+                                return;
+                            }
+                            const idx = Number(e.currentTarget.dataset.index);
                             const name = tempStatuses[idx];
                             tempStatuses.splice(idx, 1);
                             delete tempColors[name];
@@ -1764,9 +1923,13 @@ async function init() {
                         });
                     });
 
-                    // Add button
                     document.getElementById('btn-add-status-item').onclick = () => {
-                        const newName = "Trạng thái mới " + (tempStatuses.length + 1);
+                        let suffix = tempStatuses.length + 1;
+                        let newName = "Trạng thái mới " + suffix;
+                        while (tempStatuses.includes(newName)) {
+                            suffix++;
+                            newName = "Trạng thái mới " + suffix;
+                        }
                         tempStatuses.push(newName);
                         tempColors[newName] = "#e2e8f0";
                         container.innerHTML = renderList();
@@ -1780,8 +1943,6 @@ async function init() {
 
         if (confirmed) {
             setSyncing(true);
-            
-            // Update in-place to maintain references if any, but also re-assign for safety
             statusOptions.length = 0;
             statusOptions.push(...tempStatuses);
             statusColors = tempColors;
@@ -1792,7 +1953,6 @@ async function init() {
                     statusColors: statusColors 
                 }, { merge: true });
 
-                // Update each status column definition directly using Column Component
                 table.getColumns(true).forEach(col => {
                     const field = col.getField();
                     if (["anhTraiSanTrangThai", "anhModelTrangThai", "videoModelTrangThai"].includes(field)) {
@@ -1813,7 +1973,7 @@ async function init() {
         }
     });
 
-    // Manually Color Rows
+    // Manually Color Rows (Clearing color restores automatic status coloring)
     document.getElementById("btn-color-row").addEventListener("click", async () => {
         if (isUser) return;
         const selectedRows = table.getSelectedRows();
@@ -1823,7 +1983,7 @@ async function init() {
             title: 'Chọn màu nền',
             input: 'select',
             inputOptions: {
-                '#ffffff': 'Trắng (Xoá màu)',
+                '__clear__': 'Trắng (Xoá màu thủ công — về tự động theo trạng thái)',
                 '#dcfce7': 'Xanh nhạt (Hoàn tất)',
                 '#fef08a': 'Vàng nhạt (Đang xử lý)',
                 '#fecaca': 'Đỏ nhạt (Lỗi/Khẩn cấp)',
@@ -1835,13 +1995,16 @@ async function init() {
 
         if (color) {
             setSyncing(true);
-            let promises = [];
-            for (let row of selectedRows) {
+            const isClear = color === '__clear__' || color === '#ffffff';
+            const promises = [];
+            for (const row of selectedRows) {
                 const data = row.getData();
                 if (data.id) {
                     const targetCollection = data._collectionName || COLLECTION_NAME;
-                    promises.push(updateDoc(doc(db, targetCollection, data.id), { rowColor: color }));
-                    row.update({ rowColor: color });
+                    promises.push(updateDoc(doc(db, targetCollection, data.id), {
+                        rowColor: isClear ? deleteField() : color
+                    }));
+                    row.update({ rowColor: isClear ? "" : color });
                 }
             }
             await Promise.all(promises);
@@ -1852,9 +2015,29 @@ async function init() {
     });
 
     // Connect Drive Listener
-    document.getElementById("btn-connect-drive").addEventListener("click", connectGoogleDrive);
+    document.getElementById("btn-connect-drive").addEventListener("click", () => connectGoogleDrive(false, false));
 
-    // Import Logic
+    // Helper: normalize Excel cell value / Date to DD/MM/YYYY string for date columns
+    function normalizeImportedDate(val) {
+        if (val === null || val === undefined || val === '') return '';
+        if (val instanceof Date && !isNaN(val.getTime())) {
+            const dd = String(val.getDate()).padStart(2, '0');
+            const mm = String(val.getMonth() + 1).padStart(2, '0');
+            return `${dd}/${mm}/${val.getFullYear()}`;
+        }
+        const s = String(val).trim();
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+            const [y, m, d] = s.slice(0, 10).split('-');
+            return `${d}/${m}/${y}`;
+        }
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+            const [d, m, y] = s.split('/');
+            return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
+        }
+        return s;
+    }
+
+    // Import Logic (Supports both .xlsx and .csv with Vietnamese & field-key header mapping)
     document.getElementById("btn-import-trigger").addEventListener("click", () => {
         if (isUser) return;
         document.getElementById("file-import-csv").click();
@@ -1863,45 +2046,352 @@ async function init() {
     document.getElementById("file-import-csv").addEventListener("change", async (e) => {
         if (isUser) return;
         const file = e.target.files[0];
+        e.target.value = '';
         if (!file) return;
 
+        const targetMonth = currentMonth || `${String(new Date().getMonth() + 1).padStart(2, '0')}-${new Date().getFullYear()}`;
+        const targetColl = `new_products_${targetMonth}`;
+
         const result = await Swal.fire({
-            title: 'Nhập dữ liệu',
-            text: `Bạn muốn nhập dữ liệu vào tháng ${currentMonth}?`,
+            title: 'Nhập dữ liệu Excel / CSV',
+            text: `Bạn muốn nhập dữ liệu từ "${file.name}" vào tháng ${targetMonth}?`,
             icon: 'question',
-            showCancelButton: true
+            showCancelButton: true,
+            confirmButtonText: 'Nhập ngay',
+            cancelButtonText: 'Hủy'
         });
 
-        if (result.isConfirmed) {
-            setSyncing(true);
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const text = event.target.result;
-                const rows = text.split('\n').filter(r => r.trim().length > 0);
-                const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
-                
-                let addedCount = 0;
-                for (let i = 1; i < rows.length; i++) {
-                    const values = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || rows[i].split(',');
-                    const rowData = { createdAt: serverTimestamp() };
-                    headers.forEach((h, index) => {
-                        let val = values[index] ? values[index].replace(/"/g, '').trim() : "";
-                        rowData[h] = val;
-                    });
-                    try {
-                        delete rowData.id; 
-                        const docRef = await addDoc(collection(db, COLLECTION_NAME), rowData);
-                        table.addRow({ id: docRef.id, ...rowData }, true);
-                        addedCount++;
-                    } catch (e) { console.error(e); }
-                }
-                Swal.fire('Thành công', `Đã nhập ${addedCount} dòng mới`, 'success');
+        if (!result.isConfirmed) return;
+
+        setSyncing(true);
+        try {
+            const buffer = await file.arrayBuffer();
+            const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const jsonRows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+            if (!jsonRows.length) {
+                Swal.fire('File rỗng', 'Không tìm thấy dòng dữ liệu nào trong file.', 'warning');
                 setSyncing(false);
+                return;
+            }
+
+            // Build flexible header map (Vietnamese titles + internal field keys + custom columns)
+            const headerAliasMap = {
+                'ma10': 'ma10', 'mã 10': 'ma10', 'ma 10': 'ma10', 'mã sp': 'ma10', 'ma sp': 'ma10',
+                'ma16': 'ma16', 'mã màu (mã 16)': 'ma16', 'mã màu': 'ma16', 'ma mau': 'ma16', 'mã 16': 'ma16', 'ma 16': 'ma16',
+                'phanloai': 'phanLoai', 'phân loại': 'phanLoai', 'phan loai': 'phanLoai', 'tên sản phẩm': 'phanLoai', 'ten san pham': 'phanLoai',
+                'soluongve': 'soLuongVe', 'số lượng về': 'soLuongVe', 'so luong ve': 'soLuongVe', 'số lượng': 'soLuongVe', 'sl': 'soLuongVe',
+                'ngayvekho': 'ngayVeKho', 'ngày về kho': 'ngayVeKho', 'ngay ve kho': 'ngayVeKho', 'ngày về kho media': 'ngayVeKho',
+                'linkanh': 'linkAnh', 'link ảnh': 'linkAnh', 'link anh': 'linkAnh', 'link ảnh trải sàn': 'linkAnh',
+                'anhtraisangay': 'anhTraiSanNgay', 'anhtraisannngay': 'anhTraiSanNgay', 'ngày chụp trải sàn': 'anhTraiSanNgay',
+                'anhtraisangayco': 'anhTraiSanNgayCo', 'ngày có ảnh trải sàn': 'anhTraiSanNgayCo',
+                'anhtraisantrangthai': 'anhTraiSanTrangThai', 'trạng thái trải sàn': 'anhTraiSanTrangThai',
+                'linkanhmodel': 'linkAnhModel', 'link ảnh model': 'linkAnhModel', 'link anh model': 'linkAnhModel',
+                'anhmodelngay': 'anhModelNgay', 'ngày chụp model': 'anhModelNgay',
+                'anhmodelngayco': 'anhModelNgayCo', 'ngày có ảnh model': 'anhModelNgayCo',
+                'anhmodeltrangthai': 'anhModelTrangThai', 'trạng thái model': 'anhModelTrangThai',
+                'linkvideo': 'linkVideo', 'link video': 'linkVideo', 'link video model': 'linkVideo',
+                'videomodelngay': 'videoModelNgay', 'ngày quay': 'videoModelNgay', 'ngay quay': 'videoModelNgay',
+                'videomodeltrangthai': 'videoModelTrangThai', 'trạng thái video': 'videoModelTrangThai',
+                'airweb': 'airWeb', 'web': 'airWeb', 'ngày air web': 'airWeb',
+                'airtiktok': 'airTiktok', 'tiktok': 'airTiktok', 'ngày air tiktok': 'airTiktok',
+                'airshopee': 'airShopee', 'shopee': 'airShopee', 'ngày air shopee': 'airShopee',
+                'ghichu': 'ghiChu', 'ghi chú': 'ghiChu', 'ghi chu': 'ghiChu', 'note': 'ghiChu'
             };
-            reader.readAsText(file);
+
+            customCols.forEach(cc => {
+                if (cc.title && cc.field) {
+                    headerAliasMap[cc.title.trim().toLowerCase()] = cc.field;
+                    headerAliasMap[cc.field.toLowerCase()] = cc.field;
+                }
+            });
+
+            const DATE_FIELDS = new Set([
+                'ngayVeKho', 'anhTraiSanNgay', 'anhTraiSanNgayCo',
+                'anhModelNgay', 'anhModelNgayCo', 'videoModelNgay',
+                'airWeb', 'airTiktok', 'airShopee'
+            ]);
+
+            let addedCount = 0;
+            const addedUiRows = [];
+
+            for (const raw of jsonRows) {
+                const mapped = {
+                    ma10: '', ma16: '', phanLoai: '', soLuongVe: 0,
+                    ngayVeKho: '', linkAnh: '', linkAnhModel: '', linkVideo: '',
+                    anhTraiSanNgay: '', anhTraiSanNgayCo: '', anhTraiSanTrangThai: 'Chưa thực hiện',
+                    anhModelNgay: '', anhModelNgayCo: '', anhModelTrangThai: 'Chưa thực hiện',
+                    videoModelNgay: '', videoModelTrangThai: 'Chưa thực hiện',
+                    airWeb: '', airTiktok: '', airShopee: '', ghiChu: ''
+                };
+
+                let hasContent = false;
+                for (const [rawKey, rawVal] of Object.entries(raw)) {
+                    const normKey = String(rawKey || '').trim().toLowerCase();
+                    if (!normKey || normKey === 'stt' || normKey === 'id' || normKey === 'ảnh') continue;
+                    const field = headerAliasMap[normKey] || (rawKey in mapped ? rawKey : null);
+                    if (!field) continue;
+
+                    if (field === 'soLuongVe') {
+                        const n = parseInt(String(rawVal).replace(/[^0-9-]/g, ''), 10) || 0;
+                        mapped.soLuongVe = n;
+                        if (n > 0) hasContent = true;
+                    } else if (DATE_FIELDS.has(field)) {
+                        const dStr = normalizeImportedDate(rawVal);
+                        mapped[field] = dStr;
+                        if (dStr) hasContent = true;
+                    } else {
+                        const strVal = String(rawVal ?? '').trim();
+                        if (strVal) {
+                            mapped[field] = strVal;
+                            hasContent = true;
+                        }
+                    }
+                }
+
+                if (!hasContent) continue;
+
+                // Auto-calculate Ngày có ảnh = Ngày về kho + 7 ngày when blank
+                if (mapped.ngayVeKho) {
+                    const autoNgayCo = addDaysToDateStr(mapped.ngayVeKho, 7);
+                    if (!mapped.anhTraiSanNgayCo) mapped.anhTraiSanNgayCo = autoNgayCo;
+                    if (!mapped.anhModelNgayCo) mapped.anhModelNgayCo = autoNgayCo;
+                }
+
+                mapped.createdAt = serverTimestamp();
+                const docRef = await addDoc(collection(db, targetColl), mapped);
+                addedUiRows.push({
+                    id: docRef.id,
+                    _collectionName: targetColl,
+                    _monthStr: targetMonth,
+                    ...mapped
+                });
+                addedCount++;
+            }
+
+            if (addedUiRows.length > 0 && table) {
+                await table.addData(addedUiRows, true);
+                updateStats(table.getData());
+            }
+            Swal.fire('Thành công!', `Đã nhập chính xác ${addedCount} dòng sản phẩm vào tháng ${targetMonth}.`, 'success');
+        } catch (err) {
+            console.error("Import error:", err);
+            Swal.fire('Lỗi đọc file', err.message || 'Định dạng file không hợp lệ.', 'error');
         }
-        e.target.value = ''; 
+        setSyncing(false);
     });
+
+    // Cross-Module Sync: Push selected product rows directly into a Creative Order (NV-xxxx)
+    const createOrderBtn = document.getElementById("btn-create-order-from-products");
+    if (createOrderBtn) {
+        createOrderBtn.addEventListener("click", async () => {
+            if (isViewer) {
+                Swal.fire('Từ chối', 'Tài khoản Người xem không có quyền tạo đơn hàng.', 'warning');
+                return;
+            }
+            const selectedRows = table.getSelectedRows();
+            if (selectedRows.length === 0) {
+                Swal.fire('Chưa chọn sản phẩm', 'Hãy tích chọn ít nhất 1 dòng sản phẩm (ô vuông đầu dòng) để tạo đơn sản xuất Creative.', 'info');
+                return;
+            }
+
+            const items = selectedRows.map(r => r.getData());
+            const sampleCodes = items.map(x => x.ma10 || x.ma16).filter(Boolean).slice(0, 4).join(', ');
+            const defaultTitle = `Sản xuất Media SP mới (${items.length} mã${sampleCodes ? ': ' + sampleCodes : ''})`;
+            const plus7 = new Date();
+            plus7.setDate(plus7.getDate() + 7);
+            const defaultDeadline = buildLocalYMD(plus7.getFullYear(), plus7.getMonth() + 1, plus7.getDate());
+            const defaultDept = localStorage.getItem('nevo_dept') || 'Ngành hàng';
+
+            const { value: orderForm } = await Swal.fire({
+                title: `🎬 Tạo đơn Creative (${items.length} SP)`,
+                width: '520px',
+                html: `
+                    <div style="text-align:left;display:flex;flex-direction:column;gap:12px;margin-top:6px">
+                        <div>
+                            <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Tiêu đề đơn hàng *</label>
+                            <input id="swal-ord-title" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;font-size:13px" value="${escapeHtml(defaultTitle)}">
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                            <div>
+                                <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Thể loại sản xuất *</label>
+                                <select id="swal-ord-cat" class="swal2-select" style="margin:0;width:100%;box-sizing:border-box;font-size:13px">
+                                    <option value="Hình Ảnh">Hình Ảnh (Model + Trải sàn)</option>
+                                    <option value="Video">Video Model</option>
+                                    <option value="Livestream">Livestream</option>
+                                    <option value="Giả Live">Giả Live</option>
+                                    <option value="Thiết kế">Thiết kế</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Deadline bàn giao *</label>
+                                <input id="swal-ord-deadline" type="date" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;font-size:13px" value="${defaultDeadline}">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:4px">Phòng ban yêu cầu</label>
+                            <input id="swal-ord-dept" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;font-size:13px" value="${escapeHtml(defaultDept)}">
+                        </div>
+                        <p style="font-size:11px;color:#64748b;margin:0">✨ Khi đơn Creative được đánh dấu <b>Hoàn thành</b> hoặc <b>Duyệt Final</b>, trạng thái Ảnh/Video và Link sản phẩm sẽ tự động đồng bộ ngược về các dòng sản phẩm này!</p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Khởi tạo đơn NV-xxxx',
+                confirmButtonColor: '#b80035',
+                cancelButtonText: 'Hủy',
+                preConfirm: () => {
+                    const title = document.getElementById('swal-ord-title').value.trim();
+                    const category = document.getElementById('swal-ord-cat').value;
+                    const deadline = document.getElementById('swal-ord-deadline').value;
+                    const department = document.getElementById('swal-ord-dept').value.trim() || 'Ngành hàng';
+                    if (!title || !deadline) {
+                        Swal.showValidationMessage('Vui lòng nhập đủ Tiêu đề và Deadline.');
+                        return false;
+                    }
+                    return { title, category, deadline, department };
+                }
+            });
+
+            if (!orderForm) return;
+
+            setSyncing(true);
+            try {
+                const requester = localStorage.getItem('nevo_user') || 'Nhân viên';
+                const rowsHtml = items.map((p, idx) => `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><b>${escapeHtml(p.ma10 || '-')}</b></td>
+                        <td>${escapeHtml(p.ma16 || '-')}</td>
+                        <td>${escapeHtml(p.phanLoai || '-')}</td>
+                        <td>${Number(p.soLuongVe || 0)}</td>
+                        <td>${escapeHtml(p.ngayVeKho || '-')}</td>
+                        <td>${escapeHtml(p.anhModelNgayCo || p.anhTraiSanNgayCo || '-')}</td>
+                    </tr>
+                `).join('');
+
+                const contentHtml = `
+                    <p><b>Đơn tự động khởi tạo từ bảng Sản phẩm mới (${items.length} dòng sản phẩm):</b></p>
+                    <table>
+                        <thead>
+                            <tr><th>STT</th><th>Mã 10</th><th>Mã Màu (16)</th><th>Phân loại</th><th>SL về</th><th>Ngày về kho</th><th>Hạn có ảnh</th></tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                `;
+
+                const linkedProducts = items
+                    .filter(p => p.id)
+                    .map(p => ({
+                        collection: p._collectionName || COLLECTION_NAME,
+                        docId: p.id,
+                        ma10: p.ma10 || '',
+                        ma16: p.ma16 || ''
+                    }));
+
+                const counterRef = doc(db, "counters", "orders");
+                const newOrderRef = doc(collection(db, "orders"));
+                const todayYMD = buildLocalYMD(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
+
+                const allocatedCode = await runTransaction(db, async (tx) => {
+                    const cSnap = await tx.get(counterRef);
+                    let candidateNum = cSnap.exists() ? (Number(cSnap.data().count) || 0) : 0;
+                    let assigned = null;
+
+                    for (let attempt = 0; attempt < 50; attempt++) {
+                        candidateNum++;
+                        const codeCandidate = 'NV-' + String(candidateNum).padStart(4, '0');
+                        const codeRef = doc(db, "order_codes", codeCandidate);
+                        const codeSnap = await tx.get(codeRef);
+                        if (!codeSnap.exists()) {
+                            tx.set(codeRef, {
+                                code: codeCandidate,
+                                orderId: newOrderRef.id,
+                                requester,
+                                title: orderForm.title,
+                                createdAt: serverTimestamp()
+                            });
+                            assigned = codeCandidate;
+                            break;
+                        }
+                    }
+                    if (!assigned) throw new Error("Không thể cấp phát mã đơn tự động.");
+
+                    tx.set(counterRef, {
+                        count: candidateNum,
+                        lastAllocatedCode: assigned,
+                        updatedAt: serverTimestamp()
+                    }, { merge: true });
+
+                    tx.set(newOrderRef, {
+                        code: assigned,
+                        department: orderForm.department,
+                        requester,
+                        title: orderForm.title,
+                        category: orderForm.category,
+                        orderDate: todayYMD,
+                        deployDate: todayYMD,
+                        deadline: orderForm.deadline,
+                        content: contentHtml,
+                        note: `Đồng bộ 2 chiều với ${linkedProducts.length} mã SP mới`,
+                        linkedProducts,
+                        status: 'Chờ duyệt',
+                        stageTimestamps: { 'Chờ duyệt': new Date().toISOString() },
+                        createdAt: serverTimestamp()
+                    });
+
+                    return assigned;
+                });
+
+                // Mark selected products as "Đang xử lý" for the requested media type
+                const isVideoOrder = orderForm.category.toLowerCase().includes('video') || orderForm.category.toLowerCase().includes('live');
+                for (const row of selectedRows) {
+                    const d = row.getData();
+                    if (!d.id) continue;
+                    const coll = d._collectionName || COLLECTION_NAME;
+                    const statusPatch = isVideoOrder
+                        ? { videoModelTrangThai: 'Đang xử lý', updatedAt: serverTimestamp() }
+                        : { anhModelTrangThai: 'Đang xử lý', anhTraiSanTrangThai: 'Đang xử lý', updatedAt: serverTimestamp() };
+                    await updateDoc(doc(db, coll, d.id), statusPatch);
+                    row.update(isVideoOrder
+                        ? { videoModelTrangThai: 'Đang xử lý' }
+                        : { anhModelTrangThai: 'Đang xử lý', anhTraiSanTrangThai: 'Đang xử lý' }
+                    );
+                }
+                table.deselectRow();
+                table.redraw(true);
+
+                // Notify Creative team via notifications collection
+                await addDoc(collection(db, "notifications"), {
+                    title: `🆕 Đơn SP mới #${allocatedCode}: ${orderForm.title}`,
+                    body: `${requester} (${orderForm.department}) vừa đẩy ${linkedProducts.length} sản phẩm mới sang Creative.`,
+                    type: 'create',
+                    orderId: newOrderRef.id,
+                    orderCode: allocatedCode,
+                    targetAll: true,
+                    readBy: [],
+                    linkPage: 'orders',
+                    createdAt: serverTimestamp()
+                });
+
+                const goRes = await Swal.fire({
+                    title: `Đã tạo đơn #${allocatedCode}!`,
+                    text: `Đã liên kết 2 chiều ${linkedProducts.length} mã sản phẩm với đơn #${allocatedCode}.`,
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Mở Quản lý đơn hàng',
+                    cancelButtonText: 'Ở lại trang SP mới'
+                });
+                if (goRes.isConfirmed) {
+                    window.location.href = 'index.html#orders';
+                }
+            } catch (err) {
+                console.error("Create order from products error:", err);
+                Swal.fire('Lỗi tạo đơn', err.message || 'Không thể khởi tạo đơn hàng.', 'error');
+            }
+            setSyncing(false);
+        });
+    }
 
     // Delete Rows
     document.getElementById("btn-delete-rows").addEventListener("click", async () => {
@@ -1919,13 +2409,14 @@ async function init() {
         if (result.isConfirmed) {
             setSyncing(true);
             try {
-                for (let row of selectedRows) {
+                for (const row of selectedRows) {
                     const data = row.getData();
                     const id = data.id;
                     const targetCollection = data._collectionName || COLLECTION_NAME;
                     if (id) await deleteDoc(doc(db, targetCollection, id));
                     row.delete();
                 }
+                updateStats(table.getData());
             } catch (err) { console.error(err); }
             setSyncing(false);
         }
@@ -1965,33 +2456,36 @@ async function init() {
         if (!filterParams) return true;
         const term = filterParams.toLowerCase();
         for (const key in data) {
+            if (key.startsWith('_')) continue;
             if (data[key] && String(data[key]).toLowerCase().includes(term)) return true;
         }
         return false;
     }
     updateDriveButton();
-    trySilentReconnect(); // Ghi nhớ kết nối Drive: tự gia hạn token im lặng khi vào lại web
+    trySilentReconnect();
 
-    // RBAC: Ẩn các nút chỉnh sửa với User role
-    // (3 cột Ngày air vẫn cho phép User điền — đã xử lý trong cellEdited)
+    // RBAC: Ẩn các nút chỉnh sửa theo vai trò
     if (isUser) {
         const elementsToRemove = [
             "btn-add-row", "btn-add-col", "btn-color-row", 
             "btn-import-trigger", "btn-delete-rows", "btn-manage-status",
             "file-import-csv"
         ];
+        if (isViewer) {
+            elementsToRemove.push("btn-create-order-from-products");
+        }
         elementsToRemove.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
         
-        // Ẩn ghi chú hướng dẫn Alt+Drag
         const infoText = document.querySelector('.text-slate-500.font-medium');
-        if (infoText) infoText.style.display = 'none';
+        if (infoText && isViewer) infoText.style.display = 'none';
     }
 
-    console.log("App Initialized");
     setSyncing(false);
 }
 
-init();
+if (isLoggedIn) {
+    init();
+}

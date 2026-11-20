@@ -1,0 +1,25 @@
+{
+  "name": "Nevo-Task — Hệ thống Quản lý Đơn hàng & Creative",
+  "short_name": "Nevo-Task",
+  "description": "Trung tâm điều hành Đơn hàng Creative, Lịch làm việc KPI, Kế hoạch, Chi phí, Sản phẩm mới & Booking Model",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf8ff",
+  "theme_color": "#b80035",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

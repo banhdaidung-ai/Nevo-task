@@ -3,32 +3,32 @@
   Data formatting, sanitization, and common helpers
 */
 
+import { parseCurrencyNumber, toLocalYMD } from "./security-utils.js";
+
 /**
- * Format number as currency (VNĐ)
- * Handles NaN cases gracefully
+ * Format number as currency digits (vi-VN) safely without throwing on null/undefined
  */
 export function formatCurrency(value) {
-    const num = parseInt(value.toString().replace(/\D/g, '')) || 0;
-    return num.toLocaleString('vi-VN');
+    return parseCurrencyNumber(value).toLocaleString('vi-VN');
 }
 
 /**
- * Sanitize number from string
+ * Sanitize number from string or number preserving sign and decimals when present
  */
 export function sanitizeNumber(value) {
-    if (typeof value === 'number') return value;
-    const clean = (value || '').toString().replace(/\D/g, '');
-    return parseInt(clean) || 0;
+    if (value === null || value === undefined || value === '') return 0;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    return parseCurrencyNumber(value);
 }
 
 /**
- * Format date to local string (DD/MM/YYYY)
+ * Format date to local string (DD/MM/YYYY) without UTC boundary shift
  */
 export function formatDate(date) {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return 'N/A';
-    return d.toLocaleDateString('vi-VN');
+    const ymd = toLocalYMD(date);
+    if (!ymd) return 'N/A';
+    const [y, m, d] = ymd.split('-');
+    return `${d}/${m}/${y}`;
 }
 
 /**
@@ -56,5 +56,5 @@ export function getStatusColorClass(status) {
         'Hoàn thành': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
         'Từ chối': 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
     };
-    return map[status] || 'bg-slate-100 text-slate-700';
+    return map[status] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
 }

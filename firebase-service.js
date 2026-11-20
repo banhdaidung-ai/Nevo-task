@@ -8,7 +8,8 @@ import {
     initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     getFirestore, collection, addDoc, getDocs, getDoc, doc, 
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
-    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp 
+    serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp,
+    writeBatch, deleteField, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 import { 
     getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut 
@@ -52,11 +53,14 @@ window.fsStartAfter = startAfter;
 window.fsSetDoc = setDoc;
 window.fsRunTransaction = runTransaction;
 window.fsTimestamp = Timestamp;
+window.fsWriteBatch = writeBatch;
+window.fsDeleteField = deleteField;
+window.fsArrayUnion = arrayUnion;
 
 export { 
     db, auth, collection, addDoc, getDocs, getDoc, doc, 
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, 
     serverTimestamp, limit, startAfter, setDoc, runTransaction, Timestamp,
+    writeBatch, deleteField, arrayUnion,
     onAuthStateChanged, signInWithEmailAndPassword, signOut
 };
-

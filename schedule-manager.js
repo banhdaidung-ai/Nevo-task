@@ -10,6 +10,7 @@ import {
 } from "./firebase-service.js";
 import { checkPermission, getCurrentUser } from "./auth-service.js";
 import { showToast } from "./ui-service.js";
+import { escapeJsStr, stripHtmlToText, isCompletedOnTimeLocal } from "./security-utils.js";
 
 export const SCHEDULE_CATEGORIES = [
     "Hình ảnh AI",
@@ -669,7 +670,7 @@ export function openScheduleFromOrder(orderId, dateYMD, memberName, event) {
         category: mapOrderCategoryToSchedule(order.category),
         deadline: normFn(order.deadline),
         linkedOrderCode: order.code || "",
-        description: order.content || ""
+        description: stripHtmlToText(order.content || "")
     });
 }
 
@@ -832,8 +833,13 @@ export function renderWeeklySchedule() {
             getFilteredOrdersForDate(ymd).forEach(o => getOrderAssignees(o).forEach(addCandidate));
         });
         (window.allUsersData || []).forEach(u => {
-            if (f.dept !== "all" || u.dept === "Creative") addCandidate(u.name);
+            const dLower = String(u.dept || u.department || "").toLowerCase();
+            const isCreativeLike = ["creative", "thiết kế", "design", "sản xuất", "marketing", "media"].some(k => dLower.includes(k));
+            if (f.dept !== "all" || isCreativeLike) addCandidate(u.name);
         });
+        if (memberSet.size === 0) {
+            (window.allUsersData || []).forEach(u => { if (u.name && u.status !== "inactive") addCandidate(u.name); });
+        }
     }
 
     const members = Array.from(memberSet.values()).sort((a, b) => {
@@ -860,7 +866,7 @@ export function renderWeeklySchedule() {
 
         bodyHtml += `<tr class="group/row hover:bg-slate-50/40 dark:hover:bg-slate-800/30 transition-colors border-b border-slate-100 dark:border-slate-800">
             <th scope="row" class="py-4 px-5 text-left align-top bg-white dark:bg-slate-900 shadow-[4px_0_12px_-6px_rgba(0,0,0,0.08)] border-r border-slate-100 dark:border-slate-800">
-                <button type="button" onclick="window.openMemberScorecard('${escapeHtml(member.name)}')" class="flex items-center gap-3 text-left w-full group/member">
+                <button type="button" onclick="window.openMemberScorecard('${escapeJsStr(member.name)}')" class="flex items-center gap-3 text-left w-full group/member">
                     <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-50 to-indigo-50 dark:from-rose-950/60 dark:to-indigo-950/60 flex items-center justify-center text-xs font-black text-primary border border-rose-200/50 dark:border-rose-800/40 shrink-0">
                         ${escapeHtml(member.initials)}
                     </div>
@@ -873,7 +879,7 @@ export function renderWeeklySchedule() {
                         </div>
                     </div>
                 </button>
-                ${canAddForMember ? `<button type="button" onclick="window.openBulkScheduleModal({ mode: 'week', date: '${weekYmds[0]}', assignee: '${escapeHtml(member.name)}' })"
+                ${canAddForMember ? `<button type="button" onclick="window.openBulkScheduleModal({ mode: 'week', date: '${weekYmds[0]}', assignee: '${escapeJsStr(member.name)}' })"
                     class="mt-2.5 w-full py-1 px-2 rounded-lg bg-rose-50/80 dark:bg-rose-950/40 text-primary hover:bg-rose-100 dark:hover:bg-rose-950/70 text-[10px] font-black flex items-center justify-center gap-1 transition-colors">
                     <span class="material-symbols-outlined text-[13px]">playlist_add</span> + Lập lịch tuần
                 </button>` : ""}
@@ -1506,10 +1512,7 @@ function renderDeptPerformance() {
         const dRate = dOrders.length > 0 ? Math.round((dCompleted / dOrders.length) * 100) : 0;
         const dOnTimeOrders = dOrders.filter(o => {
             if (o.status !== "Hoàn thành") return false;
-            if (!o.deadline) return true;
-            const deadline = new Date(o.deadline);
-            const updated = o.updatedAt ? (o.updatedAt.toDate ? o.updatedAt.toDate() : new Date(o.updatedAt)) : new Date();
-            return updated <= deadline;
+            return isCompletedOnTimeLocal(o.deadline, o.completedAt || o.updatedAt);
         });
         const dOnTimeRate = dCompleted > 0 ? Math.round((dOnTimeOrders.length / dCompleted) * 100) : 0;
 
@@ -2889,7 +2892,7 @@ function insertSelectedOrdersToBulk() {
             priority: "Cao",
             unit: "Việc",
             linkedOrderCode: o.code || "",
-            description: o.content ? String(o.content).slice(0, 200) : ""
+            description: o.content ? stripHtmlToText(o.content).slice(0, 200) : ""
         });
     }).filter(Boolean);
 
@@ -3085,7 +3088,7 @@ function bindScheduleUIEvents() {
         document.getElementById("taskLinkedOrder").value = order.code || "";
         if (order.deadline) document.getElementById("taskDeadline").value = normFn(order.deadline);
         if (order.content && !document.getElementById("taskDescription").value) {
-            document.getElementById("taskDescription").value = order.content;
+            document.getElementById("taskDescription").value = stripHtmlToText(order.content);
         }
         document.getElementById("singleOrderPickerBox")?.classList.add("hidden");
     });

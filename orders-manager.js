@@ -12,29 +12,43 @@ import { formatDate, sanitizeNumber } from "./utils.js";
 import { checkPermission } from "./auth-service.js";
 import { showToast, navigateTo } from "./ui-service.js";
 import { printOrderVoucher } from "./pdf-service.js";
+import {
+    escapeHtml, escapeJsStr, parseCurrencyNumber, formatCurrencyVND,
+    toLocalYMD, isCompletedOnTimeLocal, toEpochMs, safeSetRichHTML
+} from "./security-utils.js";
 
 // Set globals for legacy support
 window.db = db;
 window.printOrderVoucher = printOrderVoucher;
-window.formatCurrency = (val) => {
-    return Number(val || 0).toLocaleString('vi-VN') + ' đ';
-};
+window.formatCurrency = (val) => formatCurrencyVND(val, true);
 window.sanitizeNumber = sanitizeNumber;
 
-// Load and Sync Roles for Permission Management
+// Helper: pick Creative / Design / Media staff with safe fallback to all active staff so dropdowns are never empty
+function getCreativeAssignableStaff(allUsers) {
+    const valid = [...(allUsers || [])]
+        .filter(u => u && u.name && u.status !== 'inactive')
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'vi'));
+    const creativeKeywords = ['creative', 'thiết kế', 'design', 'marketing', 'sản xuất', 'media', 'studio'];
+    const matched = valid.filter(u => {
+        const d = String(u.dept || u.department || '').toLowerCase();
+        return creativeKeywords.some(k => d.includes(k));
+    });
+    return matched.length > 0 ? matched : valid;
+}
+
+// Load and Sync Roles for Permission Management (normalize keys to lowercase too)
 window.appRoles = {};
 const qRoles = query(collection(db, "system_roles"));
 onSnapshot(qRoles, (snap) => {
     const roles = {};
-    snap.forEach(doc => {
-        roles[doc.id] = doc.data();
+    snap.forEach(docSnap => {
+        const data = docSnap.data();
+        roles[docSnap.id] = data;
+        roles[docSnap.id.toLowerCase()] = data;
     });
     window.appRoles = roles;
-    console.log("Permissions system updated:", Object.keys(roles).length, "roles loaded");
-    
-    // Refresh UI elements that depend on permissions
     if (typeof window.refreshPermissionUI === 'function') window.refreshPermissionUI();
-});
+}, (err) => console.warn("Roles sync warning:", err));
 
 // Middleware: Cập nhật đơn hàng kèm lưu lịch sử thay đổi (order_history)
 window.updateOrderWithHistory = async function(orderId, updateData) {
@@ -64,12 +78,40 @@ window.updateOrderWithHistory = async function(orderId, updateData) {
                 };
             }
         }
+        // Auto-stamp SLA stage transitions when status changes
+        const finalPayload = { ...updateData };
+        if (updateData.status && updateData.status !== oldData.status) {
+            finalPayload.stageTimestamps = {
+                ...(oldData.stageTimestamps || {}),
+                [updateData.status]: new Date().toISOString()
+            };
+            if (updateData.status === 'Hoàn thành') {
+                finalPayload.completedAt = finalPayload.completedAt || new Date().toISOString();
+            }
+        }
+
         // Thực hiện cập nhật
         await updateDoc(orderRef, {
-            ...updateData,
+            ...finalPayload,
             updatedAt: serverTimestamp(),
             lastUpdatedBy: userName
         });
+
+        // Reverse sync to New Products if order just completed
+        if (updateData.status === 'Hoàn thành' && oldData.status !== 'Hoàn thành' && typeof window.syncCompletedOrderToProducts === 'function') {
+            window.syncCompletedOrderToProducts({ id: orderId, ...oldData, ...finalPayload }, finalPayload.deliverableUrl || oldData.deliverableUrl || '');
+        }
+        if (updateData.status && updateData.status !== oldData.status && typeof window.createAppNotification === 'function') {
+            window.createAppNotification({
+                title: `Đơn #${oldData.code || ''} chuyển sang "${updateData.status}"`,
+                body: oldData.title || '',
+                type: updateData.status === 'Hoàn thành' ? 'approved' : 'info',
+                orderId,
+                orderCode: oldData.code || '',
+                recipientName: oldData.requester || '',
+                webhookEvent: 'order_status'
+            });
+        }
         // Nếu có thay đổi thực sự, lưu vào order_history
         const changeKeys = Object.keys(changes);
         if (changeKeys.length > 0) {
@@ -145,21 +187,24 @@ window.openHistoryDrawer = async function(orderId, orderCode) {
             let changesHtml = '';
             Object.keys(h.changes || {}).forEach(key => {
                 const c = h.changes[key];
+                const oldText = typeof c.old_value === 'object' ? JSON.stringify(c.old_value) : String(c.old_value ?? 'Trống');
+                const newText = typeof c.new_value === 'object' ? JSON.stringify(c.new_value) : String(c.new_value ?? 'Trống');
                 changesHtml += `
                     <div class="mt-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm transition-all hover:border-primary/20">
                         <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span> ${c.label || key}
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span> ${escapeHtml(c.label || key)}
                         </div>
                         <div class="flex items-center gap-3">
                             <div class="flex-1 min-w-0">
-                                <div class="text-[11px] text-slate-400 font-medium truncate italic line-through decoration-slate-300">${c.old_value}</div>
-                                <div class="text-[12px] text-slate-700 font-bold truncate mt-0.5">${c.new_value}</div>
+                                <div class="text-[11px] text-slate-400 font-medium truncate italic line-through decoration-slate-300">${escapeHtml(oldText)}</div>
+                                <div class="text-[12px] text-slate-700 font-bold truncate mt-0.5">${escapeHtml(newText)}</div>
                             </div>
                         </div>
                     </div>
                 `;
             });
             
+            const operatorSafe = escapeHtml(h.operator || 'Hệ thống');
             html += `
                 <div class="relative pl-10 pb-10 group/item">
                     <!-- Timeline Line -->
@@ -172,21 +217,21 @@ window.openHistoryDrawer = async function(orderId, orderCode) {
 
                     <div class="flex flex-col">
                         <div class="flex items-center gap-2 mb-2">
-                            <span class="text-[10px] font-black bg-primary text-white px-2 py-0.5 rounded shadow-sm">${timeStr}</span>
-                            <span class="text-[10px] font-bold text-slate-400">${dateStr}</span>
+                            <span class="text-[10px] font-black bg-primary text-white px-2 py-0.5 rounded shadow-sm">${escapeHtml(timeStr)}</span>
+                            <span class="text-[10px] font-bold text-slate-400">${escapeHtml(dateStr)}</span>
                         </div>
                         
                         <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-5 border border-slate-200 shadow-sm transition-all group-hover/item:shadow-lg group-hover/item:border-primary/20 group-hover/item:-translate-y-1">
                             <div class="flex items-center justify-between mb-3">
                                 <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-black text-[10px] shadow-inner">${h.operator.substring(0,2).toUpperCase()}</div>
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-black text-[10px] shadow-inner">${escapeHtml((h.operator || 'HT').substring(0,2).toUpperCase())}</div>
                                     <div>
-                                        <div class="text-[13px] font-black text-slate-800">${h.operator}</div>
+                                        <div class="text-[13px] font-black text-slate-800">${operatorSafe}</div>
                                         <div class="text-[10px] font-bold text-primary/70 uppercase tracking-tighter">Cập nhật hệ thống</div>
                                     </div>
                                 </div>
                                 <!-- Nút Khôi phục -->
-                                <button onclick="window.confirmRestoreOrder('${orderId}', '${h.id}', '${timeStr} ${dateStr}')" 
+                                <button onclick="window.confirmRestoreOrder('${escapeJsStr(orderId)}', '${escapeJsStr(h.id)}', '${escapeJsStr(timeStr + ' ' + dateStr)}')" 
                                         class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all active:scale-95 group/btn border border-slate-100 hover:border-rose-100" 
                                         title="Khôi phục về trước thời điểm này">
                                     <span class="text-[10px] font-bold uppercase tracking-widest hidden group-hover/btn:block">Khôi phục</span>
@@ -232,11 +277,12 @@ window.applyRestoreOrder = async function(orderId, historyId, timeLabel) {
 
         showToast('Đang khôi phục dữ liệu...', 'info');
         
-        // Chuẩn bị dữ liệu khôi phục (lấy giá trị cũ)
+        // Chuẩn bị dữ liệu khôi phục (lấy giá trị cũ, tránh ghi đè chữ 'Trống' vào trường thực)
         const restoreData = {};
         const changes = historyItem.changes || {};
         Object.keys(changes).forEach(key => {
-            restoreData[key] = changes[key].old_value;
+            const oldVal = changes[key].old_value;
+            restoreData[key] = oldVal === 'Trống' ? (key === 'totalCost' ? 0 : '') : oldVal;
         });
 
         // Cập nhật đơn hàng gốc
@@ -760,22 +806,35 @@ window.handleCreateOrder = async function() {
             });
         }
 
-        // LOG ACTIVITY
+        // LOG ACTIVITY & REALTIME NOTIFICATION + WEBHOOK
         if (window.logActivity) {
             window.logActivity('create', `Đơn hàng mới ${allocatedCode}`, `${requester || 'Ai đó'} vừa khởi tạo đơn hàng: ${title}`, newOrderId, allocatedCode);
+        }
+        if (typeof window.createAppNotification === 'function') {
+            window.createAppNotification({
+                title: `🆕 Đơn hàng mới #${allocatedCode}: ${title}`,
+                body: `Phòng ban: ${department || '-'} · Người yêu cầu: ${requester || '-'} · Hạn: ${deadline}`,
+                type: 'create',
+                orderId: newOrderId,
+                orderCode: allocatedCode,
+                targetAll: true,
+                webhookEvent: 'order_created'
+            });
         }
         
         showToast('Thành công!', `Đơn hàng ${allocatedCode} đã được tự động cấp và lưu trên hệ thống.`, 'check_circle', 'success');
         
         setTimeout(() => {
             navigateTo('orders');
-            document.getElementById('orderTitle').value = '';
-            document.getElementById('orderContent').value = '';
-            document.getElementById('orderDeployDate').value = '';
-            document.getElementById('assignedStylist').value = '';
-            document.getElementById('assignedVideo').value = '';
-            document.getElementById('assignedPhoto').value = '';
-        }, 1000);
+            const titleEl = document.getElementById('orderTitle');
+            const editorEl = document.getElementById('orderEditor');
+            const deadlineEl = document.getElementById('deadline');
+            const catEl = document.getElementById('orderCategory');
+            if (titleEl) titleEl.value = '';
+            if (editorEl) editorEl.innerHTML = '';
+            if (deadlineEl) deadlineEl.value = '';
+            if (catEl) catEl.selectedIndex = 0;
+        }, 800);
     } catch (error) {
         console.error("Lỗi tạo đơn:", error);
         if (error?.code === 'resource-exhausted' || (error?.message && error.message.toLowerCase().includes('quota'))) {
@@ -871,8 +930,19 @@ window.clearAllFilters = function() {
     if (document.getElementById('filterSearch')) document.getElementById('filterSearch').value = '';
     if (document.getElementById('filterStatus')) document.getElementById('filterStatus').value = '';
     
-    // Reset Filter Row Inputs
-    document.querySelectorAll('.column-filter').forEach(input => {
+    // Reset Quick Filter Buttons UI
+    document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+        const isAll = btn.id === 'qf-all';
+        btn.classList.toggle('bg-primary', isAll);
+        btn.classList.toggle('text-white', isAll);
+        btn.classList.toggle('bg-white', !isAll);
+        btn.classList.toggle('border', !isAll);
+        btn.classList.toggle('border-slate-200', !isAll);
+        btn.classList.toggle('text-slate-600', !isAll);
+    });
+
+    // Reset Filter Row Inputs & Date Range Inputs
+    document.querySelectorAll('.column-filter, .date-range-menu input[type="date"]').forEach(input => {
         input.value = '';
     });
     
@@ -1035,12 +1105,12 @@ function getDayOfWeekVN(date) {
 
 function formatGroupValue(val, key) {
     if (!val) return 'KHÔNG XÁC ĐỊNH';
-    if (['createdAt', 'deployDate', 'deadline'].includes(key)) {
-        const d = (val.toDate ? val.toDate() : new Date(val));
-        if (isNaN(d.getTime())) return 'NGÀY KHÔNG HỢP LỆ';
-        const day = getDayOfWeekVN(d);
-        const datePart = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}`;
-        return `${day}, ${datePart}`;
+    if (['createdAt', 'orderDate', 'deployDate', 'deadline'].includes(key)) {
+        const ymd = toLocalYMD(val);
+        if (!ymd) return 'NGÀY KHÔNG HỢP LỆ';
+        const [y, m, d] = ymd.split('-').map(Number);
+        const dt = new Date(y, m - 1, d);
+        return `${getDayOfWeekVN(dt)}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
     }
     
     // Map keys to readable labels if needed
@@ -1060,12 +1130,10 @@ function formatGroupValue(val, key) {
 }
 
 function getNormalizedGroupValue(data, key) {
-    const val = data[key];
+    const val = key === 'orderDate' ? (data.orderDate || data.createdAt) : data[key];
     if (!val) return 'null';
-    if (['createdAt', 'deployDate', 'deadline'].includes(key)) {
-        const d = (val.toDate ? val.toDate() : new Date(val));
-        if (isNaN(d.getTime())) return 'invalid';
-        return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+    if (['createdAt', 'orderDate', 'deployDate', 'deadline'].includes(key)) {
+        return toLocalYMD(val) || 'invalid';
     }
     return String(val);
 }
@@ -1088,12 +1156,24 @@ function getGroupIcon(key) {
     return icons[key] || 'folder';
 }
 
-window.setQuickFilter = function(status) {
+window.setQuickFilter = function(status, clickedBtn) {
     const filterStatusEl = document.getElementById('filterStatus');
-    if(filterStatusEl) filterStatusEl.value = status;
+    if (filterStatusEl) filterStatusEl.value = status;
+    document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+        const matchByOnclick = !clickedBtn && btn.getAttribute('onclick')?.includes(`'${status}'`);
+        const isActive = clickedBtn ? btn === clickedBtn : matchByOnclick;
+        btn.classList.toggle('bg-primary', isActive);
+        btn.classList.toggle('text-white', isActive);
+        btn.classList.toggle('bg-white', !isActive);
+        btn.classList.toggle('border', !isActive);
+        btn.classList.toggle('border-slate-200', !isActive);
+        btn.classList.toggle('text-slate-600', !isActive);
+    });
     currentTablePage = 0;
     if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
         window.renderWeeklyBoard();
+    } else if (window.currentOrdersView === 'kanban' && window.renderKanbanBoard) {
+        window.renderKanbanBoard();
     } else {
         window.renderOrdersTable();
     }
@@ -1319,42 +1399,42 @@ window.applyDeployDateShortcut = function(type) {
 };
 
 window.switchOrdersView = function(viewMode) {
-    window.currentOrdersView = viewMode;
+    window.currentOrdersView = viewMode || 'table';
     const tableWrapper = document.getElementById('ordersTableWrapper');
     const paginationWrapper = document.getElementById('ordersPaginationWrapper');
     const weeklyBoardWrapper = document.getElementById('ordersWeeklyBoardWrapper');
-    const btnViewTable = document.getElementById('btnViewTable');
-    const btnViewWeekly = document.getElementById('btnViewWeekly');
+    const kanbanWrapper = document.getElementById('ordersKanbanWrapper');
+    const btns = [
+        { el: document.getElementById('btnViewTable'), mode: 'table' },
+        { el: document.getElementById('btnViewWeekly'), mode: 'weekly' },
+        { el: document.getElementById('btnViewKanban'), mode: 'kanban' }
+    ];
+
+    if (tableWrapper) tableWrapper.classList.toggle('hidden', viewMode !== 'table');
+    if (paginationWrapper) paginationWrapper.classList.toggle('hidden', viewMode !== 'table');
+    if (weeklyBoardWrapper) weeklyBoardWrapper.classList.toggle('hidden', viewMode !== 'weekly');
+    if (kanbanWrapper) kanbanWrapper.classList.toggle('hidden', viewMode !== 'kanban');
+
+    btns.forEach(({ el, mode }) => {
+        if (!el) return;
+        const active = mode === window.currentOrdersView;
+        el.classList.toggle('bg-white', active);
+        el.classList.toggle('dark:bg-slate-800', active);
+        el.classList.toggle('text-slate-800', active);
+        el.classList.toggle('dark:text-white', active);
+        el.classList.toggle('shadow-sm', active);
+        el.classList.toggle('text-slate-500', !active);
+        el.classList.toggle('hover:text-slate-800', !active);
+        el.classList.toggle('dark:text-slate-400', !active);
+        el.classList.toggle('dark:hover:text-white', !active);
+    });
 
     if (viewMode === 'weekly') {
-        if (tableWrapper) tableWrapper.classList.add('hidden');
-        if (paginationWrapper) paginationWrapper.classList.add('hidden');
-        if (weeklyBoardWrapper) weeklyBoardWrapper.classList.remove('hidden');
-
-        if (btnViewTable) {
-            btnViewTable.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
-            btnViewTable.classList.add('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
-        }
-        if (btnViewWeekly) {
-            btnViewWeekly.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
-            btnViewWeekly.classList.remove('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
-        }
-
-        window.renderWeeklyBoard();
+        window.renderWeeklyBoard?.();
+    } else if (viewMode === 'kanban') {
+        window.renderOrdersTable(); // Recomputes window.currentFilteredOrders cleanly
+        window.renderKanbanBoard?.();
     } else {
-        if (tableWrapper) tableWrapper.classList.remove('hidden');
-        if (paginationWrapper) paginationWrapper.classList.remove('hidden');
-        if (weeklyBoardWrapper) weeklyBoardWrapper.classList.add('hidden');
-
-        if (btnViewTable) {
-            btnViewTable.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
-            btnViewTable.classList.remove('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
-        }
-        if (btnViewWeekly) {
-            btnViewWeekly.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-800', 'dark:text-white', 'shadow-sm');
-            btnViewWeekly.classList.add('text-slate-500', 'hover:text-slate-800', 'dark:text-slate-400', 'dark:hover:text-white');
-        }
-
         window.renderOrdersTable();
     }
 };
@@ -1842,6 +1922,22 @@ window.renderOrdersTable = function() {
                 return true;
             }
 
+            // String text filter check (for Mã đơn, Nội dung, Ghi chú, Số tiền)
+            if (typeof filterVal === 'string' && filterVal.trim() !== '') {
+                const needle = filterVal.trim().toLowerCase();
+                if (key === 'title') {
+                    const hay = `${data.title || ''} ${(data.content || '').replace(/<[^>]*>/g, ' ')}`.toLowerCase();
+                    return hay.includes(needle);
+                }
+                if (key === 'totalCost') {
+                    const cleanNeedle = needle.replace(/[^\d]/g, '');
+                    const costStr = String(parseCurrencyNumber(data.totalCost || 0));
+                    const fmtStr = window.formatCurrency(data.totalCost || 0).toLowerCase();
+                    return (cleanNeedle && costStr.includes(cleanNeedle)) || fmtStr.includes(needle);
+                }
+                return String(data[key] || '').toLowerCase().includes(needle);
+            }
+
             // Normal multi-select array check
             if (Array.isArray(filterVal) && filterVal.length > 0) {
                 const itemVal = data[key] || '-';
@@ -1919,22 +2015,28 @@ window.renderOrdersTable = function() {
     // Sorting
     if (sortConfig.key) {
         filtered.sort((a, b) => {
-            let valA = a[sortConfig.key];
-            let valB = b[sortConfig.key];
+            let valA = sortConfig.key === 'orderDate' ? (a.orderDate || a.createdAt) : a[sortConfig.key];
+            let valB = sortConfig.key === 'orderDate' ? (b.orderDate || b.createdAt) : b[sortConfig.key];
 
-            // Normalize values for sorting
-            if (sortConfig.key === 'createdAt' || sortConfig.key === 'deployDate' || sortConfig.key === 'deadline') {
-                const timeA = valA ? (valA.toDate ? valA.toDate().getTime() : new Date(valA).getTime()) : 0;
-                const timeB = valB ? (valB.toDate ? valB.toDate().getTime() : new Date(valB).getTime()) : 0;
+            if (sortConfig.key === 'totalCost') {
+                const numA = parseCurrencyNumber(valA);
+                const numB = parseCurrencyNumber(valB);
+                return sortConfig.direction === 'asc' ? numA - numB : numB - numA;
+            }
+
+            // Normalize values for date sorting
+            if (['createdAt', 'orderDate', 'deployDate', 'deadline'].includes(sortConfig.key)) {
+                const timeA = toEpochMs(valA);
+                const timeB = toEpochMs(valB);
                 return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
             }
 
             valA = String(valA || '').toLowerCase();
             valB = String(valB || '').toLowerCase();
 
-            if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-            return 0;
+            return sortConfig.direction === 'asc'
+                ? valA.localeCompare(valB, 'vi')
+                : valB.localeCompare(valA, 'vi');
         });
     }
 
@@ -1956,11 +2058,12 @@ window.renderOrdersTable = function() {
     const startIdx = currentTablePage * itemsPerPage;
     const pagedData = filtered.slice(startIdx, startIdx + itemsPerPage);
 
-    // Update table info text
+    // Update table info text (both legacy and current DOM ID)
+    const infoLabel = `Hiển thị ${pagedData.length}/${totalItems} đơn (Tổng: ${window.allOrdersData.length})`;
     const counterEleTop = document.getElementById('tableCountInfo');
-    if (counterEleTop) {
-        counterEleTop.textContent = `Hiển thị ${pagedData.length} trên ${totalItems} kết quả (Tổng hệ thống: ${window.allOrdersData.length} | Trang ${currentTablePage + 1}/${totalPages || 1})`;
-    }
+    if (counterEleTop) counterEleTop.textContent = infoLabel;
+    const summaryTopEl = document.getElementById('tableResultsSummaryTop');
+    if (summaryTopEl && window.currentOrdersView === 'table') summaryTopEl.textContent = infoLabel;
 
     if (pagedData.length === 0) {
         tbodyFull.innerHTML = `<tr><td colspan="16" class="px-6 py-12 text-center text-slate-400 font-medium bg-slate-50/50">Không tìm thấy đơn hàng nào khớp với bộ lọc.</td></tr>`;
@@ -2037,14 +2140,14 @@ window.renderOrdersTable = function() {
             note: data.note || ''
         })).replace(/'/g, '%27');
 
-        // Function to get user badge
+        // Function to get user badge (XSS-safe)
         const getUserBadge = (name) => {
             if (!name || name === '-') return '<span class="text-slate-400">-</span>';
             const u = (window.allUsersData || []).find(x => x.name === name);
-            const roleClass = u ? `badge-${u.role}` : 'badge-default';
+            const roleClass = u ? `badge-${escapeHtml(u.role || 'default')}` : 'badge-default';
             return `<span class="name-badge ${roleClass} cursor-help" 
-                onmouseenter="window.showUserTooltip(event, '${name}')" 
-                onmouseleave="window.hidePremiumTooltip()">${name}</span>`;
+                onmouseenter="window.showUserTooltip(event, '${escapeJsStr(name)}')" 
+                onmouseleave="window.hidePremiumTooltip()">${escapeHtml(name)}</span>`;
         };
 
         // Function to get row background color based on status
@@ -2091,17 +2194,17 @@ window.renderOrdersTable = function() {
                     <td class="text-[12px] text-slate-500 italic ${checkPermission('note') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('note') ? `onclick="startInlineEdit(this, '${dataStr}', 'note')"` : ''}>
                         <span class="display-val truncate max-w-[150px] inline-block">${safeAttr(data.note || '-')}</span>
                     </td>
-                    <td class="text-[11px] text-slate-500 font-bold cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'orderDate')">
-                        <div class="display-val">${orderText}</div>
+                    <td class="text-[11px] text-slate-500 font-bold ${checkPermission('orderDate') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('orderDate') ? `onclick="startInlineEdit(this, '${dataStr}', 'orderDate')"` : ''}>
+                        <div class="display-val">${escapeHtml(orderText)}</div>
                     </td>
                     <td class="text-[11px] text-slate-500 font-bold ${checkPermission('deployDate') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all group/deploy" ${checkPermission('deployDate') ? `onclick="startInlineEdit(this, '${dataStr}', 'deployDate')"` : ''}>
                         <div class="display-val flex items-center justify-between gap-1">
-                            <span>${deployText}</span>
-                            ${data.deployDate ? `<button type="button" onclick="event.stopPropagation(); window.addToGoogleCalendar('${data.id}', event)" title="Thêm vào Google Calendar" class="opacity-0 group-hover/deploy:opacity-100 p-0.5 hover:bg-rose-50 text-slate-400 hover:text-primary rounded transition-all"><span class="material-symbols-outlined text-[15px]">event</span></button>` : ''}
+                            <span>${escapeHtml(deployText)}</span>
+                            ${data.deployDate ? `<button type="button" onclick="event.stopPropagation(); window.addToGoogleCalendar('${escapeJsStr(data.id)}', event)" title="Thêm vào Google Calendar" class="opacity-0 group-hover/deploy:opacity-100 p-0.5 hover:bg-rose-50 text-slate-400 hover:text-primary rounded transition-all"><span class="material-symbols-outlined text-[15px]">event</span></button>` : ''}
                         </div>
                     </td>
-                    <td class="text-[12px] font-bold text-primary cursor-pointer hover:bg-slate-100/50 transition-all" onclick="startInlineEdit(this, '${dataStr}', 'deadline')">
-                        <div class="display-val">${deadlineText}</div>
+                    <td class="text-[12px] font-bold text-primary ${checkPermission('deadline') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('deadline') ? `onclick="startInlineEdit(this, '${dataStr}', 'deadline')"` : ''}>
+                        <div class="display-val">${escapeHtml(deadlineText)}</div>
                     </td>
                     <td class="${checkPermission('status') ? 'cursor-pointer hover:bg-slate-100/50' : 'cursor-default'} transition-all" ${checkPermission('status') ? `onclick="startInlineEdit(this, '${dataStr}', 'status')"` : ''}>
                         <div class="display-val">${statusBadgeFull}</div>
@@ -2184,17 +2287,12 @@ window.renderDashboardTable = function() {
     if (document.getElementById('dash-pending-orders')) document.getElementById('dash-pending-orders').textContent = pending.toLocaleString();
     if (document.getElementById('dash-completed-orders')) document.getElementById('dash-completed-orders').textContent = completed.toLocaleString();
     
-    // Deadline Rate (Real calculation based on completion time vs deadline)
+    // Deadline Rate (UTC+7 local calendar day comparison)
     if (document.getElementById('dash-deadline-rate')) {
         const completedOrders = allOrders.filter(o => o.status === 'Hoàn thành');
-        const onTimeOrders = completedOrders.filter(o => {
-            if (!o.deadline) return true;
-            const deadline = new Date(o.deadline);
-            const updated = o.updatedAt ? (o.updatedAt.toDate ? o.updatedAt.toDate() : new Date(o.updatedAt)) : new Date();
-            return updated <= deadline;
-        });
+        const onTimeOrders = completedOrders.filter(o => isCompletedOnTimeLocal(o.deadline, o.completedAt || o.updatedAt));
         const rate = completedOrders.length > 0 ? Math.round((onTimeOrders.length / completedOrders.length) * 100) : 0;
-        document.getElementById('dash-deadline-rate').textContent = completedOrders.length > 0 ? (rate > 90 ? 'Tuyệt vời' : rate + '%') : '--';
+        document.getElementById('dash-deadline-rate').textContent = completedOrders.length > 0 ? (rate > 90 ? `Tuyệt vời (${rate}%)` : rate + '%') : '--';
     }
 
     // --- Material Distribution ---
@@ -2286,32 +2384,28 @@ window.renderDashboardTable = function() {
 
     // --- Render Latest Orders Table ---
     if (allOrders.length === 0) {
-        tbodyDash.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">Chưa có đơn hàng nào trực tuyến.</td></tr>';
+        tbodyDash.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400">Chưa có đơn hàng nào trực tuyến.</td></tr>';
         return;
     }
     
     let dashHtml = '';
-    // Sort by createdAt desc and take top 5
-    const latestOrders = [...allOrders].sort((a, b) => {
-        const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt).getTime();
-        const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt).getTime();
-        return dateB - dateA;
-    }).slice(0, 10);
+    const latestOrders = [...allOrders].sort((a, b) => toEpochMs(b.createdAt) - toEpochMs(a.createdAt)).slice(0, 10);
 
     latestOrders.forEach((data) => {
         const currentStatus = (window.orderStatusesData || []).find(s => s.name === data.status);
         const badgeClasses = currentStatus ? currentStatus.color : 'bg-surface-container-highest text-on-secondary-container';
-        const statusBadgeDash = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${data.status || 'Chờ duyệt'}</span>`;
+        const statusBadgeDash = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClasses} uppercase">${escapeHtml(data.status || 'Chờ duyệt')}</span>`;
         
-        const orderDateStr = data.createdAt ? (data.createdAt.seconds ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('vi-VN') : new Date(data.createdAt).toLocaleDateString('vi-VN')) : '-';
+        const ymd = toLocalYMD(data.orderDate || data.createdAt);
+        const orderDateStr = ymd ? ymd.split('-').reverse().join('/') : '-';
 
         dashHtml += `
             <tr class="hover:bg-surface-container-low transition-colors cursor-pointer" onclick="navigateTo('orders')">
-                <td class="py-4 font-mono font-semibold text-primary text-sm hover:underline cursor-pointer" onclick="event.stopPropagation(); window.openHistoryDrawer('${data.id}', '${data.code}')">${data.code || '-'}</td>
-                <td class="py-4 text-xs font-medium text-slate-500">${orderDateStr}</td>
-                <td class="py-4 font-medium text-sm text-slate-700">${data.requester || '-'}</td>
-                <td class="py-4 text-sm text-slate-600">${data.category || '-'}</td>
-                <td class="py-4 text-on-surface-variant text-[13px] font-bold truncate max-w-[200px]">${data.title || '-'}</td>
+                <td class="py-4 font-mono font-semibold text-primary text-sm hover:underline cursor-pointer" onclick="event.stopPropagation(); window.openHistoryDrawer('${escapeJsStr(data.id)}', '${escapeJsStr(data.code || '')}')">${escapeHtml(data.code || '-')}</td>
+                <td class="py-4 text-xs font-medium text-slate-500">${escapeHtml(orderDateStr)}</td>
+                <td class="py-4 font-medium text-sm text-slate-700">${escapeHtml(data.requester || '-')}</td>
+                <td class="py-4 text-sm text-slate-600">${escapeHtml(data.category || '-')}</td>
+                <td class="py-4 text-on-surface-variant text-[13px] font-bold truncate max-w-[200px]">${escapeHtml(data.title || '-')}</td>
                 <td class="py-4 text-right">${statusBadgeDash}</td>
             </tr>`;
     });
@@ -2377,12 +2471,12 @@ window.renderRecentActivity = function() {
             <div class="flex gap-4 group">
                 <div class="mt-1 w-2 h-2 rounded-full ${iconClass} flex-shrink-0"></div>
                 <div>
-                    <p class="text-sm font-semibold group-hover:text-primary transition-colors cursor-pointer" onclick="${act.orderId ? `window.openHistoryDrawer('${act.orderId}', '${act.orderCode}')` : ''}">${act.title}</p>
-                    <p class="text-xs text-on-surface-variant mb-1">${act.description}</p>
+                    <p class="text-sm font-semibold group-hover:text-primary transition-colors cursor-pointer" onclick="${act.orderId ? `window.openHistoryDrawer('${escapeJsStr(act.orderId)}', '${escapeJsStr(act.orderCode || '')}')` : ''}">${escapeHtml(act.title || '')}</p>
+                    <p class="text-xs text-on-surface-variant mb-1">${escapeHtml(act.description || '')}</p>
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold text-slate-400">${timeSince(act.createdAt)}</span>
+                        <span class="text-[10px] font-bold text-slate-400">${escapeHtml(timeSince(act.createdAt))}</span>
                         <span class="text-[10px] font-medium text-slate-300">•</span>
-                        <span class="text-[10px] font-bold text-slate-400">${act.user}</span>
+                        <span class="text-[10px] font-bold text-slate-400">${escapeHtml(act.user || '')}</span>
                     </div>
                 </div>
             </div>`;
@@ -2513,6 +2607,12 @@ window.openEditModal = async function(dataStr) {
     const modal = document.getElementById('editOrderModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+
+    // Load real-time Collaboration, Proofing, Model Booking & Schedule Sync panels
+    const liveOrder = (window.allOrdersData || []).find(o => o.id === data.id) || data;
+    if (typeof window.openOrderCollaborationPanel === 'function') {
+        window.openOrderCollaborationPanel(liveOrder);
+    }
 };
 
 window.toggleExtraFields = function() {
@@ -2534,8 +2634,13 @@ window.closeEditModal = function() {
 };
 
 window.openCostModal = function(dataStr) {
+    if (!checkPermission('costs') && !checkPermission('finance_view')) {
+        showToast('Từ chối!', 'Bạn không có quyền xem hoặc chỉnh sửa chi phí.', 'block', 'error');
+        return;
+    }
     const data = JSON.parse(decodeURIComponent(dataStr));
     const currentData = window.allOrdersData.find(o => o.id === data.id) || data;
+    const canEdit = checkPermission('costs');
     
     document.getElementById('costOrderId').value = currentData.id;
     document.getElementById('costOrderCode').textContent = `ORDER: ${currentData.code || currentData.id.substring(0,8)}`;
@@ -2545,11 +2650,19 @@ window.openCostModal = function(dataStr) {
     
     fields.forEach(f => {
         const input = document.getElementById(`cost-${f}`);
-        if (input) input.value = costs[f] || 0;
+        if (input) {
+            input.value = costs[f] || 0;
+            input.disabled = !canEdit;
+        }
     });
     
     const noteInput = document.getElementById('cost-note');
-    if (noteInput) noteInput.value = costs.note || '';
+    if (noteInput) {
+        noteInput.value = costs.note || '';
+        noteInput.disabled = !canEdit;
+    }
+    const saveBtn = document.getElementById('saveCostBtn');
+    if (saveBtn) saveBtn.classList.toggle('hidden', !canEdit);
     
     window.calculateTotalCost();
     
@@ -2648,7 +2761,7 @@ window.saveEditOrder = async function() {
     btn.disabled = true;
 
     try {
-        await window.updateOrderWithHistory(id, {
+        const updatePayload = {
             status: status,
             title: title,
             requester: requester,
@@ -2662,7 +2775,11 @@ window.saveEditOrder = async function() {
             department: department,
             note: note,
             content: content
-        });
+        };
+        if (typeof window.getSelectedBookedModels === 'function' && document.getElementById('editOrderModelsPanel')) {
+            updatePayload.bookedModels = window.getSelectedBookedModels();
+        }
+        await window.updateOrderWithHistory(id, updatePayload);
         
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -2699,14 +2816,19 @@ window.startInlineEdit = async function(element, dataStr, field) {
     
     element.classList.add('editing', 'relative');
     const data = JSON.parse(decodeURIComponent(dataStr));
-    const originalVal = data[field] || '';
+    const rawFieldVal = data[field];
+    const originalVal = ['orderDate', 'deployDate', 'deadline'].includes(field)
+        ? toLocalYMD(rawFieldVal)
+        : (typeof rawFieldVal === 'object' ? '' : String(rawFieldVal ?? ''));
     const id = data.id;
     
     element.dataset.id = id;
     element.dataset.field = field;
     element.dataset.original = originalVal;
     
-    const safeVal = originalVal.replace(/"/g, '&quot;');
+    const safeVal = escapeHtml(originalVal);
+    const safeJsVal = escapeJsStr(originalVal);
+    const safeIdJs = escapeJsStr(id);
     
     let inputHtml = '';
     const commonSelectClass = "bg-white border-2 border-primary rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-4 focus:ring-primary/20 inline-input shadow-xl text-slate-700 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90%] min-w-[120px] max-w-full cursor-pointer transition-all";
@@ -2715,17 +2837,17 @@ window.startInlineEdit = async function(element, dataStr, field) {
     if (field === 'status') {
         let optionsHtml = '';
         (window.orderStatusesData || []).forEach(s => {
-            optionsHtml += `<option value="${s.name}" ${originalVal === s.name ? 'selected' : ''}>${s.name}</option>`;
+            optionsHtml += `<option value="${escapeHtml(s.name)}" ${originalVal === s.name ? 'selected' : ''}>${escapeHtml(s.name)}</option>`;
         });
-        inputHtml = `<select class="${commonSelectClass} font-bold text-primary" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+        inputHtml = `<select class="${commonSelectClass} font-bold text-primary" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${safeIdJs}', '${field}', this.value, '${safeJsVal}')">
             ${optionsHtml}
         </select>`;
     } else if (field === 'department') {
         let optionsHtml = '';
         (window.departmentsData || []).forEach(d => {
-            optionsHtml += `<option value="${d.name}" ${originalVal === d.name ? 'selected' : ''}>${d.name}</option>`;
+            optionsHtml += `<option value="${escapeHtml(d.name)}" ${originalVal === d.name ? 'selected' : ''}>${escapeHtml(d.name)}</option>`;
         });
-        inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+        inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${safeIdJs}', '${field}', this.value, '${safeJsVal}')">
             ${optionsHtml}
         </select>`;
     } else if (field === 'category') {
@@ -2744,29 +2866,37 @@ window.startInlineEdit = async function(element, dataStr, field) {
         }
         allowedCats.forEach(c => {
             const catName = c.name || c;
-            optionsHtml += `<option value="${catName}" ${originalVal === catName ? 'selected' : ''}>${catName}</option>`;
+            optionsHtml += `<option value="${escapeHtml(catName)}" ${originalVal === catName ? 'selected' : ''}>${escapeHtml(catName)}</option>`;
         });
-        inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+        inputHtml = `<select class="${commonSelectClass}" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${safeIdJs}', '${field}', this.value, '${safeJsVal}')">
             ${optionsHtml}
         </select>`;
     } else if (field === 'requester' || field === 'stylist' || field === 'assignedVideo' || field === 'assignedPhoto' || field === 'assignedDesign') {
         let optionsHtml = '<option value="-">-</option>';
-        const sortedUsers = (window.allUsersData || []).sort((a,b) => a.name.localeCompare(b.name));
+        const sortedUsers = [...(window.allUsersData || [])]
+            .filter(u => u && u.name)
+            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'vi'));
         
         const displayUsers = (field === 'requester') 
             ? sortedUsers 
-            : sortedUsers.filter(u => u.dept === 'Creative');
+            : getCreativeAssignableStaff(sortedUsers);
 
+        const deployRef = toLocalYMD(data.deployDate || data.deadline);
         displayUsers.forEach(u => {
-            optionsHtml += `<option value="${u.name}" ${originalVal === u.name ? 'selected' : ''}>${u.name}</option>`;
+            let label = u.name;
+            if (field !== 'requester' && typeof window.getMemberWeeklyWorkload === 'function') {
+                const wl = window.getMemberWeeklyWorkload(u.name, deployRef);
+                label = `${u.name} (${wl.hours}h/tuần)`;
+            }
+            optionsHtml += `<option value="${escapeHtml(u.name)}" ${originalVal === u.name ? 'selected' : ''}>${escapeHtml(label)}</option>`;
         });
-        inputHtml = `<select class="${commonSelectClass} font-bold" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')">
+        inputHtml = `<select class="${commonSelectClass} font-bold" onchange="this.blur()" onblur="saveInlineEdit(this.closest('.editing'), '${safeIdJs}', '${field}', this.value, '${safeJsVal}')">
             ${optionsHtml}
         </select>`;
-    } else if (field === 'deadline' || field === 'deployDate') {
-        inputHtml = `<input type="date" class="${commonInputClass}" value="${originalVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" />`;
+    } else if (field === 'deadline' || field === 'deployDate' || field === 'orderDate') {
+        inputHtml = `<input type="date" class="${commonInputClass}" value="${safeVal}" onblur="saveInlineEdit(this.closest('.editing'), '${safeIdJs}', '${field}', this.value, '${safeJsVal}')" />`;
     } else {
-        inputHtml = `<input type="text" class="${commonInputClass} font-semibold" value="${safeVal}" onblur="saveInlineEdit(this.closest('.editing'), '${id}', '${field}', this.value, '${safeVal}')" onkeydown="if(event.key==='Enter') this.blur();" />`;
+        inputHtml = `<input type="text" class="${commonInputClass} font-semibold" value="${safeVal}" onblur="saveInlineEdit(this.closest('.editing'), '${safeIdJs}', '${field}', this.value, '${safeJsVal}')" onkeydown="if(event.key==='Enter') this.blur();" />`;
     }
     
     const displayEl = element.querySelector('.display-val');
@@ -2846,19 +2976,22 @@ window.showUserTooltip = function(e, name) {
     const tooltip = document.getElementById('premium-tooltip');
     if (!tooltip) return;
     
+    const header = tooltip.querySelector('.tooltip-title');
+    if (header) header.textContent = 'Thông tin nhân sự';
     const body = tooltip.querySelector('.tooltip-body');
     const u = (window.allUsersData || []).find(x => x.name === name);
+    const wl = typeof window.getMemberWeeklyWorkload === 'function' ? window.getMemberWeeklyWorkload(name) : null;
     
     if (u) {
         body.innerHTML = `
             <div class="flex flex-col gap-3 font-sans">
                 <div class="flex items-center gap-3">
                     <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs shadow-inner">
-                        ${u.name.substring(0,2).toUpperCase()}
+                        ${escapeHtml((u.name || 'NV').substring(0,2).toUpperCase())}
                     </div>
                     <div>
-                        <p class="text-sm font-black text-slate-800 leading-tight">${u.name}</p>
-                        <p class="text-[10px] font-bold text-primary/70 uppercase tracking-tighter">${u.dept || 'Phòng ban'}</p>
+                        <p class="text-sm font-black text-slate-800 leading-tight">${escapeHtml(u.name || '')}</p>
+                        <p class="text-[10px] font-bold text-primary/70 uppercase tracking-tighter">${escapeHtml(u.dept || 'Phòng ban')}</p>
                     </div>
                 </div>
                 <div class="border-t border-slate-100 pt-3 flex flex-col gap-2">
@@ -2868,7 +3001,7 @@ window.showUserTooltip = function(e, name) {
                         </div>
                         <div>
                             <p class="text-[10px] uppercase font-extrabold text-slate-400 tracking-widest">Mã nhân viên</p>
-                            <p class="text-sm font-bold text-slate-700">${u.empId || 'N/A'}</p>
+                            <p class="text-sm font-bold text-slate-700">${escapeHtml(u.empId || 'N/A')}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
@@ -2877,12 +3010,13 @@ window.showUserTooltip = function(e, name) {
                         </div>
                         <div>
                             <p class="text-[10px] uppercase font-extrabold text-slate-400 tracking-widest">Số điện thoại</p>
-                            <p class="text-sm font-bold text-slate-700">${u.phone || 'N/A'}</p>
+                            <p class="text-sm font-bold text-slate-700">${escapeHtml(u.phone || 'N/A')}</p>
                         </div>
                     </div>
-                    <div class="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    ${wl ? `<div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] font-bold"><span class="text-slate-400">Tải lịch tuần này</span><span>${escapeHtml(wl.label)}</span></div>` : ''}
+                    <div class="mt-1 pt-2 border-t border-slate-100 flex items-center justify-between">
                         <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Chức vụ</span>
-                        <span class="px-2 py-0.5 rounded bg-slate-100 text-[10px] font-bold text-slate-600 uppercase">${u.role || 'user'}</span>
+                        <span class="px-2 py-0.5 rounded bg-slate-100 text-[10px] font-bold text-slate-600 uppercase">${escapeHtml(u.role || 'user')}</span>
                     </div>
                 </div>
             </div>
@@ -2964,7 +3098,7 @@ window.exportToExcel = function() {
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     
-    // Set column widths for better readability
+    // Set column widths for all 17 columns
     const colWidths = [
         { wch: 15 }, // Mã
         { wch: 20 }, // Người yêu cầu
@@ -2980,6 +3114,7 @@ window.exportToExcel = function() {
         { wch: 20 }, // Stylist
         { wch: 20 }, // Video
         { wch: 20 }, // Photo
+        { wch: 20 }, // Design
         { wch: 15 }, // Chi phí
         { wch: 30 }  // Ghi chú chi phí
     ];
@@ -2987,17 +3122,20 @@ window.exportToExcel = function() {
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Đơn hàng");
-    XLSX.writeFile(workbook, `NevoTask_Orders_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(workbook, `NevoTask_Orders_${toLocalYMD(new Date())}.xlsx`);
 };
 
 function populateDropdown(selectId, data, defaultText = null, defaultValue = "") {
     const select = document.getElementById(selectId);
-    if (!select) return;
+    if (!select || select.tagName !== 'SELECT') return;
     const currentVal = select.value;
-    let html = defaultText ? `<option value="${defaultValue}">${defaultText}</option>` : '';
-    html += data.map(item => `<option value="${item.name}">${item.name}</option>`).join('');
+    let html = defaultText ? `<option value="${escapeHtml(defaultValue)}">${escapeHtml(defaultText)}</option>` : '';
+    html += (data || [])
+        .filter(item => item && item.name)
+        .map(item => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`)
+        .join('');
     select.innerHTML = html;
-    if (currentVal && data.some(d => d.name === currentVal)) {
+    if (currentVal && data.some(d => d && d.name === currentVal)) {
         select.value = currentVal;
     }
 }
@@ -3008,16 +3146,17 @@ function populateMultiSelect(containerId, data, key) {
     if (!container) return;
     
     let html = `
-        <div class="multi-select-item ${(!columnFilters[key] || columnFilters[key].length === 0) ? 'all-active' : ''}" id="all-${key}" onclick="toggleColumnFilter('${key}', 'ALL', true)">
+        <div class="multi-select-item ${(!columnFilters[key] || columnFilters[key].length === 0) ? 'all-active' : ''}" id="all-${escapeHtml(key)}" onclick="toggleColumnFilter('${escapeJsStr(key)}', 'ALL', true)">
             <span>Tất cả</span>
         </div>`;
         
-    data.forEach(item => {
+    (data || []).filter(item => item && item.name).forEach(item => {
         const isChecked = columnFilters[key] && columnFilters[key].includes(item.name);
+        const jsName = escapeJsStr(item.name);
         html += `
-            <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('${key}', '${item.name}', cb.checked)">
-                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="toggleColumnFilter('${key}', '${item.name}', this.checked)">
-                <span>${item.name}</span>
+            <div class="multi-select-item" onclick="var cb=this.querySelector('input'); cb.checked=!cb.checked; toggleColumnFilter('${escapeJsStr(key)}', '${jsName}', cb.checked)">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="toggleColumnFilter('${escapeJsStr(key)}', '${jsName}', this.checked)">
+                <span>${escapeHtml(item.name)}</span>
             </div>`;
     });
     container.innerHTML = html;
@@ -3032,18 +3171,19 @@ window.getStatusColor = function(status) {
 };
 
     window.initOrdersTracker = function() {
-        if (!window.db) return;
+        if (!window.db || window._ordersTrackerInitialized) return;
+        window._ordersTrackerInitialized = true;
         
         // --- 0. USERS SYNC ---
         const usersRef = window.fsCollection(window.db, "users");
         window.fsOnSnapshot(usersRef, (snapshot) => {
             window.allUsersData = [];
-            snapshot.forEach(doc => window.allUsersData.push({ id: doc.id, ...doc.data() }));
+            snapshot.forEach(docSnap => window.allUsersData.push({ id: docSnap.id, ...docSnap.data() }));
             
             // Sync current user's profile changes to localStorage automatically
             const currentEmpId = localStorage.getItem('nevo_empId');
             if (currentEmpId) {
-                const me = window.allUsersData.find(u => u.id === currentEmpId);
+                const me = window.allUsersData.find(u => u.id === currentEmpId || (u.empId && u.empId.toLowerCase() === currentEmpId.toLowerCase()));
                 if (me) {
                     if (me.dept && me.dept !== localStorage.getItem('nevo_dept')) {
                         localStorage.setItem('nevo_dept', me.dept);
@@ -3057,8 +3197,13 @@ window.getStatusColor = function(status) {
                 }
             }
             
-            const staff = window.allUsersData.sort((a,b) => a.name.localeCompare(b.name));
-            const creativeStaff = staff.filter(u => u.dept === 'Creative');
+            const staff = [...window.allUsersData]
+                .filter(u => u && u.name)
+                .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'vi'));
+            const creativeStaff = getCreativeAssignableStaff(staff);
+
+            // Populate Create Order #requester with real users!
+            populateDropdown('requester', staff);
 
             // Multi-select staff
             populateMultiSelect('menu-requester', staff, 'requester');
@@ -3151,6 +3296,10 @@ window.getStatusColor = function(status) {
             populateDropdown('budgetFilterCategory', window.orderCategoriesData, 'Tất cả hạng mục', 'all');
             populateMultiSelect('menu-category', window.orderCategoriesData, 'category');
             if (window.allOrdersData.length > 0) window.renderOrdersTable();
+            if (window.currentPage === 'planning') {
+                if (typeof window.renderPlanningTable === 'function') window.renderPlanningTable();
+                if (typeof window.renderPlanningReport === 'function') window.renderPlanningReport();
+            }
         });
 
         // --- 3. ORDERS SYNC ---
@@ -3203,11 +3352,15 @@ window.getStatusColor = function(status) {
             if (window.currentPage === 'orders') {
                 if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
                     window.renderWeeklyBoard();
+                } else if (window.currentOrdersView === 'kanban' && window.renderKanbanBoard) {
+                    window.renderOrdersTable();
+                    window.renderKanbanBoard();
                 } else if (window.renderOrdersTable) {
                     window.renderOrdersTable();
                 }
             }
             if (window.currentPage === 'dashboard') window.renderDashboardTable();
+            if (window.currentPage === 'profile' && typeof window.updateProfilePage === 'function') window.updateProfilePage();
             
             if (window.currentPage === 'reports') {
                 window.renderReports();

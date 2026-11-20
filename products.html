@@ -4,6 +4,13 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Sản phẩm mới — Task Manager</title>
+    <script>
+        if (localStorage.getItem('nevo_logged_in') !== 'true') {
+            window.location.replace('login.html');
+        }
+    </script>
+    <link rel="manifest" href="manifest.webmanifest"/>
+    <meta name="theme-color" content="#b80035"/>
     <meta name="description" content="Quản lý sản phẩm mới NEVO 2026"/>
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -159,6 +166,22 @@
             text-align: center;
             color: #64748b;
         }
+        #sync-indicator {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            z-index: 9990;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            background: #1e293b;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+        }
     </style>
 </head>
 <body>
@@ -223,6 +246,7 @@
                         <option value="2026" selected>Năm 2026</option>
                         <option value="2025">Năm 2025</option>
                         <option value="2027">Năm 2027</option>
+                        <option value="2028">Năm 2028</option>
                         <option value="all">Tất cả các năm</option>
                     </select>
                 </div>
@@ -251,6 +275,9 @@
         <div class="flex flex-wrap gap-1.5">
             <button id="btn-add-row" class="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all font-bold flex items-center gap-1 text-[11px] shadow-sm">
                 <span class="material-symbols-outlined text-[14px]">add_circle</span> Dòng mới
+            </button>
+            <button id="btn-create-order-from-products" class="px-2.5 py-1.5 bg-[#b80035] text-white rounded-lg hover:bg-[#920028] transition-all font-bold flex items-center gap-1 text-[11px] shadow-sm" title="Tạo đơn hàng sản xuất ảnh/video Creative từ các mã sản phẩm đang chọn">
+                <span class="material-symbols-outlined text-[14px]">movie_edit</span> Tạo đơn Creative
             </button>
             <button id="btn-add-col" class="px-2.5 py-1.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-200 transition-all font-bold flex items-center gap-1 text-[11px]">
                 <span class="material-symbols-outlined text-[14px]">view_column</span> Thêm cột
@@ -320,6 +347,6 @@
         <div id="preview-title" class="preview-title"></div>
     </div>
 
-    <script type="module" src="products.js?v=3.1"></script>
+    <script type="module" src="products.js?v=20261120"></script>
 </body>
 </html>

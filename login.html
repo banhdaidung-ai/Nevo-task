@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Đăng nhập — Task Manager</title>
     <meta name="description" content="Đăng nhập vào hệ thống Quản lý task nguyên liệu NEVO"/>
+    <link rel="manifest" href="manifest.webmanifest"/>
+    <meta name="theme-color" content="#b80035"/>
     <!-- DNS Prefetch & Preconnect -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
@@ -550,14 +552,14 @@
                     await window.fsSetDoc(window.fsDoc(window.db, "users", u.empId), u);
                 }
             } else {
-                console.log("Kiểm tra nâng cấp bảo mật mật khẩu...");
                 for (const docSnap of snap.docs) {
                     const u = docSnap.data();
-                    if (u.password && u.password.length !== 64) {
-                        console.log(`Nâng cấp mật khẩu bảo mật cho tài khoản: ${u.empId}`);
+                    const docKey = u.empId || docSnap.id;
+                    if (docKey && u.password && u.password.length !== 64) {
                         const hashedPwd = await hashPassword(u.password);
-                        await window.fsSetDoc(window.fsDoc(window.db, "users", u.empId), {
+                        await window.fsSetDoc(window.fsDoc(window.db, "users", docKey), {
                             ...u,
+                            empId: docKey,
                             password: hashedPwd
                         }, { merge: true });
                     }
@@ -642,11 +644,28 @@
         }
 
         try {
-            const userRef = window.fsDoc(window.db, "users", empId);
-            const userDoc = await window.fsGetDoc(userRef);
+            let userRef = window.fsDoc(window.db, "users", empId);
+            let userDoc = await window.fsGetDoc(userRef);
+
+            // Case-insensitive fallback (e.g. "yd0085" -> "YD0085") so employees are never blocked by CapsLock
+            if (!userDoc.exists()) {
+                const upperRef = window.fsDoc(window.db, "users", empId.toUpperCase());
+                const upperDoc = await window.fsGetDoc(upperRef);
+                if (upperDoc.exists()) {
+                    userDoc = upperDoc;
+                } else {
+                    const allSnap = await window.fsGetDocs(window.fsCollection(window.db, "users"));
+                    const matched = allSnap.docs.find(d =>
+                        d.id.toLowerCase() === empId.toLowerCase() ||
+                        String(d.data()?.empId || '').toLowerCase() === empId.toLowerCase()
+                    );
+                    if (matched) userDoc = matched;
+                }
+            }
 
             if (userDoc.exists()) {
                 const userData = userDoc.data();
+                const resolvedEmpId = userData.empId || userDoc.id || empId;
                 
                 const hashedInput = await window.hashPassword(password);
                 if (userData.password === hashedInput) {
@@ -654,10 +673,10 @@
                         showError('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.');
                     } else {
                         localStorage.setItem('nevo_logged_in', 'true');
-                        localStorage.setItem('nevo_user', userData.name || empId);
+                        localStorage.setItem('nevo_user', userData.name || resolvedEmpId);
                         localStorage.setItem('nevo_role', userData.role || 'user');
                         localStorage.setItem('nevo_dept', userData.dept || '');
-                        localStorage.setItem('nevo_empId', userData.empId || empId);
+                        localStorage.setItem('nevo_empId', resolvedEmpId);
                         localStorage.setItem('nevo_email', userData.email || '');
                         localStorage.setItem('nevo_phone', userData.phone || '');
 
