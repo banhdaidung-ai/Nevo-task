@@ -90,7 +90,10 @@ export function showToast(title, message = '', icon = 'check_circle', type = 'su
 /**
  * Premium Page Navigation with race-condition protection and invalid-hash fallback
  */
-export function navigateTo(pageId) {
+export function navigateTo(pageId, eventObj) {
+    if (eventObj && typeof eventObj.preventDefault === 'function') {
+        eventObj.preventDefault();
+    }
     const cleanId = String(pageId || 'dashboard').replace(/^#/, '').trim() || 'dashboard';
     let newEl = document.getElementById(`page-${cleanId}`);
     let resolvedPageId = cleanId;
@@ -102,18 +105,21 @@ export function navigateTo(pageId) {
         if (!newEl) return;
     }
 
+    // Update current page, active nav highlight, and URL hash synchronously so hashchange/clicks stay in sync
+    window.currentPage = resolvedPageId;
+    updateActiveNavLinks(resolvedPageId);
+    if (window.location.hash !== `#${resolvedPageId}`) {
+        history.replaceState(null, '', `#${resolvedPageId}`);
+    }
+
     const activePages = Array.from(document.querySelectorAll('.page.active'));
     if (activePages.length === 1 && activePages[0] === newEl && newEl.classList.contains('visible')) {
-        window.currentPage = resolvedPageId;
-        updateActiveNavLinks(resolvedPageId);
         return;
     }
 
     // Cancel any pending rapid-click navigation timers to prevent multiple active pages
     if (navTransitionTimer) clearTimeout(navTransitionTimer);
     if (hidePreviousTimer) clearTimeout(hidePreviousTimer);
-
-    window.currentPage = resolvedPageId;
 
     const otherPages = activePages.filter(el => el !== newEl);
     otherPages.forEach(el => el.classList.remove('visible'));
@@ -135,34 +141,34 @@ export function navigateTo(pageId) {
         void newEl.offsetWidth;
         newEl.classList.add('visible');
 
-        if (window.location.hash !== `#${resolvedPageId}`) {
-            history.replaceState(null, '', `#${resolvedPageId}`);
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        updateActiveNavLinks(resolvedPageId);
+        window.scrollTo?.({ top: 0, behavior: 'smooth' });
 
-        // Trigger page-specific renders
-        if (resolvedPageId === 'dashboard' && window.renderDashboardTable) window.renderDashboardTable();
-        if (resolvedPageId === 'orders') {
-            if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
-                window.renderWeeklyBoard();
-            } else if (window.currentOrdersView === 'kanban' && window.renderKanbanBoard) {
-                window.renderKanbanBoard();
-            } else if (window.renderOrdersTable) {
-                window.renderOrdersTable();
+        // Trigger page-specific renders safely so a render issue never blocks navigation
+        try {
+            if (resolvedPageId === 'dashboard' && window.renderDashboardTable) window.renderDashboardTable();
+            if (resolvedPageId === 'orders') {
+                if (window.currentOrdersView === 'weekly' && window.renderWeeklyBoard) {
+                    window.renderWeeklyBoard();
+                } else if (window.currentOrdersView === 'kanban' && window.renderKanbanBoard) {
+                    window.renderKanbanBoard();
+                } else if (window.renderOrdersTable) {
+                    window.renderOrdersTable();
+                }
             }
+            if (resolvedPageId === 'reports' && window.renderReports) window.renderReports();
+            if (resolvedPageId === 'planning') {
+                if (window.renderPlanningTable) window.renderPlanningTable();
+                if (window.renderPlanningReport) window.renderPlanningReport();
+            }
+            if (resolvedPageId === 'budgetReport') {
+                if (window.switchBudgetTab) window.switchBudgetTab(window.currentBudgetTab || 'production');
+                else if (window.renderBudgetReport) window.renderBudgetReport();
+            }
+            if (resolvedPageId === 'detailed-report' && window.renderDetailedReport) window.renderDetailedReport();
+            if (resolvedPageId === 'profile' && window.updateProfilePage) window.updateProfilePage();
+        } catch (err) {
+            console.error('[Nav render error]', resolvedPageId, err);
         }
-        if (resolvedPageId === 'reports' && window.renderReports) window.renderReports();
-        if (resolvedPageId === 'planning') {
-            if (window.renderPlanningTable) window.renderPlanningTable();
-            if (window.renderPlanningReport) window.renderPlanningReport();
-        }
-        if (resolvedPageId === 'budgetReport') {
-            if (window.switchBudgetTab) window.switchBudgetTab(window.currentBudgetTab || 'production');
-            else if (window.renderBudgetReport) window.renderBudgetReport();
-        }
-        if (resolvedPageId === 'detailed-report' && window.renderDetailedReport) window.renderDetailedReport();
-        if (resolvedPageId === 'profile' && window.updateProfilePage) window.updateProfilePage();
 
         if (resolvedPageId === 'create-order') {
             if (window.updateOrderCategoryDropdown) window.updateOrderCategoryDropdown();

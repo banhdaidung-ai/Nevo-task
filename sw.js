@@ -3,7 +3,7 @@
   Strategy: Network-First for HTML/JS/CSS (always fresh code after deploy), Cache fallback when offline.
 */
 
-const CACHE_NAME = 'nevo-task-pwa-v3.0';
+const CACHE_NAME = 'nevo-task-pwa-v3.1';
 const CORE_ASSETS = [
   './index.html',
   './login.html',

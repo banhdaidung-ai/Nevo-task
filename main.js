@@ -10,7 +10,10 @@ import './firebase-service.js';
 // Apply Dark Mode immediately before DOM paint finishes
 initDarkMode();
 
-document.addEventListener('DOMContentLoaded', () => {
+function initMainApp() {
+    if (window._nevoMainInit) return;
+    window._nevoMainInit = true;
+
     if (!checkAuth()) return;
 
     initDarkMode();
@@ -45,16 +48,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dropUserRole) dropUserRole.textContent = getRoleDisplayName(user.role);
 
     // Single authoritative hash navigation
-    const initialPage = window.location.hash.replace('#', '') || 'dashboard';
+    const initialPage = window.location.hash.replace(/^#/, '').trim() || 'dashboard';
     navigateTo(initialPage);
 
     window.addEventListener('hashchange', () => {
-        const hashPage = window.location.hash.replace('#', '') || 'dashboard';
-        if (window.currentPage !== hashPage) navigateTo(hashPage);
+        const rawHash = window.location.hash.replace(/^#/, '').trim();
+        if (!rawHash && window.location.href.endsWith('#')) return;
+        const hashPage = rawHash || 'dashboard';
+        if (hashPage && window.currentPage !== hashPage) navigateTo(hashPage);
     });
 
     console.log('Nevo-Task Enterprise Initialized');
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMainApp);
+} else {
+    initMainApp();
+}
 
 window.navigateTo = navigateTo;
 window.showToast = showToast;

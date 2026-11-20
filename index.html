@@ -507,17 +507,17 @@
             <button id="mobileMenuBtn" class="md:hidden p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <a href="#" onclick="navigateTo('dashboard')" class="text-xl font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
+            <a href="#dashboard" onclick="event.preventDefault(); navigateTo('dashboard')" class="text-xl font-bold tracking-tighter text-[#131b2e] font-headline flex items-center gap-2">
                 <img src="https://bizweb.dktcdn.net/100/598/325/themes/1047287/assets/footers2_one_logo.png?1775450132549" alt="Task Manager Logo" class="brand-logo-img"/>
                 <span class="hidden sm:inline">Task Manager</span>
             </a>
             <!-- Desktop Nav Links -->
             <div id="navLinks" class="hidden md:flex items-center gap-6 font-headline tracking-tight font-semibold text-sm">
-                <a href="#" data-page="dashboard" onclick="navigateTo('dashboard')" class="nav-link text-rose-600 border-b-2 border-rose-600 pb-1 transition-all duration-200">Bảng điều khiển</a>
-                <a href="#" data-page="orders" onclick="navigateTo('orders')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
-                <a href="#" data-page="planning" onclick="navigateTo('planning')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
-                <a href="#" data-page="budgetReport" onclick="navigateTo('budgetReport')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
-                <a href="#" id="navScheduleLink" data-page="reports" onclick="navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200 hidden">Lịch làm việc</a>
+                <a href="#dashboard" data-page="dashboard" onclick="event.preventDefault(); navigateTo('dashboard')" class="nav-link text-rose-600 border-b-2 border-rose-600 pb-1 transition-all duration-200">Bảng điều khiển</a>
+                <a href="#orders" data-page="orders" onclick="event.preventDefault(); navigateTo('orders')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Đơn hàng</a>
+                <a href="#planning" data-page="planning" onclick="event.preventDefault(); navigateTo('planning')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Kế hoạch</a>
+                <a href="#budgetReport" data-page="budgetReport" onclick="event.preventDefault(); navigateTo('budgetReport')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Chi phí</a>
+                <a href="#reports" id="navScheduleLink" data-page="reports" onclick="event.preventDefault(); navigateTo('reports')" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200 hidden">Lịch làm việc</a>
                 <a href="products.html" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200">Sản phẩm mới</a>
                 <a href="model.html" id="navModelLink" class="nav-link text-slate-500 hover:text-[#131b2e] transition-all duration-200 hidden">Model</a>
                 <a href="admin.html" id="navAdminLink" class="nav-link text-slate-500 hover:text-red-600 transition-all duration-200 hidden">Quản trị</a>
@@ -638,25 +638,25 @@
         </div>
     </div>
     <div class="p-4 space-y-2">
-        <a href="#" onclick="navigateTo('dashboard'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+        <a href="#dashboard" onclick="event.preventDefault(); navigateTo('dashboard'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">dashboard</span> Bảng điều khiển
         </a>
-        <a href="#" onclick="navigateTo('orders'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+        <a href="#orders" onclick="event.preventDefault(); navigateTo('orders'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">shopping_cart</span> Đơn hàng
         </a>
-        <a href="#" id="mobilePlanningLink" onclick="navigateTo('planning'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+        <a href="#planning" id="mobilePlanningLink" onclick="event.preventDefault(); navigateTo('planning'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">event_note</span> Kế hoạch
         </a>
-        <a href="#" id="mobileFinanceLink" onclick="navigateTo('budgetReport'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+        <a href="#budgetReport" id="mobileFinanceLink" onclick="event.preventDefault(); navigateTo('budgetReport'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">payments</span> Chi phí &amp; Tài chính
         </a>
-        <a href="#" id="mobileScheduleLink" onclick="navigateTo('reports'); closeMobileMenu()" class="items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold hidden">
+        <a href="#reports" id="mobileScheduleLink" onclick="event.preventDefault(); navigateTo('reports'); closeMobileMenu()" class="items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold hidden">
             <span class="material-symbols-outlined text-primary">calendar_month</span> Lịch làm việc
         </a>
-        <a href="#" onclick="navigateTo('create-order'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+        <a href="#create-order" onclick="event.preventDefault(); navigateTo('create-order'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">add_circle</span> Tạo đơn mới
         </a>
-        <a href="#" onclick="navigateTo('profile'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
+        <a href="#profile" onclick="event.preventDefault(); navigateTo('profile'); closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
             <span class="material-symbols-outlined text-primary">person</span> Hồ sơ cá nhân
         </a>
         <a href="products.html" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-surface-container-low transition-colors text-sm font-semibold">
@@ -2742,9 +2742,9 @@
             <p class="text-xs text-slate-400">© 2026 Hệ thống được phát triển bởi Bành Đại Dũng - Creative</p>
         </div>
         <div class="flex gap-6 text-xs">
-            <a class="text-slate-400 hover:text-rose-400 transition-all" href="#">Quy định</a>
-            <a class="text-slate-400 hover:text-rose-400 transition-all" href="#">Bảo mật</a>
-            <a class="text-slate-400 hover:text-rose-400 transition-all" href="#">Liên hệ</a>
+            <a class="text-slate-400 hover:text-rose-400 transition-all" href="support.html" target="_blank" rel="noopener noreferrer">Quy định</a>
+            <a class="text-slate-400 hover:text-rose-400 transition-all" href="support.html" target="_blank" rel="noopener noreferrer">Bảo mật</a>
+            <a class="text-slate-400 hover:text-rose-400 transition-all" href="support.html" target="_blank" rel="noopener noreferrer">Liên hệ</a>
         </div>
     </div>
 </footer>
@@ -3973,12 +3973,12 @@
         window._pendingScheduleAction = { type: 'bulk', opts: opts || {} };
     };
 </script>
-<script type="module" src="security-utils.js?v=20261120"></script>
-<script type="module" src="main.js?v=20261120"></script>
-<script type="module" src="orders-manager.js?v=20261120"></script>
-<script type="module" src="schedule-manager.js?v=20261120"></script>
-<script type="module" src="notifications-palette.js?v=20261120"></script>
-<script type="module" src="collaboration-kanban.js?v=20261120"></script>
+<script type="module" src="security-utils.js?v=20261120-2"></script>
+<script type="module" src="main.js?v=20261120-2"></script>
+<script type="module" src="orders-manager.js?v=20261120-2"></script>
+<script type="module" src="schedule-manager.js?v=20261120-2"></script>
+<script type="module" src="notifications-palette.js?v=20261120-2"></script>
+<script type="module" src="collaboration-kanban.js?v=20261120-2"></script>
 
 <!-- ====== JAVASCRIPT ====== -->
 <script>
